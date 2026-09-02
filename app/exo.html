@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#109080">
+<title>EXOCLEAN — App</title>
+<meta name="description" content="Pick your cleaner. Keep your slot. Schedule-locked bookings, dated refunds, and a human on chat in 60 seconds.">
+<link rel="icon" href="assets/exoclean-mark.png">
+<link rel="manifest" href="manifest-exo.json">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EXOCLEAN">
+<link rel="stylesheet" href="css/exo.css">
+</head>
+<body>
+  <!-- ==========================================================================
+       exo.html — EXOCLEAN App (marketplace ponsel: pelanggan + mitra)
+       --------------------------------------------------------------------------
+       Wujud kode dari paket desain "Mobile cleaning service app" (2 Sep 2026):
+       27 layar — 20 pelanggan, 7 mitra — 16 layanan, 12 bahasa. Konsol
+       backend-nya di exo-admin.html; keduanya berbagi css/exo.css dan
+       js/exo-brand.js.
+
+       Berdiri sendiri dari index.html / mitra.html / mcs.html: sistem
+       warnanya Organic (aksen dari logo), dan yang dijual berbeda — di sini
+       pelanggan MEMILIH ORANGNYA dan tarif = tarif layanan × faktor orangnya.
+
+       Di layar lebar aplikasi tampil 412×892 persis kanvas rancangan, dengan
+       bilah lompat layar di bawahnya untuk peninjauan. Di ponsel sungguhan
+       bingkainya lenyap dan bilah lompatnya disembunyikan.
+       ========================================================================== -->
+  <div class="frame">
+    <main class="app" id="exo-app" aria-live="polite"></main>
+    <div id="exo-lapis"></div>
+  </div>
+  <div class="jumpbar" id="exo-lompat" aria-label="Screen jump bar"></div>
+
+  <script>
+    window.I18N = window.I18N || { t: function (s) { return s; }, untuk: function (k, s) { return s; }, get: function () { return 'en'; } };
+  </script>
+
+  <!-- alat bersama yang dipinjam: kunci penyimpanan, kompresi foto, lumbung foto IndexedDB -->
+  <script src="js/ruang.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/foto.js"></script>
+  <!-- roster juru bersih sungguhan + tarif yang ditetapkan Super Admin (bila basis datanya ada) -->
+  <script src="js/db.js"></script>
+  <script src="js/pasar.js"></script>
+  <!-- wilayah administratif sungguhan (Kepmendagri 2025 + 56 negara lain), dimuat per berkas saat dibutuhkan -->
+  <script src="js/wilayah.js"></script>
+  <!-- jembatan ke server pendamping: pembayaran (4000) dan OTP (4100) -->
+  <script src="js/exo-server.js"></script>
+  <!-- kunci publik integrasi (Google, Facebook, Turnstile) — kosong = simulasi -->
+  <script src="js/exo-config.js"></script>
+
+  <script src="js/exo-brand.js"></script>
+  <script src="js/exo-i18n.js"></script>
+  <script src="js/exo-data.js"></script>
+  <script src="js/exo-core.js"></script>
+  <script src="js/exo-screens-customer.js"></script>
+  <script src="js/exo-screens-customer2.js"></script>
+  <script src="js/exo-screens-partner.js"></script>
+  <script src="js/exo-sheets.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Kredensial — tidak pernah ikut ke repositori.
+.env
+.env.*
+!.env.example
+
+# Data sementara server pembayaran
+transactions.json
+
+node_modules/
+npm-debug.log*

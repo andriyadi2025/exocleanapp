@@ -1,0 +1,44 @@
+# ============================================================================
+#  Berkas yang TIDAK boleh ikut ke repositori.
+#
+#  Aturannya satu: apa pun yang, bila terbaca orang lain, memberi mereka akses
+#  ke sesuatu. Sekali sebuah rahasia masuk riwayat git, menghapusnya kemudian
+#  tidak cukup — ia tetap ada di setiap salinan yang sudah terlanjur diambil.
+#  Karena itu daftar ini ditulis SEBELUM dibutuhkan, bukan sesudah.
+# ============================================================================
+
+# Basis data sungguhan: berisi seluruh data pelanggan dan hash token perangkat.
+app/server/data/
+
+# Sertifikat TLS. Berkas .crt sendiri memang publik — ia dibagikan justru agar
+# perangkat mempercayainya. Tetapi .key adalah kuncinya, dan seluruh foldernya
+# diabaikan supaya tidak ada yang tidak sengaja mengirim keduanya sekaligus.
+app/server/cert/
+*.key
+*.pem
+
+# Rahasia server: Server Key Midtrans, Secret Key Xendit, sandi agen
+# Darmawisata, API key Biteship, MAIL_TOKEN, DATA_TOKEN.
+.env
+*.env
+!*.env.contoh
+
+# Kunci Google Maps yang disimpan sebagai teks biasa di akar proyek.
+api key google maps exoclean.txt
+*api key*.txt
+
+# Bawaan Node.
+node_modules/
+npm-debug.log*
+
+# Ditambahkan 2 Sep 2026 sebelum unggah ke GitHub.
+# Kunci Xendit yang disimpan sebagai CSV di akar proyek.
+secret_api_key xendit.csv
+*secret*api*key*.csv
+
+# Cadangan berkas lama aplikasi (sudah tergantikan; riwayatnya cukup di git).
+app/backup-exo-20260902/
+
+# Data uji milik server pendamping.
+app/server/transactions.json
+app/server/dwi-transaksi.json

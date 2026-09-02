@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3730A3" data-asal="#3730A3">
+<title>MCS EXOCLEAN — Management Cleaning Service</title>
+<link rel="icon" href="assets/icon-mcs-192.png">
+<link rel="manifest" href="manifest-mcs.json">
+<link rel="apple-touch-icon" href="assets/icon-mcs-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MCS">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<!-- Tanpa data-simpan, MCS memakai kunci penyimpanan yang sama dengan
+     EXOCLEAN (exoclean_*). Itu disengaja SELAMA keduanya berbagi satu
+     asal: korporat didaftarkan admin lewat index.html, dan stafnya
+     bekerja di sini atas data yang sama.
+
+     Untuk pemasangan di tempat pelanggan — MCS sendirian, tanpa EXOCLEAN
+     — tambahkan data-simpan="mcs" dan seluruh sepuluh kunci penyimpanannya
+     berpindah ke ruangnya sendiri. Lihat js/ruang.js. -->
+<body data-app="mcs">
+  <!-- ==========================================================================
+       mcs.html — pintu masuk MCS EXOCLEAN
+       --------------------------------------------------------------------------
+       PINTU MASUK KETIGA, BASIS KODE TETAP SATU
+
+       EXOCLEAN     (index.html) — klien dan mitra toko
+       EXOCLEAN Mitra (mitra.html) — mitra lapangan
+       MCS EXOCLEAN   (berkas ini) — korporat memantau kebersihan areanya sendiri
+
+       Ketiganya memuat modul yang SAMA, hanya berbeda subsetnya. Aturan
+       bisnisnya tidak disalin ke mana pun: satu perubahan pada perhitungan
+       jadwal berlaku serentak di semuanya.
+
+       KENAPA MCS PANTAS BERDIRI SENDIRI
+
+       Ia menjual hal yang berbeda. Di aplikasi lain EXOCLEAN MENGERJAKAN
+       kebersihannya; di sini EXOCLEAN menjual PERANGKAT LUNAKNYA kepada
+       korporat yang sudah punya office boy sendiri. Pembelinya berbeda,
+       percakapan penjualannya berbeda, dan ikon di layar utama seorang building
+       manager tidak seharusnya bertuliskan hal yang sama dengan aplikasi tempat
+       orang memesan juru masak.
+
+       YANG SENGAJA TIDAK DIMUAT
+
+       Seluruh layar toko, marketplace, pembayaran gateway, katalog jasa,
+       pemesanan keahlian, pembelajaran mitra, dompet, poin, dan obrolan.
+       Staf korporat tidak pernah membukanya.
+       ========================================================================== -->
+  <div id="app"></div>
+  <div id="modal-root"></div>
+  <div id="toast-root"></div>
+
+  <!-- ---------- inti ---------- -->
+  <!-- Dimuat PALING AWAL dan memasang temanya seketika. Ditaruh setelah
+       utils.js akan menghasilkan kedipan putih menyilaukan di ruang gelap. -->
+  <!-- PALING AWAL: menentukan kunci penyimpanan yang dipakai seluruh berkas
+     di bawahnya. db.js dan kawan-kawan membacanya saat DIMUAT. -->
+  <script src="js/ruang.js"></script>
+  <script src="js/tampilan.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/kripto.js"></script>
+  <script src="js/qr.js"></script>
+  <script src="js/lang/core.js"></script>
+  <script src="js/lang/en-extra.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/foto.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/peran-bawaan.js"></script>
+  <script src="js/semai-mcs.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/chart.js"></script>
+
+  <!-- ---------- domain yang dipakai bersama ----------
+       Sebagian ini milik bagian lain aplikasi, tetapi tetap dibawa karena
+       seed dan modul inti merujuknya. Berkasnya kecil; membuangnya menuntut
+       belasan penjaga di kode bersama — biaya yang lebih besar daripada
+       manfaatnya. -->
+  <script src="js/wa.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/wilayah.js"></script>
+  <script src="js/pesan.js"></script>
+  <script src="js/akses.js"></script>
+  <script src="js/keamanan.js"></script>
+  <script src="js/syarat.js"></script>
+  <!-- Sebelum mcs.js: MCS.tugasHari memakai ZONA untuk membandingkan jam. -->
+  <script src="js/zona.js"></script>
+  <script src="js/mcsakses.js"></script>
+  <script src="js/penghuni.js"></script>
+  <script src="js/pegawai.js"></script>
+  <script src="js/akun.js"></script>
+  <script src="js/notif.js"></script>
+
+  <!-- ---------- inti MCS ---------- -->
+  <script src="js/mcs.js"></script>
+  <script src="js/lokasi.js"></script>
+  <script src="js/bangunan.js"></script>
+  <script src="js/impor.js"></script>
+  <script src="js/gaji.js"></script>
+  <script src="js/tagihan.js"></script>
+  <script src="js/kerja.js"></script>
+  <script src="js/k3.js"></script>
+  <script src="js/aset.js"></script>
+  <script src="js/silang.js"></script>
+  <script src="js/beban.js"></script>
+  <script src="js/portal.js"></script>
+  <script src="js/latih.js"></script>
+  <script src="js/kontrak.js"></script>
+  <script src="js/biaya.js"></script>
+  <script src="js/ronda.js"></script>
+  <script src="js/kpi.js"></script>
+  <!-- Sesudah kpi.js dan mcsakses.js: hirarki.js berdiri di atas keduanya. -->
+  <script src="js/hirarki.js"></script>
+
+  <!-- ---------- layar yang benar-benar dibuka staf korporat ---------- -->
+  <script src="js/views/splash.js"></script>
+  <script src="js/views/keamanan.js"></script>
+  <script src="js/views/daftar.js"></script>
+  <script src="js/views/auth.js"></script>
+  <script src="js/views/shared.js"></script>
+  <script src="js/views/profil.js"></script>
+  <!-- Layar MCS, dulu satu berkas 15.166 baris.
+       URUTANNYA MENGIKAT: mcs-inti.js membuat VMCS dan harus lebih dulu,
+       karena tiap berkas layar menyalin pembantunya saat dimuat. mcs.js
+       merakit paling akhir, sesudah semua layar mendaftarkan diri. -->
+  <script src="js/views/mcs-inti.js"></script>
+  <script src="js/views/mcs-harian.js"></script>
+  <script src="js/views/mcs-tempat.js"></script>
+  <script src="js/views/mcs-jadwal.js"></script>
+  <script src="js/views/mcs-orang.js"></script>
+  <script src="js/views/mcs-bahan.js"></script>
+  <script src="js/views/mcs-alat.js"></script>
+  <script src="js/views/mcs-uang.js"></script>
+  <script src="js/views/mcs-lapor.js"></script>
+  <!-- URUTANNYA MENGIKAT: menu.js membuat MENU, views/menu.js membuat
+       ViewMenu, dan mcs-sistem.js mendaftarkan layarnya hanya bila keduanya
+       ADA. Terbalik urutannya, layar Susunan Menu diam-diam tidak muncul. -->
+  <script src="js/menu.js"></script>
+  <script src="js/views/menu.js"></script>
+  <script src="js/views/mcs-sistem.js"></script>
+  <script src="js/views/mcs-negara.js"></script>
+  <script src="js/views/mcs.js"></script>
+  <script src="js/views/penghuni.js"></script>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

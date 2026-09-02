@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#109080">
+<title>EXOCLEAN — Backend console</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<link rel="stylesheet" href="css/exo.css">
+<link rel="stylesheet" href="css/exo-admin.css">
+</head>
+<body>
+  <!-- ==========================================================================
+       exo-admin.html — konsol backend EXOCLEAN App (14 modul)
+       --------------------------------------------------------------------------
+       Wujud kode dari "EXOCLEAN Admin.dc.html": dash · live · orders · cleaners
+       · services · crm · sop · desk · claims · promos · rewards · brand ·
+       roles · team. Konsol ini mengatur MARKETPLACE (exo.html); manajemen
+       operasi korporat tetap di index.html.
+
+       Yang tersambung sungguhan ke exo.html lewat localStorage asal yang sama:
+         · Appearance  → logo, warna, nama, running text (js/exo-brand.js)
+         · Services    → layanan dijeda hilang dari katalog & beranda
+         · Promos      → nominal & status CLEAN25 divalidasi di keranjang
+       Sisanya data contoh dari rancangan, siap diganti API.
+       ========================================================================== -->
+  <div class="adm">
+    <aside class="adm-side" id="adm-side"></aside>
+    <div class="adm-main">
+      <div class="adm-top" id="adm-top"></div>
+      <div class="adm-body" id="adm-body"></div>
+    </div>
+  </div>
+  <div id="adm-lapis"></div>
+  <script>
+    window.I18N = window.I18N || { t: function (s) { return s; }, untuk: function (k, s) { return s; }, get: function () { return 'en'; } };
+  </script>
+  <!-- basis data EXOCLEAN (bila ada di asal ini): orders, users, complaints, ratings -->
+  <script src="js/ruang.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/pasar.js"></script>
+  <script src="js/exo-brand.js"></script>
+  <script src="js/exo-admin.js"></script>
+  <script src="js/exo-admin-views.js"></script>
+</body>
+</html>

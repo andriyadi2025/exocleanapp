@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#109080">
+<title>EXOCLEAN — Analisa pasar</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<link rel="stylesheet" href="css/exo.css">
+<link rel="stylesheet" href="css/exo-admin.css">
+<style>
+  .doc { max-width:1420px; margin:0 auto; padding:48px 56px 64px; display:flex; flex-direction:column; gap:28px; }
+  .doc-head { display:flex; align-items:flex-end; gap:18px; }
+  .doc-head img { height:52px; width:auto; }
+  .doc-tabs { display:flex; gap:8px; }
+  .lv { display:inline-flex; align-items:center; font-size:11px; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+  .ada { background:var(--color-accent-500); color:var(--color-bg); font-weight:700; }
+  .sebagian { box-shadow:inset 0 0 0 1.5px var(--color-accent-400); color:var(--color-accent-800); font-weight:600; }
+  .tidak { background:var(--color-neutral-200); color:color-mix(in srgb, var(--color-text) 60%, transparent); }
+  @media (max-width:1100px) { .doc { padding:24px 18px; } .adm { min-width:0; } .grid.g2, .grid.g3, .grid.g4 { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <!-- Dua dokumen analisa dari paket desain ("EXOCLEAN Perbandingan Layanan"
+       dan "EXOCLEAN Analisa Kompetitor", 31 Agu 2026), diporting apa adanya.
+       Bukan layar aplikasi — ini bahan keputusan pemilik dan tim. -->
+  <div class="doc" id="doc"></div>
+  <script src="js/exo-brand.js"></script>
+  <script>
+  (function () {
+    var tab = (location.hash || '#layanan').slice(1);
+    function lv(v) { return '<span class="lv ' + (v === 'Ada' ? 'ada' : v === 'Sebagian' ? 'sebagian' : 'tidak') + '">' + v + '</span>'; }
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+    function tabel(cols, rows) { var h = '<div class="card elev-sm table-card"><table class="table"><thead><tr>'; cols.forEach(function (c) { h += '<th>' + c + '</th>'; }); h += '</tr></thead><tbody>'; rows.forEach(function (r) { h += '<tr>'; r.forEach(function (c) { h += '<td>' + c + '</td>'; }); h += '</tr>'; }); return h + '</tbody></table></div>'; }
+
+    function layanan() {
+      var ROWS = [
+        ['General cleaning / per jam','Ada','Ada','Ada','Layanan inti semua pemain; pembeda ada di harga dan kepastian, bukan keberadaannya'],
+        ['Deep cleaning','Ada','Ada','Ada','KliknClean memakai survei dulu; kita samakan pola itu'],
+        ['Setrika','Ada','Ada','Ada','Minimal 2 jam di semua pemain'],
+        ['Laundry antar-jemput','Ada','Sebagian','Ada','KliknClean fokus setrika di tempat, bukan cuci antar-jemput'],
+        ['Cuci sofa, kasur, karpet (wet vacuum)','Ada','Ada','Ada','Dihitung per kursi/luas di semua pemain'],
+        ['Hydro cleaning / vakum tungau','Ada','Ada','Sebagian','Baru kita tambahkan — sebelumnya celah paling terasa'],
+        ['Cuci & servis AC','Ada','Ada','Ada','Garansi kita 30 hari, di atas rata-rata pasar'],
+        ['Fogging disinfektan','Ada','Ada','Ada','Standar sejak pandemi'],
+        ['Pest control','Ada','Ada','Sebagian','Butuh bahan berizin dan petugas bersertifikat'],
+        ['Poles lantai / kristalisasi marmer','Ada','Ada','Tidak','Order bernilai tinggi, biasanya dari gedung dan rumah besar'],
+        ['Cuci toren air','Ada','Ada','Tidak','Berulang tiap 6 bulan — bagus untuk langganan'],
+        ['Perawatan kolam renang','Ada','Ada','Tidak','Cocok dijual sebagai kontrak mingguan, bukan sekali pesan'],
+        ['Cuci mobil di rumah','Ada','Ada','Sebagian','Butuh air, listrik, dan area teduh'],
+        ['Cleaning kantor / kontrak','Ada','Ada','Sebagian','Di sinilah 79 dokumen SOP kita paling bernilai'],
+        ['Pembersihan pasca renovasi','Ada','Ada','Sebagian','Dulu dikecualikan; kini layanan tersendiri bersurvei (di aplikasi)'],
+        ['Cuci tangki/tandon gedung besar','Ada','Ada','Tidak','Kini layanan B2B tersendiri di atas 2.000 liter (di aplikasi)'],
+        ['Memasak / meal prep','Tidak','Tidak','Ada','Kekuatan bTaskee; di luar kompetensi kebersihan'],
+        ['Belanja & titip barang','Tidak','Tidak','Ada','Margin tipis, sulit dijamin mutunya'],
+        ['Perawatan lansia / anak / pasien','Tidak','Tidak','Ada','Risiko dan regulasi jauh lebih berat'],
+        ['Pijat / layanan tubuh','Tidak','Tidak','Sebagian','Tidak relevan dengan posisi merek kita']
+      ];
+      var h = '<div class="grid g4">';
+      [['Layanan EXOCLEAN','16','16 layanan di aplikasi, termasuk pasca renovasi & tangki gedung'],['Layanan KliknClean','≈12','katalog publik aplikasi & situs'],['Layanan bTaskee','≈15','termasuk non-kebersihan'],['Celah tersisa','0','dua celah di dokumen asli sudah ditutup di aplikasi']].forEach(function (k) { h += '<div class="card elev-sm kpi sm"><div class="lbl">' + k[0] + '</div><div class="val">' + k[1] + '</div><div class="note" style="opacity:.65">' + k[2] + '</div></div>'; });
+      h += '</div><div class="card elev-sm table-card"><div class="card-head"><div class="grow card-title">Matriks layanan</div><div class="t-115 o-6">Ada · Sebagian (paket/permintaan khusus) · Tidak</div></div><table class="table"><thead><tr><th>Layanan</th><th>EXOCLEAN</th><th>KliknClean</th><th>bTaskee</th><th>Catatan pasar</th></tr></thead><tbody>';
+      ROWS.forEach(function (r) { h += '<tr><td class="bold t-125">' + r[0] + '</td><td>' + lv(r[1]) + '</td><td>' + lv(r[2]) + '</td><td>' + lv(r[3]) + '</td><td class="t-12 o-8">' + r[4] + '</td></tr>'; });
+      h += '</tbody></table></div><div class="grid g2" style="gap:18px"><div class="card elev-sm gap-11"><div class="card-kicker">Yang mereka punya, kita belum</div>';
+      [['KliknClean','Pembersihan pasca renovasi / pasca banjir','Dulu ditolak di ketentuan general cleaning. Kini layanan tersendiri bersurvei di aplikasi.','Sudah diambil',true],['KliknClean','Cuci tangki gedung di atas 2.000 liter','Perlu tim, pompa besar, dan izin masuk gedung.','Sudah diambil lewat jalur B2B',true],['bTaskee','Memasak / meal prep','Menambah kategori risiko baru (alergi, higienitas makanan) yang tidak bisa dibuktikan dengan foto.','Lewati',false],['bTaskee','Belanja & titip barang','Margin tipis, sengketa harga barang, sulit distandarkan lewat SOP.','Lewati',false],['bTaskee','Perawatan lansia, anak, pasien','Butuh sertifikasi tenaga kesehatan dan asuransi berbeda.','Lewati',false],['Pasar','Paket kebersihan berkala gedung','Bukan layanan baru, melainkan pengemasan: bundel toren + kolam + lobby jadi kontrak bulanan.','Ambil — pengemasan, bukan operasi baru',true]].forEach(function (g) {
+        h += '<div class="flex gap-10 items-start"><span class="lv ' + (g[4] ? 'ada' : 'tidak') + '">' + g[0] + '</span><div class="grow"><div class="t-13 bold">' + g[1] + '</div><div class="t-115 o-7 lh-145">' + g[2] + '</div></div><span class="t-11 o-65 nowrap">' + g[3] + '</span></div>';
+      });
+      h += '</div><div class="card elev-sm gap-11"><div class="card-kicker">Yang hanya kita punya</div>';
+      [['Pilih petugas sendiri di layanan berat','Pesaing menugaskan tim untuk poles lantai atau pest control; kita membiarkan pelanggan melihat siapa yang datang, dengan tarif masing-masing.'],['Satuan yang jujur per layanan','m² untuk hydro dan poles, per kunjungan untuk pest dan kolam, per toren — bukan semuanya dipaksa jadi “per jam”.'],['Bukti sebelum–sesudah wajib','Berlaku untuk semua 16 layanan, bukan hanya general cleaning.'],['Ketentuan layanan di dalam aplikasi','Yang bisa dan tidak bisa dikerjakan tampil sebelum bayar, bukan tersembunyi di situs.'],['Katalog dalam 12 bahasa','Termasuk Arab dengan tata letak kanan-ke-kiri; pesaing hanya Indonesia dan Inggris.']].forEach(function (o) {
+        h += '<div class="bullet"><i></i><div class="grow"><div class="t-13 bold">' + o[0] + '</div><div class="t-115 o-7 lh-145">' + o[1] + '</div></div></div>';
+      });
+      h += '</div></div><div class="card elev-sm card-leaf gap-10"><div class="card-title">Kesimpulan</div><div class="t-13 lh-16" style="max-width:1120px">Dengan 16 layanan di aplikasi, katalog EXOCLEAN <strong>setara dengan KliknClean</strong>. Terhadap bTaskee kita <strong>lebih dalam di kebersihan</strong>, tetapi mereka bermain di ranah lain: memasak, belanja, dan perawatan orang. Saran: jangan mengejar itu. Perbedaan kita bukan jumlah menu, melainkan kepastian dan bukti kerja; menambah layanan pengasuhan justru mengencerkan posisi dan menambah risiko yang tidak bisa dijamin dengan foto sebelum–sesudah.</div></div>';
+      return h;
+    }
+
+    function kompetitor() {
+      var h = '<div class="card elev-sm gap-10"><div class="card-kicker">Ringkasan</div><div class="t-14 lh-16" style="max-width:1100px">Pasar sudah matang di sisi <strong>cakupan layanan</strong> — pesaing utama sama-sama menawarkan general cleaning, deep cleaning, hydro/vakum tungau, AC, cuci mobil, setrika, poles lantai, sampai pest control di banyak kota. Yang belum diselesaikan siapa pun adalah <strong>kepastian</strong>: jadwal yang tidak digeser sepihak, refund yang punya tanggal, voucher yang jujur sejak keranjang, dan bukti kerja yang tidak bisa dibantah. Di situlah posisi EXOCLEAN dibangun. Kelemahan terbesar kita bukan fitur, melainkan <strong>skala</strong>: jumlah mitra, sebaran kota, dan kepercayaan merek yang dibangun ratusan ribu transaksi.</div></div>';
+      h += '<h3 style="margin:0;font-size:22px">1 · Peta pesaing</h3>' + tabel(['Pemain','Model','Cakupan','Kekuatan','Celah yang kita serang'], [
+        ['<b>bTaskee</b>','Marketplace multi-layanan lintas negara (ID, VN, TH); pelanggan memilih tasker, saldo dompet in-app','Kota besar di beberapa negara Asia Tenggara','Ekosistem layanan rumah tangga luas, basis tasker besar, pemesanan cepat','<span class="c-accent-900">Kepastian jadwal & transparansi refund; kualitas berbeda antar tasker</span>'],
+        ['<b>KliknClean</b>','Layanan terkelola: perusahaan menugaskan petugas terlatih, paket prepaid & langganan','Jabodetabek, Bandung, Surabaya, Bali, Medan','Menu layanan sangat lengkap, garansi kepuasan hingga Rp100.000, SOP pelatihan','<span class="c-accent-900">Pelanggan tidak bebas memilih petugas; konfirmasi lambat saat akhir pekan di pinggiran kota</span>'],
+        ['<b>Allbersih / penyedia deep-clean</b>','Kontraktor kebersihan profesional, pesan via telepon/WA & aplikasi ringan','Kota besar','Kuat di deep cleaning, unit pasca-sewa dan pasca-renovasi','<span class="c-accent-900">Pengalaman digital tipis: tanpa pelacakan langsung, tanpa bukti foto terstruktur</span>'],
+        ['<b>Super-app (Go-Clean dan sejenis)</b>','Layanan kebersihan sebagai fitur di dalam super-app','Sangat luas mengikuti induknya','Distribusi dan dompet digital yang sudah dipakai jutaan orang','<span class="c-accent-900">Kebersihan bukan fokus utama; SOP dan bukti kerja dangkal</span>'],
+        ['<b>Pekerja informal</b>','Tanpa aplikasi, tawar-menawar langsung','Di mana saja','Termurah, hubungan personal, fleksibel','<span class="c-accent-900">Tidak ada asuransi, tanpa pengganti bila berhalangan, tidak ada bukti kerja</span>']]);
+      h += '<div class="grid g2" style="gap:20px"><div class="stack gap-12"><h3 style="margin:0;font-size:22px">2 · Kelebihan EXOCLEAN</h3>' + tabel(['Aspek','Yang kita punya','Nilai bisnis'], [
+        ['<b>Model harga</b>','Marketplace dengan tarif per petugas di dalam pagu floor–ceiling, fee flat Rp3.000, tanpa surge','Pelanggan melihat alasan harga; petugas bagus bisa menaikkan pendapatan tanpa merugikan pasar'],
+        ['<b>Kepastian jadwal</b>','Slot terkunci; hanya pelanggan yang bisa memindahkan. Bila kita yang memindahkan, Rp100.000 kredit otomatis','Menyerang keluhan bintang satu paling sering di semua pesaing'],
+        ['<b>Refund</b>','Pelacak refund dengan tanggal jatuh tempo, kredit otomatis bila lewat tenggat','Mengubah keluhan “refund lama” menjadi janji yang bisa diukur'],
+        ['<b>Voucher</b>','Divalidasi terhadap keranjang sebelum bayar, dengan alasan bila tidak memenuhi syarat','Menghapus rasa tertipu di layar pembayaran'],
+        ['<b>Bukti kerja</b>','Checklist SOP wajib foto sebelum–sesudah berstempel waktu dan lokasi, terlihat pelanggan secara langsung','Menyelesaikan sengketa tanpa debat, sekaligus materi jualan untuk klien korporat'],
+        ['<b>Aset SOP</b>','87 dokumen terkontrol (SOP, checklist, formulir) siap dipakai sebagai standar kerja digital','Modal kuat untuk tender gedung, sekolah, rumah sakit non-klinis'],
+        ['<b>Operasi terpusat</b>','Live ops: peta armada, GPS, keterlambatan, job tanpa petugas, akurasi ETA','Masalah tertangani sebelum jadi komplain'],
+        ['<b>Layanan pelanggan</b>','Manusia bernama dalam 60 detik, tenggat publik, eskalasi berjenjang','Pembeda tajam melawan CS bot pesaing'],
+        ['<b>Keamanan akun</b>','Login sosial + OTP dua langkah, PIN transaksi terpisah, captcha, dua kontak darurat mitra ber-OTP','Menurunkan risiko penipuan dan memperkuat kepercayaan pelanggan perempuan yang tinggal sendiri'],
+        ['<b>Multi-bahasa</b>','12 bahasa termasuk Arab (RTL) dan bahasa ASEAN','Membuka pasar ekspatriat dan ekspansi regional lebih awal']]) + '</div>';
+      h += '<div class="stack gap-12"><h3 style="margin:0;font-size:22px">3 · Kekurangan EXOCLEAN</h3>' + tabel(['Aspek','Kekurangan','Risiko'], [
+        ['<b>Skala mitra</b>','Belum punya ribuan petugas terlatih seperti pesaing','<span class="c-accent-900">Marketplace kosong: pelanggan membuka aplikasi dan tidak ada petugas di jamnya</span>'],
+        ['<b>Cakupan kota</b>','Fokus Jabodetabek, sementara pesaing sudah di Bandung, Surabaya, Bali, Medan','<span class="c-accent-900">Kalah di pencarian dan kerja sama korporat multi-kota</span>'],
+        ['<b>Kepercayaan merek</b>','Tanpa rekam jejak ulasan publik dan rating toko aplikasi','<span class="c-accent-900">Biaya akuisisi mahal; janji besar tanpa bukti sosial justru dicurigai</span>'],
+        ['<b>Beban janji</b>','Kredit Rp100.000, kredit keterlambatan otomatis, dan re-clean gratis membebani margin','<span class="c-accent-900">Bila operasi belum stabil, biaya jaminan bisa memakan seluruh fee platform</span>'],
+        ['<b>Kompleksitas pilih petugas</b>','Memilih sendiri menambah satu langkah dibanding “pesan dalam 30 detik” — tombol Pesan cepat sudah ada di beranda','<span class="c-accent-900">Konversi turun untuk pelanggan yang hanya ingin cepat</span>'],
+        ['<b>Konten & foto</b>','Foto petugas belum ada; foto layanan baru contoh dari proyek lama','<span class="c-accent-900">Kesan belum jadi saat demo ke investor atau klien</span>'],
+        ['<b>Integrasi nyata</b>','Pembayaran & OTP memanggil server pendamping bila hidup; peta posisi mitra masih dari perangkat yang sama; data Kemendagri sudah dipakai','<span class="c-accent-900">Estimasi waktu pengembangan bisa meleset bila dianggap sudah jadi</span>'],
+        ['<b>Sisi B2B</b>','Kontrak gedung, penagihan bulanan, dan portal klien belum dirancang di marketplace (ada di aplikasi manajemen)','<span class="c-accent-900">Aset SOP tidak termonetisasi di segmen yang paling menguntungkan</span>']]) + '</div></div>';
+      h += '<h3 style="margin:0;font-size:22px">4 · Perbandingan fitur langsung</h3>';
+      var M = [['Pilih petugas sendiri','Ada','Ada','Tidak','bTaskee sama; KliknClean menugaskan petugas'],['Jadwal terkunci + kompensasi otomatis','Ada','Tidak','Tidak','Pembeda utama kita'],['Pelacak refund bertanggal','Ada','Tidak','Sebagian','Pesaing memberi garansi, tapi tanpa tenggat publik'],['Garansi kepuasan Rp100.000','Ada','Sebagian','Ada','KliknClean sudah punya standar serupa'],['Foto sebelum–sesudah terstruktur','Ada','Tidak','Sebagian','Kita jadikan wajib dan tidak bisa diedit'],['Checklist SOP di aplikasi mitra','Ada','Sebagian','Sebagian','Kita berbasis dokumen terkontrol bernomor'],['Pelacakan langsung petugas','Ada','Ada','Ada','Standar pasar'],['Dompet in-app & poin','Ada','Ada','Ada','Standar pasar'],['Langganan / jadwal berulang','Ada','Ada','Ada','Kita tambahkan penguncian petugas yang sama'],['Paket prepaid','Ada','Sebagian','Ada','Sudah ada di aplikasi (3 paket)'],['Layanan berat (poles, pest, kolam, toren)','Ada','Sebagian','Ada','Sudah masuk katalog 16 layanan'],['Cakupan multi-kota','Tidak','Ada','Ada','Butuh peta ekspansi'],['Multi-bahasa (12)','Ada','Sebagian','Tidak','Keunggulan untuk ekspatriat & regional'],['CS manusia < 60 detik','Ada','Tidak','Sebagian','Perlu SDM nyata agar janji ini tidak kosong'],['Portal klien korporat / B2B','Sebagian','Tidak','Sebagian','Ada di aplikasi manajemen (MCS), belum di marketplace']];
+      h += '<div class="card elev-sm table-card"><table class="table"><thead><tr><th>Fitur</th><th>EXOCLEAN</th><th>bTaskee</th><th>KliknClean</th><th>Catatan</th></tr></thead><tbody>';
+      M.forEach(function (m) { h += '<tr><td class="bold t-125">' + m[0] + '</td><td>' + lv(m[1]) + '</td><td>' + lv(m[2]) + '</td><td>' + lv(m[3]) + '</td><td class="t-12 o-8">' + m[4] + '</td></tr>'; });
+      h += '</tbody></table></div><div class="t-115 o-6">Penilaian kompetitor berdasarkan materi publik (deskripsi Play Store, situs resmi, ulasan pengguna) per Agustus 2026 dan dapat berubah setelah pembaruan aplikasi mereka. Kolom EXOCLEAN diperbarui 2 Sep 2026 mengikuti keadaan aplikasi.</div>';
+      h += '<h3 style="margin:0;font-size:22px">5 · Prioritas tindak lanjut</h3><div class="grid g3">';
+      [['0–1 bulan','Partner Ops','Isi marketplace dulu, bukan fitur','Target 60–80 mitra terverifikasi di 3 kecamatan padat sebelum promosi. Marketplace kosong lebih merusak merek daripada fitur yang belum ada.',true],['0–1 bulan','Produk','Mode “Pesan cepat”','Sudah ada di beranda: satu tombol memilihkan petugas terbaik, tetap bisa diganti di langkah 2.',true],['1–2 bulan','Produk','Prepaid & paket langganan','Alur beli paket sudah ada; yang belum: pemakaian kuota saat memesan dan langganan mingguan yang sungguh menagih.',false],['1–3 bulan','Operasi','SOP layanan berat berlaku','Tujuh SOP layanan baru masih draf di register (D-031…B-010). Harus disetujui sebelum mitra menjalankannya.',false],['2–3 bulan','Sales B2B','Portal klien korporat','Laporan bulanan otomatis dari checklist, penagihan kontrak, akses pengelola gedung. Sambungkan ke MCS di aplikasi manajemen.',false],['Berjalan','Keuangan','Awasi biaya janji','Pantau rasio kredit jaminan terhadap fee platform mingguan. Bila melebihi 25%, perbaiki akar masalah operasi — jangan kurangi janjinya.',true]].forEach(function (a) {
+        h += '<div class="card elev-sm gap-9"><div class="flex items-center gap-8"><span class="lv ' + (a[4] ? 'ada' : 'sebagian') + '">' + a[0] + '</span><span class="t-11 o-6" style="margin-inline-start:auto">' + a[1] + '</span></div><div class="f-head t-16" style="line-height:1.2">' + a[2] + '</div><div class="t-125 lh-15 o-85">' + a[3] + '</div></div>';
+      });
+      return h + '</div>';
+    }
+
+    function gambar() {
+      var b = EXO_BRAND.baca();
+      var h = '<div class="doc-head"><img src="' + b.markSrc + '" alt=""><div class="grow"><h2 style="margin:0;font-size:31px">' + (tab === 'layanan' ? 'Perbandingan katalog layanan' : 'Analisa kompetitif EXOCLEAN') + '</h2><div class="t-13 o-7" style="margin-top:5px">EXOCLEAN vs KliknClean vs bTaskee · disusun 31 Agustus 2026, diperbarui 2 September 2026</div></div><div class="t-11 up c-accent-700" style="letter-spacing:.18em">We clean all purpose</div></div>';
+      h += '<div class="doc-tabs"><button class="pill' + (tab === 'layanan' ? ' on' : '') + '" data-tab="layanan">Perbandingan layanan</button><button class="pill' + (tab === 'kompetitor' ? ' on' : '') + '" data-tab="kompetitor">Analisa kompetitor</button><a class="pill" href="exo-admin.html" style="text-decoration:none">← Konsol backend</a></div>';
+      h += tab === 'layanan' ? layanan() : kompetitor();
+      document.getElementById('doc').innerHTML = h;
+      EXO_BRAND.terapkan(b);
+    }
+    document.addEventListener('click', function (ev) { var t = ev.target.closest('[data-tab]'); if (!t) return; tab = t.getAttribute('data-tab'); location.hash = tab; gambar(); window.scrollTo(0, 0); });
+    gambar();
+  })();
+  </script>
+</body>
+</html>
