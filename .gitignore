@@ -1,4 +1,15 @@
 # ============================================================================
+#  HANYA APLIKASI EXOCLEAN yang masuk repositori (keputusan 3 Sep 2026).
+#  Semua isi folder proyek lain (arsip EXOCLEAN, QUOTATION, foto, dokumen
+#  bisnis, basis data) diabaikan; yang diizinkan hanya app/, README.md,
+#  dan berkas ini. Aturan khusus di bawah (rahasia di dalam app/) tetap berlaku.
+# ============================================================================
+/*
+!/app/
+!/README.md
+!/.gitignore
+
+# ============================================================================
 #  Berkas yang TIDAK boleh ikut ke repositori.
 #
 #  Aturannya satu: apa pun yang, bila terbaca orang lain, memberi mereka akses
@@ -42,3 +53,9 @@ app/backup-exo-20260902/
 # Data uji milik server pendamping.
 app/server/transactions.json
 app/server/dwi-transaksi.json
+
+# Ditambahkan 3 Sep 2026 saat mengunggah seluruh berkas proyek (repo publik).
+# Cadangan basis data sungguhan: 20 akun pengguna, token perangkat, log OTP.
+cadangan-db-sebelum-rombak-katalog-*.json
+# Riwayat percakapan dengan pelanggan (data pribadi pelanggan).
+RIWAYAT CHAT EXOCLEAN/
