@@ -61,7 +61,7 @@ var ADMIN = (function () {
     ['roles','Roles & permissions','8'], ['team','Admins','9']
   ];
   var META = {
-    dash:['Dashboard','Jabodetabek · today, 2 Sep 2026','New booking'],
+    dash:['Dashboard','Jabodetabek · today, ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),'New booking'],
     live:['Live ops','24 petugas di lapangan · peta armada dan status real time','Reassign job'],
     orders:['Orders','1.284 bookings this month','Create order'],
     cleaners:['Cleaners','412 aktif · 7 menunggu verifikasi · wajib 2 kontak darurat ber-OTP','Invite cleaner'],
