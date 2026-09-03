@@ -65,7 +65,11 @@ var EXO_DATA = (function () {
     { id:'iron',     d:'<path d="M3 17h18a8 8 0 0 0-8-8H8Z"/><path d="M8 9V7a3 3 0 0 1 3-3h6"/>' },
     { id:'office',   daun:true, d:'<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M10 7h4M10 12h4M10 17h4"/><path d="M3 22h18"/>' },
     { id:'disinfect',daun:true, d:'<path d="M8 21h8V9H8Z"/><path d="M10 9V5h4v4"/><path d="M18 5h.01M20 8h.01M18 11h.01"/>' },
-    { id:'car',      d:'<path d="M5 17h14"/><path d="M4 17v-4l2-5h12l2 5v4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/>' }
+    { id:'car',      d:'<path d="M5 17h14"/><path d="M4 17v-4l2-5h12l2 5v4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/>' },
+    /* Perawatan & pribadi (3 Sep 2026) — ikut ubin cepat supaya terlihat dari beranda. */
+    { id:'care',     daun:true, d:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/>' },
+    { id:'errand',   d:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>' },
+    { id:'massage',  daun:true, d:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.5 5-6.5"/>' }
   ];
 
   /* ---------------------------------------------------- roster cadangan
