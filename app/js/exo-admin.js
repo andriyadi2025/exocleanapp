@@ -118,7 +118,7 @@ var ADMIN = (function () {
      Bila basis data EXOCLEAN ada di asal ini (index.html sudah pernah
      disemai), Orders / Cleaners / Claims membaca tabel orders, users,
      complaints, ratings. Tanpa itu, data contoh rancangan. JANGAN
-     memanggil DB.init() bila basisnya belum ada — init() menulis basis
+     memanggil EXO_DB.init() bila basisnya belum ada — init() menulis basis
      data kosong (lihat catatan di exo-core.js). */
   var dbSiap = null;
   function adaDB() {
@@ -126,13 +126,13 @@ var ADMIN = (function () {
     /* Sejak MCS dipisah (3 Sep 2026) tidak ada lagi index.html yang menyemai
        basis data; konsol ini membuatnya sendiri bila belum ada — kosong, lalu
        tombol "Isi data dummy" atau pendaftaran mitra yang mengisinya. */
-    try { if (window.DB && window.RUANG) { DB.init(); dbSiap = true; } }
+    try { if (window.EXO_DB && window.EXO_DB) { EXO_DB.init(); dbSiap = true; } }
     catch (e) { dbSiap = false; }
     return dbSiap;
   }
   var STATUS_ORDER = { dijadwalkan:['Locked','green'], berjalan:['In progress','accent'], selesai:['Done','flat'], diverifikasi:['Verified','flat'], ditagih:['Invoiced','flat'], lunas:['Paid','flat'], dibatalkan:['Cancelled','accent'] };
   function tglPendek(iso) { try { return new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short' }); } catch (e) { return iso || ''; } }
-  function namaUser(id) { var u = DB.find('users', id); return u ? u.nama : '—'; }
+  function namaUser(id) { var u = EXO_DB.find('users', id); return u ? u.nama : '—'; }
 
   /* ============================================================ DASHBOARD */
   VIEW.dash = function () {
@@ -199,11 +199,11 @@ var ADMIN = (function () {
          hari berikutnya dua jam sebelum Jakarta. Jam diberi label zona
          (WIB/WITA/WIT) supaya admin di kota lain tidak salah baca. */
       var lokal = new Date(); var hariIni = lokal.getFullYear() + '-' + ('0' + (lokal.getMonth() + 1)).slice(-2) + '-' + ('0' + lokal.getDate()).slice(-2);
-      function zonaOrder(o) { if (!window.ZONA) return ''; if (o.zona && ZONA.sah(o.zona)) return o.zona; return o.wilayah ? (ZONA.dariWilayah(o.wilayah) || '') : ''; }
-      var nyata = DB.all('orders').sort(function (a, b) { return (b.tgl || '').localeCompare(a.tgl || ''); }).map(function (o) {
+      function zonaOrder(o) { if (!window.EXO_ZONA) return ''; if (o.zona && EXO_ZONA.sah(o.zona)) return o.zona; return o.wilayah ? (EXO_ZONA.dariWilayah(o.wilayah) || '') : ''; }
+      var nyata = EXO_DB.all('orders').sort(function (a, b) { return (b.tgl || '').localeCompare(a.tgl || ''); }).map(function (o) {
         var st = STATUS_ORDER[o.status] || [o.status, 'flat'], tz = zonaOrder(o);
-        var tags = (o.tgl === (tz ? ZONA.hariIni(tz) : hariIni) ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue' : '');
-        return [o.no || o.id, namaUser(o.clientId), o.judul || '', (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || '') + (tz ? ' ' + ZONA.singkat(tz) : ''), rp(o.nilai), st[0], st[1], tags];
+        var tags = (o.tgl === (tz ? EXO_ZONA.hariIni(tz) : hariIni) ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (EXO_DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue' : '');
+        return [o.no || o.id, namaUser(o.clientId), o.judul || '', (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || '') + (tz ? ' ' + EXO_ZONA.singkat(tz) : ''), rp(o.nilai), st[0], st[1], tags];
       }).filter(function (o) { return S.orderFilter === 'all' || o[8].indexOf(S.orderFilter) >= 0; });
       h += '</div><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Orders from the EXOCLEAN database</div><div class="t-115 o-6">' + nyata.length + ' shown · table orders on this origin · schedules locked to the customer · times labelled in the order\'s own zone (WIB/WITA/WIT)</div></div></div>' +
         tabel(['Order','Customer','Service','Cleaner','Schedule','Value','Status'], nyata.length ? nyata.map(function (o) { return ['<span class="id">' + esc(o[0]) + '</span>', esc(o[1]), esc(o[2]), esc(o[3]), esc(o[4]), o[5], chip(o[7], o[6])]; })
@@ -242,15 +242,15 @@ var ADMIN = (function () {
     if (!q.length) h += '<div class="card elev-sm t-125 o-7">Antrian verifikasi kosong.</div>';
     h += '</div>';
     if (adaDB() && window.SEMAI_DUMMY) {
-      var nDummy = DB.where('users', function (u) { return u.sumber === 'dummy'; }).length;
+      var nDummy = EXO_DB.where('users', function (u) { return u.sumber === 'dummy'; }).length;
       h += '<div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px">' + chip(nDummy ? 'green' : 'flat', nDummy ? nDummy + ' data uji' : 'Belum ada data uji') +
         '<div class="grow t-125 o-75">Data uji: 20 klien + 50 mitra dari 26 kota Indonesia, terisi penuh dan terverifikasi (S&amp;K, KTP, 2 kontak darurat, 5 kursus wajib, sertifikat, tarif pasar). Tanpa order. Bisa diulang tanpa menggandakan.</div>' +
         '<button class="btn btn-primary" style="height:34px;padding:0 16px;font-size:12.5px"' + aksi('semaiDummy') + '>Semai data uji</button>' +
         (nDummy ? '<button class="btn btn-secondary" style="height:34px;padding:0 16px;font-size:12.5px"' + aksi('hapusDummy') + '>Hapus data uji</button>' : '') + '</div>';
     }
-    if (adaDB() && window.PASAR) {
-      var pekerja = DB.where('users', function (u) { return u.role === 'worker'; }).map(function (u) {
-        var p = PASAR.data(u), s = PASAR.statistik(u.id), tayang = PASAR.tayang(u);
+    if (adaDB() && window.EXO_ROSTER) {
+      var pekerja = EXO_DB.where('users', function (u) { return u.role === 'worker'; }).map(function (u) {
+        var p = EXO_ROSTER.data(u), s = EXO_ROSTER.statistik(u.id), tayang = EXO_ROSTER.tayang(u);
         return ['<b>' + esc(u.nama) + '</b>', esc(u.jabatan || '—'), s.bintang === null ? '<span class="o-55">not rated</span>' : String(s.bintang).replace('.', ','), String(s.kerja), (u.sertifikat || []).join(', ') || '—', p.tarif ? rp(p.tarif) + '/h' : '<span class="o-55">not set</span>', chip(tayang ? 'green' : p.tarif ? 'flat' : 'accent', tayang ? 'Listed' : p.tarif ? 'Hidden' : 'No rate')];
       });
       h += '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Roster from the EXOCLEAN database</div><div class="t-115 o-6">' + pekerja.length + ' workers · rate is set by Super admin in index.html → Mitra & Rekrutmen → Tarif pasar; ratings computed from completed orders</div></div></div>' +
@@ -282,8 +282,8 @@ var ADMIN = (function () {
   VIEW.claims = function () {
     var h = kpi([{label:'Open claims', value:'12', note:'0 past their promised date'},{label:'Median decision', value:'6h 20m', note:'Promise: same working day'},{label:'Auto-credits this week', value:'Rp 1,4jt', note:'Paid without a ticket'}]);
     if (adaDB()) {
-      var kompl = DB.all('complaints').map(function (c) {
-        var o = DB.find('orders', c.orderId) || {};
+      var kompl = EXO_DB.all('complaints').map(function (c) {
+        var o = EXO_DB.find('orders', c.orderId) || {};
         var st = c.status === 'baru' ? ['Open', 'accent'] : c.status === 'selesai' ? ['Closed', 'flat'] : [c.status, 'green'];
         return ['<span class="id">' + esc(c.id.toUpperCase()) + '</span>', esc(o.no || c.orderId), 'Quality', esc(c.reworkOrderId ? 'Re-clean booked' : 'Free redo'), esc(tglPendek(c.at)), '<span class="t-12">' + (c.status === 'baru' ? 'next working day 17:00' : '—') + '</span>', esc(namaUser(c.clientId)), chip(st[1], st[0])];
       });

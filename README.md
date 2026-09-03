@@ -19,4 +19,4 @@ lalu buka `http://localhost:8080/exo.html`.
 
 Server pendamping (pembayaran, OTP & login sosial, posisi mitra) ada di `app/server/`; salin `.env.example` menjadi `.env` dan isi kredensialnya. Berkas rahasia (`.env`, kunci API, sertifikat, basis data) sengaja tidak ikut ke repositori — lihat `.gitignore`.
 
-Aplikasi manajemen operasional (MCS: `index.html`, `mitra.html`, `mcs.html`) adalah proyek terpisah sejak 3 Sep 2026 — repositori **MCS EXOCLEAN**. Modul yang dipakai bersama ada di kedua repositori.
+Aplikasi manajemen operasional (MCS) adalah proyek terpisah — repositori **MCS EXOCLEAN**. Sejak 3 Sep 2026 kedua sistem tidak berbagi kode, kunci penyimpanan, maupun skema data.

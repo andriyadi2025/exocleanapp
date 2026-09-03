@@ -28,7 +28,7 @@
 
 /* Dinaikkan tiap kali KERANGKA berubah. Tanpa itu, pemasangan lama tetap
    memakai singgahan lamanya dan exo.html tidak pernah ikut tersimpan. */
-var VERSI = 'exoclean-v13';
+var VERSI = 'exoclean-v14';
 
 /* Kerangka yang membuat aplikasi tetap bisa dibuka tanpa sinyal. Sengaja
    pendek: berkas lain ikut tersinggah sendiri saat pertama diminta.
@@ -55,7 +55,12 @@ var KERANGKA = [
   './js/exo-server.js',
   './js/exo-config.js',
   './js/exo-i18n-str.js',
-  './js/zona.js',
+  './js/exo-util.js',
+  './js/exo-db.js',
+  './js/exo-foto.js',
+  './js/exo-zona.js',
+  './js/exo-wilayah.js',
+  './js/exo-roster.js',
   './js/exo-i18n-terms.js',
   './js/exo-i18n-terms-ja.js',
   './js/exo-i18n-terms-ko.js',
@@ -67,7 +72,6 @@ var KERANGKA = [
   './js/exo-i18n-terms-tl.js',
   './js/exo-i18n-terms-km.js',
   './js/exo-i18n-terms-my.js',
-  './js/wilayah.js',
   './exo-analisa.html',
   './assets/foto/kadek-after.jpg',
   './exo-admin.html',
@@ -76,11 +80,6 @@ var KERANGKA = [
   './js/exo-admin-views.js',
   './assets/exoclean-mark.png',
   './assets/exoclean-wordmark.png',
-  './js/utils.js',
-  './js/ruang.js',
-  './js/foto.js',
-  './js/db.js',
-  './js/pasar.js',
   './assets/fonts/libre-baskerville-400.woff2',
   './assets/fonts/libre-baskerville-700.woff2',
   './assets/fonts/nunito-sans-var.woff2',

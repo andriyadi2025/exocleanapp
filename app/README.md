@@ -15,11 +15,11 @@ lalu buka `http://localhost:8080/exo.html` (aplikasi), `exo-admin.html` (konsol 
 | `exo.html` | Aplikasi pelanggan + mitra |
 | `exo-admin.html` | Konsol backend, 14 modul |
 | `exo-analisa.html` | Analisa pasar & perbandingan layanan |
-| `js/ruang.js`, `utils.js`, `zona.js`, `foto.js`, `db.js`, `pasar.js`, `wilayah.js`, `kurikulum.js`, `kompetensi.js` | Modul bersama dengan aplikasi manajemen MCS (repositori terpisah); perubahan perlu diterapkan di keduanya |
+| `js/exo-util.js`, `exo-db.js`, `exo-foto.js`, `exo-roster.js`, `exo-zona.js`, `exo-wilayah.js` | Modul dasar milik EXOCLEAN App sendiri: pembantu, basis data lokal (`exoclean_app_db`), foto, roster & tarif, zona waktu, wilayah |
 | `server/` | payment-server (Midtrans), auth-server (OTP, Google, Facebook), posisi-server (posisi mitra lintas perangkat) |
 | `data/wilayah/` | Data wilayah Indonesia (Kepmendagri) dan ASEAN |
 
-> Aplikasi manajemen operasional (index.html, mitra.html, mcs.html) sejak 3 Sep 2026 menjadi proyek terpisah: repositori **MCS EXOCLEAN**.
+> EXOCLEAN App tidak berbagi kode, kunci penyimpanan, maupun skema data dengan aplikasi lain. Aplikasi manajemen operasional (MCS) adalah proyek terpisah di repositori **MCS EXOCLEAN**.
 
 ---
 

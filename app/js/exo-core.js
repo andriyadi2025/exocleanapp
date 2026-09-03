@@ -14,10 +14,9 @@
    Urutan muat harus seperti itu. Tiap berkas layar MENDAFTARKAN dirinya ke
    ExoApp.LAYAR / ExoApp.LEMBAR / ExoApp.AKSI; core tidak tahu isinya.
 
-   ATURAN YANG TIDAK BOLEH DILANGGAR: JANGAN memanggil DB.init() bila basis
-   datanya belum ada. init() menulis basis data KOSONG, lalu index.html
-   melewati penyemaian dan seluruh aplikasi manajemen terbuka tanpa data.
-   Lihat adaBasisData() di bawah.
+   ATURAN YANG TIDAK BOLEH DILANGGAR: Basis data milik EXOCLEAN App sendiri (exo-db.js, kunci exoclean_app_db).
+   Aplikasi pelanggan hanya MEMBACA; yang membuat dan mengisinya adalah
+   konsol admin (exo-admin.html) atau pendaftaran mitra. Lihat adaBasisData().
    ========================================================================== */
 var ExoApp = (function () {
   'use strict';
@@ -84,18 +83,18 @@ var ExoApp = (function () {
   /* ======================================================== ROSTER JURU */
   var sumberDB = null;
   function adaBasisData() {
-    try { return !!(window.RUANG && localStorage.getItem(RUANG.kunci('db'))); }
+    try { return !!(window.EXO_DB && EXO_DB.ada()); }
     catch (e) { return false; }
   }
   function pakaiDB() {
     if (sumberDB !== null) return sumberDB;
-    sumberDB = !!(window.DB && window.PASAR && adaBasisData());
-    if (sumberDB) { try { DB.init(); } catch (e) { sumberDB = false; } }
+    sumberDB = !!(window.EXO_DB && window.EXO_ROSTER && adaBasisData());
+    if (sumberDB) { try { EXO_DB.init(); } catch (e) { sumberDB = false; } }
     /* Basis data yang ada tetapi belum punya satu pun mitra (instalasi baru,
        sebelum konsol admin menyemai atau mitra mendaftar) diperlakukan seperti
        tidak ada: roster contoh dari rancangan lebih baik daripada marketplace
        kosong. Begitu ada mitra sungguhan, mereka yang tayang. */
-    if (sumberDB) { try { if (!DB.all('users').some(function (u) { return u.role === 'worker'; })) sumberDB = false; } catch (e) { sumberDB = false; } }
+    if (sumberDB) { try { if (!EXO_DB.all('users').some(function (u) { return u.role === 'worker'; })) sumberDB = false; } catch (e) { sumberDB = false; } }
     return sumberDB;
   }
   /* Faktor = tarif per jam yang ditetapkan Super Admin ÷ tarif dasar per
@@ -121,7 +120,7 @@ var ExoApp = (function () {
   }
   function daftarJuru() {
     if (!pakaiDB()) return D.CLEANERS;
-    return PASAR.juruBersih().map(dariDB);
+    return EXO_ROSTER.juruBersih().map(dariDB);
   }
   var JURU_KOSONG = { id:null, name:'No cleaner listed yet', initials:'—', rating:null, jobs:'0', factor:1,
     distance:null, years:null, tags:[], note:'A super admin sets each cleaner’s rate in the EXOCLEAN admin app.' };
@@ -189,26 +188,26 @@ var ExoApp = (function () {
   }
   function zonaPesanan() {
     var iso = isoNegara() || 'ID', a = KEADAAN.addr;
-    if (!window.ZONA) return iso === 'ID' ? 'Asia/Jakarta' : (ZONA_NEGARA[iso] || 'Asia/Jakarta');
-    if (iso !== 'ID') return ZONA_NEGARA[iso] || ZONA.perangkat();
-    return ZONA.dariWilayah({ negara:'ID', l1:a.provinsi }) || ZONA.tebakDariKota(a.kabkota);
+    if (!window.EXO_ZONA) return iso === 'ID' ? 'Asia/Jakarta' : (ZONA_NEGARA[iso] || 'Asia/Jakarta');
+    if (iso !== 'ID') return ZONA_NEGARA[iso] || EXO_ZONA.perangkat();
+    return EXO_ZONA.dariWilayah({ negara:'ID', l1:a.provinsi }) || EXO_ZONA.tebakDariKota(a.kabkota);
   }
   /* "WIB" / "WITA" / "WIT" (GMT+8 dsb. untuk luar Indonesia). */
-  function labelZona(tz) { return window.ZONA ? ZONA.singkat(tz || zonaPesanan()) : 'WIB'; }
-  function labelPerangkat() { return window.ZONA ? ZONA.singkat(ZONA.perangkat()) : ''; }
+  function labelZona(tz) { return window.EXO_ZONA ? EXO_ZONA.singkat(tz || zonaPesanan()) : 'WIB'; }
+  function labelPerangkat() { return window.EXO_ZONA ? EXO_ZONA.singkat(EXO_ZONA.perangkat()) : ''; }
   /* Benar bila jam kota pesanan berbeda dari jam ponsel ini — saat itulah
      padanan "di ponsel Anda" perlu ditampilkan. */
-  function zonaBeda() { return !!(window.ZONA && !ZONA.samaDenganPerangkat(zonaPesanan())); }
+  function zonaBeda() { return !!(window.EXO_ZONA && !EXO_ZONA.samaDenganPerangkat(zonaPesanan())); }
   function isoTgl(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   /* Jam dinding di sebuah zona → ISO UTC. Dua putaran cukup: putaran pertama
      menebak dengan offset 0, putaran kedua mengoreksi selisih dinding. */
   function keUTC(tgl, jam, tz) {
     var p = tgl.split('-'), q = String(jam || '00:00').split(':');
     var target = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1] || 0), tebak = target;
-    if (!window.ZONA) return new Date(target - 7 * 3600e3).toISOString();
+    if (!window.EXO_ZONA) return new Date(target - 7 * 3600e3).toISOString();
     for (var k = 0; k < 2; k++) {
       var iso = new Date(tebak).toISOString();
-      var w = (ZONA.tgl(iso, tz) + 'T' + ZONA.jam(iso, tz)).split(/[-T:]/);
+      var w = (EXO_ZONA.tgl(iso, tz) + 'T' + EXO_ZONA.jam(iso, tz)).split(/[-T:]/);
       var dinding = Date.UTC(+w[0], +w[1] - 1, +w[2], +w[3] % 24, +w[4]);
       tebak += target - dinding;
     }
@@ -216,7 +215,7 @@ var ExoApp = (function () {
   }
   /* "HH:MM" sebuah cap waktu UTC dibaca di zona pesanan (atau zona lain). */
   function jamZona(iso, tz) {
-    if (window.ZONA) return ZONA.jam(iso, tz || zonaPesanan()).replace(/^24:/, '00:');
+    if (window.EXO_ZONA) return EXO_ZONA.jam(iso, tz || zonaPesanan()).replace(/^24:/, '00:');
     var d = new Date(iso); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
   /* Jam dinding zona pesanan pada hari terpilih → jam yang sama di ponsel ini. */
@@ -238,7 +237,7 @@ var ExoApp = (function () {
      tanggal sudah berganti dua jam lebih awal daripada di Jakarta. */
   function hariKe(i) {
     var d;
-    if (window.ZONA) { var p = ZONA.hariIni(zonaPesanan()).split('-'); d = new Date(+p[0], +p[1] - 1, +p[2] + i); }
+    if (window.EXO_ZONA) { var p = EXO_ZONA.hariIni(zonaPesanan()).split('-'); d = new Date(+p[0], +p[1] - 1, +p[2] + i); }
     else { d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); }
     return d;
   }
@@ -269,7 +268,7 @@ var ExoApp = (function () {
      KEADAAN.addrKode — yang disimpan kodenya, bukan namanya. */
   var ISO = { 'Indonesia':'ID','Malaysia':'MY','Singapura':'SG','Brunei Darussalam':'BN','Thailand':'TH','Vietnam':'VN','Filipina':'PH','Kamboja':'KH','Laos':'LA','Myanmar':'MM','Timor-Leste':'TL' };
   function isoNegara() { return ISO[KEADAAN.addr.negara] || null; }
-  function wilayahSiap() { return !!(window.WILAYAH && WILAYAH.daftarL1); }
+  function wilayahSiap() { return !!(window.EXO_WILAYAH && EXO_WILAYAH.daftarL1); }
   function wilayahDaftar(level) {
     var a = KEADAAN.addr, iso = isoNegara(), W = D.WILAYAH, cadangan;
     if (level === 'negara') return W.negara;
@@ -278,23 +277,23 @@ var ExoApp = (function () {
     else if (level === 'kecamatan') cadangan = W.kecamatan[a.kabkota] || [];
     else if (level === 'desa') cadangan = W.desa[a.kecamatan] || [];
     else cadangan = W.pos[a.desa] || [];
-    if (!wilayahSiap() || !iso || !WILAYAH.punyaData(iso)) return cadangan;
-    var nyata = level === 'provinsi' ? WILAYAH.daftarL1(iso)
-      : level === 'kabkota' ? WILAYAH.daftarL2(iso, a.provinsi)
-      : level === 'kecamatan' ? WILAYAH.daftarL3(iso, a.provinsi, a.kabkota)
-      : level === 'desa' ? WILAYAH.daftarL4(iso, a.provinsi, a.kabkota, a.kecamatan)
-      : (function () { var k = WILAYAH.kodePosDesa(iso, a.provinsi, a.kabkota, a.kecamatan, a.desa); return k ? [k] : []; })();
+    if (!wilayahSiap() || !iso || !EXO_WILAYAH.punyaData(iso)) return cadangan;
+    var nyata = level === 'provinsi' ? EXO_WILAYAH.daftarL1(iso)
+      : level === 'kabkota' ? EXO_WILAYAH.daftarL2(iso, a.provinsi)
+      : level === 'kecamatan' ? EXO_WILAYAH.daftarL3(iso, a.provinsi, a.kabkota)
+      : level === 'desa' ? EXO_WILAYAH.daftarL4(iso, a.provinsi, a.kabkota, a.kecamatan)
+      : (function () { var k = EXO_WILAYAH.kodePosDesa(iso, a.provinsi, a.kabkota, a.kecamatan, a.desa); return k ? [k] : []; })();
     return nyata && nyata.length ? nyata : cadangan;
   }
   var wilayahMuat = {};
   function wilayahSiapkan() {
     var iso = isoNegara(), a = KEADAAN.addr;
-    if (!wilayahSiap() || !iso || !WILAYAH.punyaData(iso)) return;
+    if (!wilayahSiap() || !iso || !EXO_WILAYAH.punyaData(iso)) return;
     var kunci = iso + '|' + a.provinsi + '|' + a.kabkota;
     if (wilayahMuat[kunci]) return;
     wilayahMuat[kunci] = true;
-    WILAYAH.siapkan({ negara:iso, l1:a.provinsi, l2:a.kabkota }).then(function () {
-      var k = WILAYAH.kodePosDesa(iso, a.provinsi, a.kabkota, a.kecamatan, a.desa);
+    EXO_WILAYAH.siapkan({ negara:iso, l1:a.provinsi, l2:a.kabkota }).then(function () {
+      var k = EXO_WILAYAH.kodePosDesa(iso, a.provinsi, a.kabkota, a.kecamatan, a.desa);
       if (k && !KEADAAN.addr.pos) KEADAAN.addr.pos = k;
       KEADAAN.addrKode = kodeWilayah();
       gambar();
@@ -304,15 +303,15 @@ var ExoApp = (function () {
     var iso = isoNegara(), a = KEADAAN.addr, hasil = { negara:iso };
     if (!wilayahSiap() || !iso) return hasil;
     try {
-      var idx = WILAYAH.sumberData(iso);
+      var idx = EXO_WILAYAH.sumberData(iso);
       hasil.dasar = idx && idx.dasar;
     } catch (e) { /* abaikan */ }
     return hasil;
   }
   function sumberWilayah() {
     var iso = isoNegara();
-    if (!wilayahSiap() || !iso || !WILAYAH.punyaData(iso)) return null;
-    try { var s = WILAYAH.sumberData(iso); return s && s.dasar ? s : null; } catch (e) { return null; }
+    if (!wilayahSiap() || !iso || !EXO_WILAYAH.punyaData(iso)) return null;
+    try { var s = EXO_WILAYAH.sumberData(iso); return s && s.dasar ? s : null; } catch (e) { return null; }
   }
 
   /* ================================================== POSISI MITRA
@@ -328,8 +327,8 @@ var ExoApp = (function () {
   }
   function hapusPosisi() { try { localStorage.removeItem(KUNCI_POSISI); } catch (e) { /* abaikan */ } }
   function jarakKe(titik) {
-    var p = KEADAAN.posisi; if (!p || !window.U || !U.jarakMeter) return null;
-    return U.jarakMeter(p, titik);
+    var p = KEADAAN.posisi; if (!p || !window.EXO_UTIL || !EXO_UTIL.jarakMeter) return null;
+    return EXO_UTIL.jarakMeter(p, titik);
   }
   function teksJarak(m) { return m == null ? '—' : m < 1000 ? m + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km'; }
   function menitTempuh(m) { return m == null ? null : Math.max(1, Math.round(m / 1000 / 25 * 60)); }   /* 25 km/jam lalu lintas kota */
@@ -368,10 +367,10 @@ var ExoApp = (function () {
      sini juga. */
   function pelangganDB() {
     if (!pakaiDB()) return null;
-    if (KEADAAN.pelangganId && DB.find('users', KEADAAN.pelangganId)) return KEADAAN.pelangganId;
-    var ada = DB.where('users', function (u) { return u.role === 'client' && (u.telp === '081288904417' || u.email === 'dewi.anggraini@gmail.com'); })[0];
+    if (KEADAAN.pelangganId && EXO_DB.find('users', KEADAAN.pelangganId)) return KEADAAN.pelangganId;
+    var ada = EXO_DB.where('users', function (u) { return u.role === 'client' && (u.telp === '081288904417' || u.email === 'dewi.anggraini@gmail.com'); })[0];
     if (!ada) {
-      ada = DB.insert('users', { role:'client', nama:'Dewi Anggraini', email:'dewi.anggraini@gmail.com', telp:'081288904417',
+      ada = EXO_DB.insert('users', { role:'client', nama:'Dewi Anggraini', email:'dewi.anggraini@gmail.com', telp:'081288904417',
         alamat:alamatKini().full, tipe:'perorangan', sumber:'exo-app', aktif:true });
     }
     KEADAAN.pelangganId = ada.id;
@@ -379,10 +378,10 @@ var ExoApp = (function () {
   }
   function tulisOrderDB() {
     if (!pakaiDB()) return null;
-    var j = juruKini(); if (!j.id || !DB.find('users', j.id)) return null;   /* roster contoh: tidak ada baris untuk ditulis */
+    var j = juruKini(); if (!j.id || !EXO_DB.find('users', j.id)) return null;   /* roster contoh: tidak ada baris untuk ditulis */
     var tgl = isoTgl(hariKe(KEADAAN.hari)), selesai = jamSelesai(), tz = zonaPesanan();
-    var o = DB.insert('orders', {
-      no: (window.U && U.docNo) ? U.docNo('ORD', DB.nextNo('order')) : 'EXO-' + Date.now(),
+    var o = EXO_DB.insert('orders', {
+      no: (window.EXO_UTIL && EXO_UTIL.docNo) ? EXO_UTIL.docNo('ORD', EXO_DB.nextNo('order')) : 'EXO-' + Date.now(),
       clientId: pelangganDB(), quotationId:null,
       judul: I.svcName(KEADAAN.jasa) + ' · ' + qtyText(KEADAAN.jam) + ' · EXOCLEAN App',
       alamat: alamatKini().full, koordinat: alamatKini().point, wilayah: wilayahPesanan(),
@@ -393,19 +392,19 @@ var ExoApp = (function () {
       status:'dijadwalkan', nilai:totalN(), checklist:[],
       sumber:'exo-app', exo:{ jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true }
     });
-    if (DB.log) DB.log(o.clientId, 'Memesan lewat EXOCLEAN App · ' + o.no, 'order', o.id);
+    if (EXO_DB.log) EXO_DB.log(o.clientId, 'Memesan lewat EXOCLEAN App · ' + o.no, 'order', o.id);
     KEADAAN.orderDbId = o.id; KEADAAN.orderNo = o.no;
     return o;
   }
   function tulisRatingDB(bintang, komentar) {
     if (!pakaiDB() || !KEADAAN.orderDbId) return null;
-    var ada = DB.where('ratings', function (r) { return r.orderId === KEADAAN.orderDbId; })[0];
-    if (ada) return DB.update('ratings', ada.id, { bintang:bintang, komentar:komentar || '', at:U.nowISO() });
-    return DB.insert('ratings', { orderId:KEADAAN.orderDbId, clientId:pelangganDB(), bintang:bintang, komentar:komentar || '', at:U.nowISO() });
+    var ada = EXO_DB.where('ratings', function (r) { return r.orderId === KEADAAN.orderDbId; })[0];
+    if (ada) return EXO_DB.update('ratings', ada.id, { bintang:bintang, komentar:komentar || '', at:EXO_UTIL.nowISO() });
+    return EXO_DB.insert('ratings', { orderId:KEADAAN.orderDbId, clientId:pelangganDB(), bintang:bintang, komentar:komentar || '', at:EXO_UTIL.nowISO() });
   }
   function tulisKomplainDB(isi, fotoIds) {
     if (!pakaiDB() || !KEADAAN.orderDbId) return null;
-    return DB.insert('complaints', { orderId:KEADAAN.orderDbId, clientId:pelangganDB(), status:'baru', isi:isi, photos:fotoIds || [], at:U.nowISO(), reworkOrderId:null, sumber:'exo-app' });
+    return EXO_DB.insert('complaints', { orderId:KEADAAN.orderDbId, clientId:pelangganDB(), status:'baru', isi:isi, photos:fotoIds || [], at:EXO_UTIL.nowISO(), reworkOrderId:null, sumber:'exo-app' });
   }
 
   /* ============================================================ PEMBANTU */
@@ -507,13 +506,13 @@ var ExoApp = (function () {
      data aplikasi lain di asal yang sama. */
   function ambilFoto(berkas, tujuan) {
     if (!berkas) return;
-    var kompres = window.U && U.compressImage
-      ? U.compressImage(berkas, 1280, 0.72)
+    var kompres = window.EXO_UTIL && EXO_UTIL.compressImage
+      ? EXO_UTIL.compressImage(berkas, 1280, 0.72)
       : new Promise(function (ok, gagal) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = gagal; r.readAsDataURL(berkas); });
     kompres.then(function (dataUrl) {
       var id = 'exofoto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       var rekam = { id:id, url:dataUrl, jam:jamSekarang() };
-      if (window.FOTO) FOTO.simpan(id, dataUrl);
+      if (window.EXO_FOTO) EXO_FOTO.simpan(id, dataUrl);
       ExoApp.AKSI.fotoMasuk(tujuan, rekam);
       gambar();
     }).catch(function () { sekilas('That file is not an image we can read.', 'err'); gambar(); });

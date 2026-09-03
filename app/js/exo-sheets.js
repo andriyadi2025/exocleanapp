@@ -330,9 +330,9 @@
     });
   };
   A.posisiAmbil = function () {
-    if (!window.U || !U.getGPS) { K.posisiGalat = 'GPS helper missing'; return; }
+    if (!window.EXO_UTIL || !EXO_UTIL.getGPS) { K.posisiGalat = 'GPS helper missing'; return; }
     K.posisiSibuk = true; K.posisiGalat = null;
-    U.getGPS(10000).then(function (r) {
+    EXO_UTIL.getGPS(10000).then(function (r) {
       K.posisiSibuk = false;
       if (r.ok) {
         K.posisi = { lat:r.lat, lng:r.lng, akurasi:r.akurasi, at:Date.now() }; X.simpanPosisi(K.posisi);
@@ -464,7 +464,7 @@
       img.src = rekam.url;
     }
   };
-  A.fotoBuang = function (v) { K.fotoKlaim = K.fotoKlaim.filter(function (f) { return f.id !== v; }); if (window.FOTO) FOTO.hapus(v); sekilas(tx('Photo removed.')); };
+  A.fotoBuang = function (v) { K.fotoKlaim = K.fotoKlaim.filter(function (f) { return f.id !== v; }); if (window.EXO_FOTO) EXO_FOTO.hapus(v); sekilas(tx('Photo removed.')); };
 
   document.addEventListener('DOMContentLoaded', function () {
     X.pasang(document.getElementById('exo-app'), document.getElementById('exo-lapis'));

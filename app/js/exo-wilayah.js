@@ -1,5 +1,5 @@
 /* ==========================================================================
-   wilayah.js — alamat terstruktur berjenjang
+   exo-wilayah.js — alamat terstruktur berjenjang
    --------------------------------------------------------------------------
    Negara → Provinsi → Kota/Kabupaten → Kecamatan → Desa/Kelurahan → Kode pos
    → Alamat lengkap (jalan, nomor, patokan).
@@ -21,7 +21,12 @@
    Jepang. Menyimpan bentuk data yang berbeda per negara membuat setiap
    laporan dan setiap pencarian harus tahu negara mana yang sedang dibaca.
    ========================================================================== */
-var WILAYAH = (function () {
+var EXO_WILAYAH = (function () {
+  /* Milik EXOCLEAN App (3 Sep 2026): pembantu teks, pengurut, dan simpanan
+     setelan negara yang dilayani ada di sini, bukan dari modul aplikasi lain. */
+  var I18N = { t: function (s) { return s; } };
+  var U = { esc: EXO_UTIL.esc, sortBy: EXO_UTIL.sortBy };
+  var DB = { get raw() { EXO_DB.init(); return EXO_DB.raw; }, save: function () { EXO_DB.save(true); } };
 
   /* ================================================================ NEGARA
      Kode ISO 3166-1 alfa-2, nama Inggris (bahasa bawaan aplikasi), kode

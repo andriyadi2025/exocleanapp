@@ -364,7 +364,7 @@
     return h;
   };
   X.LAYAR.track = function () {
-    var j = X.juruKini(), pos = X.posisiMitra(), jarak = pos && window.U ? U.jarakMeter(pos, X.alamatKini().point) : null;
+    var j = X.juruKini(), pos = X.posisiMitra(), jarak = pos && window.EXO_UTIL ? EXO_UTIL.jarakMeter(pos, X.alamatKini().point) : null;
     var eta = K.tahap <= 1 ? (jarak != null ? tx('Arriving') + ' ' + tx('in ~') + X.menitTempuh(jarak) + ' ' + tx('min') + ' · ' + X.teksJarak(jarak) : tx('Arriving') + ' 08:56') : K.tahap === 2 ? tx('Working') + ' · 1h 12m ' + tx('left') : tx('Finished') + ' 12:04';
     var h = '<div class="screen"><div class="map">' + X.petaHTML(pos && K.tahap <= 1 ? { lat:pos.lat, lng:pos.lng } : X.alamatKini().point, pos ? 'Cleaner position' : 'Map of the visit address') + '<div class="tirai"></div>' +
       '<div class="back"><button class="btn btn-icon btn-plain"' + aksi('ke', 'home') + ' aria-label="Back">' + garis(IK.kembali) + '</button></div><div class="eta">' + esc(eta) + '</div></div>';

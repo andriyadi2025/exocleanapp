@@ -1,5 +1,5 @@
 /* ==========================================================================
-   zona.js — zona waktu per cabang
+   exo-zona.js — zona waktu per kota (milik EXOCLEAN App; diturunkan dari modul zona MCS, kini berdiri sendiri)
    --------------------------------------------------------------------------
    MASALAH YANG DIPECAHKAN
 
@@ -37,7 +37,7 @@
    `Intl` sudah membawa seluruh basis data zona; yang perlu disimpan hanya
    namanya.
    ========================================================================== */
-var ZONA = (function () {
+var EXO_ZONA = (function () {
   'use strict';
 
   /* PINTASAN, BUKAN BATAS.
@@ -236,25 +236,10 @@ var ZONA = (function () {
   }
 
   /** Bawaan korporat; dipakai cabang yang zonanya belum diisi. */
-  function bawaan() {
-    var c = (window.MCS && MCS.config) ? MCS.config() : null;
-    var z = c && c.zona;
-    return sah(z) ? z : perangkat();
-  }
-
-  function lokasi(lokasiId) {
-    if (!lokasiId) return bawaan();
-    var l = (window.LOKASI && LOKASI.satu) ? LOKASI.satu(lokasiId) : null;
-    return (l && sah(l.zona)) ? l.zona : bawaan();
-  }
-
-  /** Zona sebuah AREA — lewat cabang tempat ia berada. */
-  function area(a) {
-    if (!a) return bawaan();
-    var lid = a.lokasiId ||
-      (a.lantaiId && window.MCS && MCS.lokasiDariLantai ? MCS.lokasiDariLantai(a.lantaiId) : null);
-    return lokasi(lid);
-  }
+  /* EXOCLEAN App tidak punya cabang; bawaannya zona perangkat. */
+  function bawaan() { return perangkat(); }
+  function lokasi() { return bawaan(); }
+  function area() { return bawaan(); }
 
   /* Pembentuk Intl DISIMPAN. tugasHari memanggil pembanding jam ribuan kali
      dalam satu penggambaran, dan membuat Intl.DateTimeFormat baru tiap
@@ -399,9 +384,9 @@ var ZONA = (function () {
   function pilihan(awal) {
     var out = awal ? [awal] : [];
     var punya = {};
-    out.push({ grup: I18N.t('Sering dipakai'), options: DAFTAR.map(function (z) {
+    out.push({ grup: 'Sering dipakai', options: DAFTAR.map(function (z) {
       punya[z.id] = 1;
-      return { value: z.id, label: I18N.t(z.nama) + '  ·  ' + offset(z.id) };
+      return { value: z.id, label: z.nama + '  ·  ' + offset(z.id) };
     }) });
 
     var perWilayah = {}, urutan = [];

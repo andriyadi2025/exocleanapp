@@ -18,7 +18,7 @@
      · DIBERI TANDA. Setiap baris membawa `sumber:'dummy'` supaya bisa
        disaring atau dibersihkan nanti tanpa menebak.
 
-   Jalankan dari konsol peramban (index.html atau exo-admin.html):
+   Jalankan dari konsol admin EXOCLEAN App (exo-admin.html):
        SEMAI_DUMMY.jalankan()
    atau lewat tombol di konsol admin → Cleaners.
    ========================================================================== */
@@ -97,8 +97,8 @@ var SEMAI_DUMMY = (function () {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
   function simpanFoto(id, data) {
-    if (window.FOTO && FOTO.simpan) FOTO.simpan(id, data);
-    else if (window.DB && DB.terimaFoto) DB.terimaFoto(id, data);
+    if (window.EXO_FOTO && EXO_FOTO.simpan) EXO_FOTO.simpan(id, data);
+    else if (window.EXO_DB && EXO_DB.terimaFoto) EXO_DB.terimaFoto(id, data);
   }
   function alamatObj(k, jalan, nomor) {
     return { jalan: jalan + ' No. ' + nomor, negara:'ID', l1:k.prov, l2:k.kota, l3:k.kec, l4:k.kel, kodePos:k.pos, patokan:pilih(PATOKAN) };
@@ -116,10 +116,10 @@ var SEMAI_DUMMY = (function () {
     return {
       role:'client', nama:nm, perusahaan:perusahaan, tipe:tipe, email:email, pass:'123456', telp:hp,
       alamat: teksAlamat(w), wilayah:w, kota:k.kota, zonaWaktu:k.tz,
-      alamatList:[{ id:U.uid('adr'), label: tipe === 'rumah' ? 'Rumah' : tipe === 'apartemen' ? 'Apartemen' : 'Kantor', penerima:nm, telp:hp,
+      alamatList:[{ id:EXO_UTIL.uid('adr'), label: tipe === 'rumah' ? 'Rumah' : tipe === 'apartemen' ? 'Apartemen' : 'Kantor', penerima:nm, telp:hp,
         alamat:w.jalan, kota:k.kota, kodePos:k.pos, patokan:w.patokan, utama:true, wilayah:w,
         koordinat:{ lat:+(k.lat + (acak() - 0.5) * 0.02).toFixed(6), lng:+(k.lng + (acak() - 0.5) * 0.02).toFixed(6) } }],
-      rekening:[{ id:U.uid('rek'), bank:pilih(BANK), nomor:digit(10), atasNama: perusahaan || nm, utama:true }],
+      rekening:[{ id:EXO_UTIL.uid('rek'), bank:pilih(BANK), nomor:digit(10), atasNama: perusahaan || nm, utama:true }],
       emailVerifiedAt: hariLalu(sejak, 10), telpVerifiedAt: hariLalu(sejak, 10),
       aktif:true, wajibGantiSandi:false, foto:null, createdAt: hariLalu(sejak, 9),
       preferensi:{ bahasa:'id', notifWA:true, notifEmail:true, ringkasanMingguan:false },
@@ -134,30 +134,31 @@ var SEMAI_DUMMY = (function () {
     var lahir = (1978 + bulat(0, 24)) + '-' + String(bulat(1, 12)).padStart(2, '0') + '-' + String(bulat(1, 28)).padStart(2, '0');
     var w = alamatObj(k, pilih(JALAN), bulat(1, 90)), hp = telp(), sejak = bulat(60, 700);
     var email = slug(nm) + '.' + (i + 1) + '@' + pilih(['gmail.com', 'yahoo.co.id', 'outlook.com']);
-    var fotoDepan = U.uid('ph'), fotoSelfie = U.uid('ph');
+    var fotoDepan = EXO_UTIL.uid('ph'), fotoSelfie = EXO_UTIL.uid('ph');
     simpanFoto(fotoDepan, fotoKartu(nm, 'KTP')); simpanFoto(fotoSelfie, fotoKartu(nm + ' (swafoto)', 'KTP'));
-    var butir = (window.KURIKULUM && KURIKULUM.SYARAT ? KURIKULUM.SYARAT : []).map(function (b) { return b.id; });
+    /* Butir syarat & ketentuan mitra EXOCLEAN App yang disetujui saat mendaftar. */
+    var butir = ['identitas', 'skck', 'kode-etik', 'jadwal-terkunci', 'foto-wajib', 'pembayaran', 'privasi'];
     var kd1 = nama(!perempuan), kd2 = nama(bulat(0, 1) === 1);
     var u = {
       role:'worker', nama:nm, jabatan:jabatan, email:email, pass:'123456', telp:hp,
       sertifikat: (SERT_NAMA[jabatan] || []).slice(),
       alamat: teksAlamat(w), wilayah:w, kota:k.kota, zonaWaktu:k.tz,
-      alamatList:[{ id:U.uid('adr'), label:'Rumah', penerima:nm, telp:hp, alamat:w.jalan, kota:k.kota, kodePos:k.pos, patokan:w.patokan, utama:true, wilayah:w,
+      alamatList:[{ id:EXO_UTIL.uid('adr'), label:'Rumah', penerima:nm, telp:hp, alamat:w.jalan, kota:k.kota, kodePos:k.pos, patokan:w.patokan, utama:true, wilayah:w,
         koordinat:{ lat:+(k.lat + (acak() - 0.5) * 0.03).toFixed(6), lng:+(k.lng + (acak() - 0.5) * 0.03).toFixed(6) } }],
-      rekening:[{ id:U.uid('rek'), bank:pilih(BANK), nomor:digit(10), atasNama:nm, utama:true }],
+      rekening:[{ id:EXO_UTIL.uid('rek'), bank:pilih(BANK), nomor:digit(10), atasNama:nm, utama:true }],
       identitas:{ jenis:'ktp', nomor:nik(k, lahir), namaSesuaiKartu:nm.toUpperCase(), tanggalLahir:lahir, berlakuHingga:'',
         alamatKtp:teksAlamat(w), fotoDepan:fotoDepan, fotoSelfie:fotoSelfie,
         diverifikasi:true, diverifikasiOleh:admin, diverifikasiAt:hariLalu(sejak - 5, 10) },
       kontakDarurat:[
-        { id:U.uid('kd'), nama:kd1, hubungan:pilih(HUBUNGAN), telp:telp(), utama:true, verifikasiAt:hariLalu(sejak - 1, 11) },
-        { id:U.uid('kd'), nama:kd2, hubungan:pilih(HUBUNGAN), telp:telp(), utama:false, verifikasiAt:hariLalu(sejak - 1, 11) }
+        { id:EXO_UTIL.uid('kd'), nama:kd1, hubungan:pilih(HUBUNGAN), telp:telp(), utama:true, verifikasiAt:hariLalu(sejak - 1, 11) },
+        { id:EXO_UTIL.uid('kd'), nama:kd2, hubungan:pilih(HUBUNGAN), telp:telp(), utama:false, verifikasiAt:hariLalu(sejak - 1, 11) }
       ],
       alamatTinggal:{ alamat:w.jalan, rt:String(bulat(1, 12)).padStart(3, '0'), rw:String(bulat(1, 9)).padStart(3, '0'), kelurahan:k.kel, kecamatan:k.kec,
         kota:k.kota, provinsi:k.prov, kodePos:k.pos, status:pilih(['Milik sendiri', 'Kontrak / sewa', 'Ikut keluarga']), sejak:String(2015 + bulat(0, 10)), samaDenganKtp:true, patokan:w.patokan },
       kepegawaian:{ nomorPegawai:'EXO-' + tglLalu(sejak).slice(0, 4) + '-' + String(100 + i).padStart(3, '0'), tglMasuk:tglLalu(sejak - 12), statusKerja:'mitra',
         kontrakMulai:'', kontrakSelesai:'', penempatan:k.kota, atasanId:'', bpjsTk:'19' + digit(9), bpjsKes:'000' + digit(10), npwp:'', tglBerhenti:'', alasanBerhenti:'', catatan:'Data uji (semai-dummy)' },
       statusMitra:'aktif', daftarAt:hariLalu(sejak, 9), disetujuiAt:hariLalu(sejak - 12, 10), disetujuiOleh:admin, alasanTolak:null,
-      persetujuanSK:{ versi:(window.LMS && LMS.versiSK) ? LMS.versiSK() : '2026.1', at:hariLalu(sejak, 9), butir:butir },
+      persetujuanSK:{ versi:'2026.1', at:hariLalu(sejak, 9), butir:butir },
       fungsiKerja:(FUNGSI[jabatan] || ['FK-CLEAN']).slice(),
       pasar:{ tarif:TARIF[jabatan] + bulat(-2, 2) * 1000, aktif:true, olehId:admin, olehNama:'Rina Kartika', at:hariLalu(sejak - 13, 11) },
       emailVerifiedAt:hariLalu(sejak, 9), telpVerifiedAt:hariLalu(sejak, 9),
@@ -174,14 +175,14 @@ var SEMAI_DUMMY = (function () {
     var kodeWajib = Object.keys(kursusByKode).filter(function (kd) { return kursusByKode[kd].wajib; });
     var kodeLain = [];
     (u.fungsiKerja || []).forEach(function (fk) {
-      var f = window.KOMPETENSI && KOMPETENSI.FUNGSI ? KOMPETENSI.FUNGSI.filter(function (x) { return x.kode === fk; })[0] : null;
+      var f = null;
       var kd = f ? f.kursus : fk;
       if (kursusByKode[kd] && kodeWajib.indexOf(kd) < 0 && kodeLain.indexOf(kd) < 0) kodeLain.push(kd);
     });
     var semua = kodeWajib.concat(kodeLain), nilaiWajib = [], n = 0;
     semua.forEach(function (kd, i) {
       var k = kursusByKode[kd], nilai = bulat(Math.max(80, k.nilaiMin || 80), 100), jarak = Math.max(3, sejak - 4 - i * 2);
-      DB.insert('lmsProgres', { userId:u.id, kursusId:k.id, status:'selesai',
+      EXO_DB.insert('lmsProgres', { userId:u.id, kursusId:k.id, status:'selesai',
         materiSelesai:(k.materi || []).map(function (_, idx) { return idx; }),
         percobaan:[{ at:hariLalu(jarak, 20), nilai:nilai, benar:Math.round(nilai / 100 * ((k.kuis || []).length || 5)), total:(k.kuis || []).length || 5, lulus:true }],
         nilaiTerbaik:nilai, mulaiAt:hariLalu(jarak + 1, 19), selesaiAt:hariLalu(jarak, 20), createdAt:hariLalu(jarak + 1, 19), sumber:'dummy' });
@@ -203,45 +204,45 @@ var SEMAI_DUMMY = (function () {
     return t.slice(0, 4) + '-' + t.slice(4);
   }
   function terbitSert(userId, kursusId, judul, jenis, nilai, hariKe, masaHari) {
-    var no = U.docNo('CERT', DB.nextNo('sertifikat'), new Date(hariLalu(hariKe)));
+    var no = EXO_UTIL.docNo('CERT', EXO_DB.nextNo('sertifikat'), new Date(hariLalu(hariKe)));
     var hingga = new Date(); hingga.setDate(hingga.getDate() - hariKe + (masaHari || 1095));
-    DB.insert('sertifikat', { no:no, userId:userId, kursusId:kursusId, judul:judul, jenis:jenis, nilai:nilai,
+    EXO_DB.insert('sertifikat', { no:no, userId:userId, kursusId:kursusId, judul:judul, jenis:jenis, nilai:nilai,
       terbitAt:hariLalu(hariKe, 14), berlakuHingga:hingga.toISOString().slice(0, 10), kode:kodeSert(userId + '|' + kursusId + '|' + no), createdAt:hariLalu(hariKe, 14), sumber:'dummy' });
   }
 
   /* ------------------------------------------------------------ jalankan */
   function jalankan(opsi) {
     opsi = opsi || {};
-    if (!window.DB || !window.U) return { ok:false, alasan:'DB / U belum dimuat.' };
-    try { if (!DB.raw) DB.init(); } catch (e) { return { ok:false, alasan:'Basis data tidak bisa dibuka: ' + e.message }; }
+    if (!window.EXO_DB || !window.EXO_UTIL) return { ok:false, alasan:'DB / U belum dimuat.' };
+    try { if (!EXO_DB.raw) EXO_DB.init(); } catch (e) { return { ok:false, alasan:'Basis data tidak bisa dibuka: ' + e.message }; }
     /* Basis data kosong (EXOCLEAN App berdiri sendiri, tanpa aplikasi manajemen
        yang menyemai peran dan akun): buat satu akun admin sistem supaya kolom
        olehId/olehNama pada tarif dan persetujuan tetap menunjuk ke orang. */
-    if (!DB.all('users').length) {
-      DB.insert('users', { role:'admin', nama:'Rina Kartika', jabatan:'Super Admin (IT)', email:'admin@exoclean.id', pass:'123456', telp:'081234567001', aktif:true, sumber:'dummy', createdAt:new Date().toISOString() });
+    if (!EXO_DB.all('users').length) {
+      EXO_DB.insert('users', { role:'admin', nama:'Rina Kartika', jabatan:'Super Admin (IT)', email:'admin@exoclean.id', pass:'123456', telp:'081234567001', aktif:true, sumber:'dummy', createdAt:new Date().toISOString() });
     }
 
     benih = 20260902;
-    var adminRow = DB.where('users', function (x) { return x.role === 'admin'; })[0], admin = adminRow ? adminRow.id : 'u_admin';
-    var kursusByKode = {}; DB.all('kursus').forEach(function (k) { kursusByKode[k.kode] = k; });
-    var adaEmail = {}; DB.all('users').forEach(function (x) { if (x.email) adaEmail[x.email.toLowerCase()] = true; });
+    var adminRow = EXO_DB.where('users', function (x) { return x.role === 'admin'; })[0], admin = adminRow ? adminRow.id : 'u_admin';
+    var kursusByKode = {};   /* EXOCLEAN App tidak punya modul kursus; sertifikat mitra ditulis langsung */
+    var adaEmail = {}; EXO_DB.all('users').forEach(function (x) { if (x.email) adaEmail[x.email.toLowerCase()] = true; });
     var hasil = { klienBaru:0, klienLewat:0, mitraBaru:0, mitraLewat:0, pembelajaran:0, kota:{} };
 
     for (var i = 0; i < (opsi.klien || 20); i++) {
       var c = buatKlien(i);
       if (adaEmail[c.email.toLowerCase()]) { hasil.klienLewat++; continue; }
-      DB.insert('users', c); adaEmail[c.email.toLowerCase()] = true; hasil.klienBaru++;
+      EXO_DB.insert('users', c); adaEmail[c.email.toLowerCase()] = true; hasil.klienBaru++;
       hasil.kota[c.kota] = (hasil.kota[c.kota] || 0) + 1;
     }
     for (var j = 0; j < (opsi.mitra || 50); j++) {
       var m = buatMitra(j, kursusByKode, admin);
       if (adaEmail[m.user.email.toLowerCase()]) { hasil.mitraLewat++; continue; }
-      var row = DB.insert('users', m.user); adaEmail[row.email.toLowerCase()] = true; hasil.mitraBaru++;
+      var row = EXO_DB.insert('users', m.user); adaEmail[row.email.toLowerCase()] = true; hasil.mitraBaru++;
       hasil.kota[row.kota] = (hasil.kota[row.kota] || 0) + 1;
       hasil.pembelajaran += buatPembelajaran(row, m.sejak, kursusByKode);
     }
-    if (DB.log) DB.log(admin, 'Menyemai data uji: ' + hasil.klienBaru + ' klien, ' + hasil.mitraBaru + ' mitra (semai-dummy.js)', 'user', null);
-    DB.save(true);
+    if (EXO_DB.log) EXO_DB.log(admin, 'Menyemai data uji: ' + hasil.klienBaru + ' klien, ' + hasil.mitraBaru + ' mitra (semai-dummy.js)', 'user', null);
+    EXO_DB.save(true);
     hasil.ok = true; hasil.jumlahKota = Object.keys(hasil.kota).length;
     return hasil;
   }
@@ -250,9 +251,9 @@ var SEMAI_DUMMY = (function () {
   function bersihkan() {
     var n = 0;
     ['sertifikat', 'lmsProgres', 'users'].forEach(function (t) {
-      DB.all(t).filter(function (r) { return r.sumber === 'dummy'; }).forEach(function (r) { DB.remove(t, r.id); n++; });
+      EXO_DB.all(t).filter(function (r) { return r.sumber === 'dummy'; }).forEach(function (r) { EXO_DB.remove(t, r.id); n++; });
     });
-    DB.save(true);
+    EXO_DB.save(true);
     return { dihapus:n };
   }
 
