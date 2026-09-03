@@ -297,11 +297,19 @@ var ADMIN = (function () {
   AKSI.sopTab = function (v) { S.sopTab = v; };
   AKSI.approve = function (v) { S.approved[v] = true; sekilas(v + ' disetujui · kontrak digital dan orientasi A-001 dikirim.'); };
   AKSI.request = function (v) { S.requested[v] = true; sekilas('Permintaan dokumen dikirim ke ' + v + ' lewat WhatsApp.'); };
+  /* Pagu: floor tidak boleh melampaui ceiling. Ditahan di batasnya dan
+     diberi tahu, bukan diam-diam ditukar. */
+  function pasangPagu(id, f, n) {
+    var lain = val(id, f === 'floor' ? 'ceiling' : 'floor');
+    if (f === 'floor' && n > lain) { n = lain; sekilas('Floor cannot exceed the ceiling — held at ' + rp(lain) + '.', 'err'); }
+    if (f === 'ceiling' && n < lain) { n = lain; sekilas('Ceiling cannot go below the floor — held at ' + rp(lain) + '.', 'err'); }
+    S.svcEdits[id + '.' + f] = n; S.svcDirty = true;
+  }
   AKSI.bump = function (v) {
     var p = v.split(':'), id = p[0], f = p[1], dir = Number(p[2]), base = SERVICES.filter(function (x) { return x.id === id; })[0];
-    S.svcEdits[id + '.' + f] = Math.max(base.step, val(id, f) + dir * base.step); S.svcDirty = true;
+    pasangPagu(id, f, Math.max(base.step, val(id, f) + dir * base.step));
   };
-  AKSI.setPrice = function (arg, raw) { var p = arg.split(':'), n = parseInt(String(raw).replace(/[^\d]/g, ''), 10); if (isNaN(n)) return; S.svcEdits[p[0] + '.' + p[1]] = Math.max(1000, n); S.svcDirty = true; };
+  AKSI.setPrice = function (arg, raw) { var p = arg.split(':'), n = parseInt(String(raw).replace(/[^\d]/g, ''), 10); if (isNaN(n)) return; pasangPagu(p[0], p[1], Math.max(1000, n)); };
   AKSI.toggleLive = function (id) { S.svcOff[id] = !S.svcOff[id]; S.svcDirty = true; };
   AKSI.publishServices = function () {
     var p = bacaPub(); p.svcOff = {}; for (var k in S.svcOff) if (S.svcOff[k]) p.svcOff[k] = true;
@@ -309,7 +317,12 @@ var ADMIN = (function () {
     S.svcEdits = {}; S.svcDirty = false; sekilas(tulisPub(p) ? 'Harga dan status layanan tayang di EXOCLEAN App.' : 'Gagal menyimpan — penyimpanan peramban ditolak.', 'ok');
   };
   AKSI.resetServices = function () { S.svcEdits = {}; S.svcOff = (bacaPub().svcOff) || {}; S.svcDirty = false; };
-  AKSI.promo = function (v) { var p = v.split(':'), code = p[0], dir = Number(p[1]), pr = PROMOS.filter(function (x) { return x.code === code; })[0]; var cur = S.promoEdits[code] == null ? pr.amount : S.promoEdits[code]; S.promoEdits[code] = Math.max(pr.step, cur + dir * pr.step); S.promoDirty = true; };
+  AKSI.promo = function (v) {
+    var p = v.split(':'), code = p[0], dir = Number(p[1]), pr = PROMOS.filter(function (x) { return x.code === code; })[0];
+    var cur = S.promoEdits[code] == null ? pr.amount : S.promoEdits[code], n = Math.max(pr.step, cur + dir * pr.step);
+    if (pr.type === 'pct' && n > 100) { n = 100; sekilas('A percentage discount cannot exceed 100%.', 'err'); }
+    S.promoEdits[code] = n; S.promoDirty = true;
+  };
   AKSI.togglePromo = function (code) { S.promoOff[code] = !S.promoOff[code]; S.promoDirty = true; };
   AKSI.publishPromos = function () {
     var p = bacaPub(); p.promos = {};

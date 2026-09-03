@@ -128,7 +128,12 @@
     K.jam = v === 'postreno' ? 6 : (D.DEFAULT_QTY[D.SERVICES[v].unit] || 1);
     K.regu = v === 'postreno' ? 2 : 1;
   };
-  A.pesanCepat = function () { K.jasa = 'hourly'; K.jam = 3; K.regu = 1; K.hari = 1; K.mulai = '09:00'; K.juru = 'sw'; K.layar = 'review'; };
+  A.pesanCepat = function () {
+    var d = X.daftarJuru();
+    K.jasa = 'hourly'; K.jam = 3; K.regu = 1; K.hari = 1; K.mulai = '09:00'; K.tambahan = {};
+    K.juru = d.length ? d[0].id : 'sw';   /* "petugas terbaik" = urutan pertama roster yang berlaku, bukan id contoh */
+    K.layar = 'review';
+  };
   A.jamKurang = function () { K.jam = Math.max(X.qtyMin(), K.jam - X.qtyStep()); };
   A.jamTambah = function () { K.jam = Math.min(X.qtyMax(), K.jam + X.qtyStep()); };
   A.regu = function (v) { K.regu = Number(v); };

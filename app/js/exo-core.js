@@ -459,9 +459,13 @@ var ExoApp = (function () {
     if (f.posisi === null || f.posisi === undefined) return;
     try { el.setSelectionRange(f.posisi, f.posisi); } catch (e) { /* abaikan */ }
   }
+  /* Layar netral dipakai kedua sisi dan tidak boleh mengubah sisi — tanpa
+     ini, mitra yang membuka Ketentuan lalu kembali mendarat di profil
+     PELANGGAN. */
+  var LAYAR_NETRAL = ['profile', 'terms', 'lang'];
   function selaraskanSisi() {
     var l = KEADAAN.layar;
-    if (l === 'profile') return;
+    if (LAYAR_NETRAL.indexOf(l) >= 0) return;
     KEADAAN.sisi = D.PARTNER_SCREENS.indexOf(l) >= 0 ? 'partner' : 'customer';
   }
   function bilahTab() {
