@@ -1,15 +1,13 @@
 # EXOCLEAN
 
-Aplikasi web EXOCLEAN — jasa kebersihan Jabodetabek. Seluruh kodenya ada di folder [`app/`](app/); dokumentasi lengkap di [`app/README.md`](app/README.md).
+EXOCLEAN App — marketplace jasa kebersihan: pelanggan memilih juru bersihnya sendiri, jadwal terkunci. Kode aplikasi di [`app/`](app/), pembungkus Android di [`exo-android/`](exo-android/); dokumentasi di [`app/README.md`](app/README.md).
 
 | Berkas | Untuk siapa |
 |---|---|
-| `app/index.html` | Sistem manajemen: klien, admin, supervisor, mitra toko |
-| `app/mitra.html` | Mitra lapangan |
-| `app/mcs.html` | Korporat yang memantau areanya sendiri (MCS) |
 | `app/exo.html` | **EXOCLEAN App** — marketplace ponsel: pelanggan memilih petugasnya |
 | `app/exo-admin.html` | Konsol backend marketplace, 14 modul |
 | `app/exo-analisa.html` | Analisa pasar dan perbandingan layanan |
+| `exo-android/` | Pembungkus Android (Capacitor) — APK/AAB, lihat `exo-android/BACA-DULU.md` |
 
 Tanpa proses build: HTML/CSS/JavaScript murni. Jalankan server statis lokal:
 
@@ -19,4 +17,6 @@ powershell -ExecutionPolicy Bypass -File app/serve.ps1 -Port 8080
 
 lalu buka `http://localhost:8080/exo.html`.
 
-Server pendamping (pembayaran, OTP & login sosial, posisi mitra, data) ada di `app/server/`; salin `.env.example` menjadi `.env` dan isi kredensialnya. Berkas rahasia (`.env`, kunci API, sertifikat, basis data) sengaja tidak ikut ke repositori — lihat `.gitignore`.
+Server pendamping (pembayaran, OTP & login sosial, posisi mitra) ada di `app/server/`; salin `.env.example` menjadi `.env` dan isi kredensialnya. Berkas rahasia (`.env`, kunci API, sertifikat, basis data) sengaja tidak ikut ke repositori — lihat `.gitignore`.
+
+Aplikasi manajemen operasional (MCS: `index.html`, `mitra.html`, `mcs.html`) adalah proyek terpisah sejak 3 Sep 2026 — repositori **MCS EXOCLEAN**. Modul yang dipakai bersama ada di kedua repositori.

@@ -123,7 +123,10 @@ var ADMIN = (function () {
   var dbSiap = null;
   function adaDB() {
     if (dbSiap !== null) return dbSiap;
-    try { dbSiap = !!(window.DB && window.RUANG && localStorage.getItem(RUANG.kunci('db'))); if (dbSiap) DB.init(); }
+    /* Sejak MCS dipisah (3 Sep 2026) tidak ada lagi index.html yang menyemai
+       basis data; konsol ini membuatnya sendiri bila belum ada — kosong, lalu
+       tombol "Isi data dummy" atau pendaftaran mitra yang mengisinya. */
+    try { if (window.DB && window.RUANG) { DB.init(); dbSiap = true; } }
     catch (e) { dbSiap = false; }
     return dbSiap;
   }

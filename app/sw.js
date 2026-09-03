@@ -28,7 +28,7 @@
 
 /* Dinaikkan tiap kali KERANGKA berubah. Tanpa itu, pemasangan lama tetap
    memakai singgahan lamanya dan exo.html tidak pernah ikut tersimpan. */
-var VERSI = 'exoclean-v12';
+var VERSI = 'exoclean-v13';
 
 /* Kerangka yang membuat aplikasi tetap bisa dibuka tanpa sinyal. Sengaja
    pendek: berkas lain ikut tersinggah sendiri saat pertama diminta.
@@ -42,11 +42,7 @@ var VERSI = 'exoclean-v12';
    justru pada saat luring. */
 var KERANGKA = [
   './',
-  './index.html',
-  './mitra.html',
-  './mcs.html',
   './exo.html',
-  './css/style.css',
   './css/exo.css',
   './js/exo-brand.js',
   './js/exo-i18n.js',
@@ -88,13 +84,8 @@ var KERANGKA = [
   './assets/fonts/libre-baskerville-400.woff2',
   './assets/fonts/libre-baskerville-700.woff2',
   './assets/fonts/nunito-sans-var.woff2',
-  './manifest.json',
-  './manifest-mitra.json',
-  './manifest-mcs.json',
   './manifest-exo.json',
   './assets/icon-192.png',
-  './assets/icon-mitra-192.png',
-  './assets/icon-mcs-192.png'
 ];
 
 self.addEventListener('install', function (e) {
@@ -148,7 +139,6 @@ self.addEventListener('fetch', function (e) {
           var berkas = url.pathname.split('/').pop();
           var minta = './' + (berkas || 'index.html');
           return caches.match(minta).then(function (m) {
-            return m || caches.match('./index.html');
           });
         }
         return new Response('', { status: 504, statusText: 'Tidak ada sinyal' });
@@ -167,15 +157,12 @@ self.addEventListener('fetch', function (e) {
  * diam-diam tanpa notifikasi apa pun.
  */
 self.addEventListener('push', function (e) {
-  var d = { judul: 'EXOCLEAN Mitra', isi: '', tag: 'exo', url: './mitra.html' };
   if (e.data) {
     try { d = Object.assign(d, e.data.json()); }
     catch (x) { d.isi = e.data.text(); }
   }
   e.waitUntil(self.registration.showNotification(d.judul, {
     body: d.isi,
-    icon: './assets/icon-mitra-192.png',
-    badge: './assets/icon-mitra-192.png',
     tag: d.tag,
     renotify: true,
     /* Permintaan bertenggat tidak boleh hilang sendiri dari bilah notifikasi
@@ -188,7 +175,6 @@ self.addEventListener('push', function (e) {
 
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
-  var tujuan = (e.notification.data && e.notification.data.url) || './mitra.html';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (daftar) {
       /* Jendela yang sudah terbuka difokuskan, bukan dibuka lagi — mitra yang
@@ -211,12 +197,9 @@ self.addEventListener('message', function (e) {
   if (d.tipe !== 'notif') return;
   self.registration.showNotification(d.judul || 'EXOCLEAN', {
     body: d.isi || '',
-    icon: './assets/icon-mitra-192.png',
-    badge: './assets/icon-mitra-192.png',
     tag: d.tag || 'exo',
     renotify: true,
     requireInteraction: !!d.penting,
     vibrate: d.getar || [200, 100, 200],
-    data: { url: d.url || './mitra.html' }
   });
 });
