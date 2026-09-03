@@ -229,6 +229,13 @@ var ADMIN = (function () {
     });
     if (!q.length) h += '<div class="card elev-sm t-125 o-7">Antrian verifikasi kosong.</div>';
     h += '</div>';
+    if (adaDB() && window.SEMAI_DUMMY) {
+      var nDummy = DB.where('users', function (u) { return u.sumber === 'dummy'; }).length;
+      h += '<div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px">' + chip(nDummy ? 'green' : 'flat', nDummy ? nDummy + ' data uji' : 'Belum ada data uji') +
+        '<div class="grow t-125 o-75">Data uji: 20 klien + 50 mitra dari 26 kota Indonesia, terisi penuh dan terverifikasi (S&amp;K, KTP, 2 kontak darurat, 5 kursus wajib, sertifikat, tarif pasar). Tanpa order. Bisa diulang tanpa menggandakan.</div>' +
+        '<button class="btn btn-primary" style="height:34px;padding:0 16px;font-size:12.5px"' + aksi('semaiDummy') + '>Semai data uji</button>' +
+        (nDummy ? '<button class="btn btn-secondary" style="height:34px;padding:0 16px;font-size:12.5px"' + aksi('hapusDummy') + '>Hapus data uji</button>' : '') + '</div>';
+    }
     if (adaDB() && window.PASAR) {
       var pekerja = DB.where('users', function (u) { return u.role === 'worker'; }).map(function (u) {
         var p = PASAR.data(u), s = PASAR.statistik(u.id), tayang = PASAR.tayang(u);
@@ -295,6 +302,15 @@ var ADMIN = (function () {
   AKSI.deskFilter = function (v) { S.deskFilter = v; };
   AKSI.mapFilter = function (v) { S.mapFilter = v; };
   AKSI.sopTab = function (v) { S.sopTab = v; };
+  AKSI.semaiDummy = function () {
+    var r = SEMAI_DUMMY.jalankan();
+    if (!r.ok) { sekilas(r.alasan, 'err'); return; }
+    sekilas(r.klienBaru + ' klien + ' + r.mitraBaru + ' mitra baru dari ' + r.jumlahKota + ' kota' + (r.klienLewat + r.mitraLewat ? ' · ' + (r.klienLewat + r.mitraLewat) + ' sudah ada, dilewati' : '') + '.');
+  };
+  AKSI.hapusDummy = function () {
+    if (!window.confirm('Hapus semua baris bertanda data uji (klien, mitra, pembelajaran, sertifikat)?')) return;
+    var r = SEMAI_DUMMY.bersihkan(); sekilas(r.dihapus + ' baris data uji dihapus.');
+  };
   AKSI.approve = function (v) { S.approved[v] = true; sekilas(v + ' disetujui · kontrak digital dan orientasi A-001 dikirim.'); };
   AKSI.request = function (v) { S.requested[v] = true; sekilas('Permintaan dokumen dikirim ke ' + v + ' lewat WhatsApp.'); };
   /* Pagu: floor tidak boleh melampaui ceiling. Ditahan di batasnya dan
