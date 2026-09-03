@@ -162,11 +162,82 @@ var ExoApp = (function () {
   }
   function layananDijeda(id) { var off = terbitan().svcOff || {}; return !!off[id]; }
 
-  /* Tujuh hari ke depan mulai hari ini. */
-  function hariKe(i) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d; }
+  /* ======================================================= ZONA WAKTU
+     Jam pesanan mengikuti KOTA ALAMAT, bukan jam ponsel yang membuka
+     aplikasi. Pelanggan di Makassar memesan "09:00" berarti 09.00 WITA;
+     mitra yang ponselnya masih WIB melihat "09:00 WITA · di ponsel Anda
+     08:00", dan admin di Jakarta membaca jadwalnya berlabel WITA.
+
+     Zona ditentukan dari provinsi alamat lewat js/zona.js (peta provinsi →
+     WIB/WITA/WIT, termasuk Asia/Pontianak), lalu tebakan nama kota bila
+     provinsinya tidak dikenali; negara ASEAN lain memakai zona negaranya.
+     Yang DISIMPAN ke basis data: tanggal + jam dinding (kompatibel dengan
+     aplikasi manajemen), objek wilayah (dipakai wa.js untuk melabeli jam),
+     nama zona IANA, dan padanan UTC-nya. */
+  var ZONA_NEGARA = { MY:'Asia/Kuala_Lumpur', SG:'Asia/Singapore', BN:'Asia/Brunei', TH:'Asia/Bangkok', VN:'Asia/Ho_Chi_Minh',
+                      PH:'Asia/Manila', KH:'Asia/Phnom_Penh', LA:'Asia/Vientiane', MM:'Asia/Yangon', TL:'Asia/Dili' };
+  function wilayahPesanan() {
+    var a = KEADAAN.addr;
+    return { negara: isoNegara() || 'ID', l1:a.provinsi || '', l2:a.kabkota || '', l3:a.kecamatan || '', l4:a.desa || '', kodePos:a.pos || '' };
+  }
+  function zonaPesanan() {
+    var iso = isoNegara() || 'ID', a = KEADAAN.addr;
+    if (!window.ZONA) return iso === 'ID' ? 'Asia/Jakarta' : (ZONA_NEGARA[iso] || 'Asia/Jakarta');
+    if (iso !== 'ID') return ZONA_NEGARA[iso] || ZONA.perangkat();
+    return ZONA.dariWilayah({ negara:'ID', l1:a.provinsi }) || ZONA.tebakDariKota(a.kabkota);
+  }
+  /* "WIB" / "WITA" / "WIT" (GMT+8 dsb. untuk luar Indonesia). */
+  function labelZona(tz) { return window.ZONA ? ZONA.singkat(tz || zonaPesanan()) : 'WIB'; }
+  function labelPerangkat() { return window.ZONA ? ZONA.singkat(ZONA.perangkat()) : ''; }
+  /* Benar bila jam kota pesanan berbeda dari jam ponsel ini — saat itulah
+     padanan "di ponsel Anda" perlu ditampilkan. */
+  function zonaBeda() { return !!(window.ZONA && !ZONA.samaDenganPerangkat(zonaPesanan())); }
+  function isoTgl(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  /* Jam dinding di sebuah zona → ISO UTC. Dua putaran cukup: putaran pertama
+     menebak dengan offset 0, putaran kedua mengoreksi selisih dinding. */
+  function keUTC(tgl, jam, tz) {
+    var p = tgl.split('-'), q = String(jam || '00:00').split(':');
+    var target = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1] || 0), tebak = target;
+    if (!window.ZONA) return new Date(target - 7 * 3600e3).toISOString();
+    for (var k = 0; k < 2; k++) {
+      var iso = new Date(tebak).toISOString();
+      var w = (ZONA.tgl(iso, tz) + 'T' + ZONA.jam(iso, tz)).split(/[-T:]/);
+      var dinding = Date.UTC(+w[0], +w[1] - 1, +w[2], +w[3] % 24, +w[4]);
+      tebak += target - dinding;
+    }
+    return new Date(tebak).toISOString();
+  }
+  /* "HH:MM" sebuah cap waktu UTC dibaca di zona pesanan (atau zona lain). */
+  function jamZona(iso, tz) {
+    if (window.ZONA) return ZONA.jam(iso, tz || zonaPesanan()).replace(/^24:/, '00:');
+    var d = new Date(iso); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+  /* Jam dinding zona pesanan pada hari terpilih → jam yang sama di ponsel ini. */
+  function jamPonsel(jam) {
+    var d = new Date(keUTC(isoTgl(hariKe(KEADAAN.hari)), jam, zonaPesanan()));
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+  function mulaiUTC() { return keUTC(isoTgl(hariKe(KEADAAN.hari)), KEADAAN.mulai, zonaPesanan()); }
+  function jamSelesai() {
+    var jamMulai = parseInt(KEADAAN.mulai, 10), lama = jasaKini().unit === '/hour' ? Math.ceil(KEADAAN.jam / KEADAAN.regu) : 3;
+    return ('0' + Math.min(23, jamMulai + lama)).slice(-2) + ':00';
+  }
+  /* Menit dari sekarang ke jam mulai, dihitung lewat UTC — sehingga aturan
+     "4 jam sebelum mulai" benar di kota mana pun ponselnya berada. */
+  function menitKeMulai() { return Math.round((new Date(mulaiUTC()).getTime() - Date.now()) / 60000); }
+  function dalamKunci4Jam() { return menitKeMulai() < 240; }
+
+  /* Tujuh hari ke depan mulai HARI INI MENURUT KOTA PESANAN — di Jayapura
+     tanggal sudah berganti dua jam lebih awal daripada di Jakarta. */
+  function hariKe(i) {
+    var d;
+    if (window.ZONA) { var p = ZONA.hariIni(zonaPesanan()).split('-'); d = new Date(+p[0], +p[1] - 1, +p[2] + i); }
+    else { d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); }
+    return d;
+  }
   function ringkasSlot() {
     var d = hariKe(KEADAAN.hari);
-    return I.dowShort(d) + ' ' + I.dayMonth(d) + ' · ' + KEADAAN.mulai + ' · ' + qtyText(KEADAAN.jam) +
+    return I.dowShort(d) + ' ' + I.dayMonth(d) + ' · ' + KEADAAN.mulai + ' ' + labelZona() + ' · ' + qtyText(KEADAAN.jam) +
       (KEADAAN.regu === 2 ? ' · ' + I.t('crew2') : '');
   }
   function alamatKini() {
@@ -302,15 +373,15 @@ var ExoApp = (function () {
   function tulisOrderDB() {
     if (!pakaiDB()) return null;
     var j = juruKini(); if (!j.id || !DB.find('users', j.id)) return null;   /* roster contoh: tidak ada baris untuk ditulis */
-    var d = hariKe(KEADAAN.hari), tgl = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-    var jamMulai = parseInt(KEADAAN.mulai, 10), lama = jasaKini().unit === '/hour' ? Math.ceil(KEADAAN.jam / KEADAAN.regu) : 3;
-    var selesai = ('0' + Math.min(23, jamMulai + lama)).slice(-2) + ':00';
+    var tgl = isoTgl(hariKe(KEADAAN.hari)), selesai = jamSelesai(), tz = zonaPesanan();
     var o = DB.insert('orders', {
       no: (window.U && U.docNo) ? U.docNo('ORD', DB.nextNo('order')) : 'EXO-' + Date.now(),
       clientId: pelangganDB(), quotationId:null,
       judul: I.svcName(KEADAAN.jasa) + ' · ' + qtyText(KEADAAN.jam) + ' · EXOCLEAN App',
-      alamat: alamatKini().full, koordinat: alamatKini().point, wilayah:null,
+      alamat: alamatKini().full, koordinat: alamatKini().point, wilayah: wilayahPesanan(),
       serviceIds:[], tgl:tgl, mulai:KEADAAN.mulai, selesai:selesai,
+      /* jam dinding di atas berlaku di zona ini; padanan UTC-nya untuk pembanding lintas kota */
+      zona: tz, mulaiUtc: keUTC(tgl, KEADAAN.mulai, tz), selesaiUtc: keUTC(tgl, selesai, tz),
       teamId:null, workerIds:[j.id], supervisorId:null,
       status:'dijadwalkan', nilai:totalN(), checklist:[],
       sumber:'exo-app', exo:{ jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true }
@@ -411,10 +482,9 @@ var ExoApp = (function () {
     return '<iframe class="bingkai" referrerpolicy="no-referrer-when-downgrade" title="' + esc(judul || 'Map') + '" ' +
            'src="https://maps.google.com/maps?q=' + titik.lat + ',' + titik.lng + '&z=16&output=embed"></iframe>';
   }
-  function jamSekarang() {
-    var d = new Date();
-    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-  }
+  /* Jam "sekarang" MENURUT KOTA PESANAN — dipakai cap obrolan, kedatangan
+     mitra, dan foto SOP, supaya semuanya satu zona dengan jadwalnya. */
+  function jamSekarang() { return jamZona(new Date().toISOString()); }
 
   /* ======================================================= PESAN SEKILAS */
   var jamSekilas = null;
@@ -612,7 +682,9 @@ var ExoApp = (function () {
     addonTotal:addonTotal, addonCount:addonCount, crewFee:crewFee, subtotalN:subtotalN, totalN:totalN,
     voucherKini:voucherKini, voucherEligible:voucherEligible, voucherApplied:voucherApplied,
     qtyStep:qtyStep, qtyMin:qtyMin, qtyMax:qtyMax, qtyText:qtyText, layananDijeda:layananDijeda, terbitan:terbitan,
-    hariKe:hariKe, ringkasSlot:ringkasSlot, alamatKini:alamatKini, sopMeta:sopMeta, ppeComplete:ppeComplete, sopSelesai:sopSelesai,
+    hariKe:hariKe, ringkasSlot:ringkasSlot, alamatKini:alamatKini,
+    zonaPesanan:zonaPesanan, labelZona:labelZona, labelPerangkat:labelPerangkat, zonaBeda:zonaBeda, jamZona:jamZona, jamPonsel:jamPonsel,
+    keUTC:keUTC, mulaiUTC:mulaiUTC, jamSelesai:jamSelesai, menitKeMulai:menitKeMulai, dalamKunci4Jam:dalamKunci4Jam, wilayahPesanan:wilayahPesanan, sopMeta:sopMeta, ppeComplete:ppeComplete, sopSelesai:sopSelesai,
     coverage:coverage, addrFilled:addrFilled,
     isoNegara:isoNegara, wilayahSiap:wilayahSiap, wilayahDaftar:wilayahDaftar, wilayahSiapkan:wilayahSiapkan, sumberWilayah:sumberWilayah, kodeWilayah:kodeWilayah,
     simpanPosisi:simpanPosisi, bacaPosisi:bacaPosisi, hapusPosisi:hapusPosisi, jarakKe:jarakKe, teksJarak:teksJarak, menitTempuh:menitTempuh, posisiMitra:posisiMitra,

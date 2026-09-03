@@ -135,7 +135,7 @@
     h += '<div style="padding:20px 20px 0"><div class="sec-head"><h4 style="margin:0;font-size:19px">' + esc(t('nextVisit')) + '</h4>' +
       '<button class="btn btn-ghost t-125"' + aksi('ke', 'track') + '>' + esc(t('trackLive')) + '</button></div>' +
       '<div class="card elev-md gap-12" style="margin-top:11px"><div class="flex items-center gap-11">' + X.avJuru(j, 44) +
-        '<div class="grow"><div class="f-head t-16">' + esc(j.name) + '</div><div class="t-12 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.qtyText(K.jam)) + ' · ' + esc(tx('Today').toLowerCase()) + ' ' + esc(K.mulai) + '</div></div>' +
+        '<div class="grow"><div class="f-head t-16">' + esc(j.name) + '</div><div class="t-12 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.qtyText(K.jam)) + ' · ' + esc(tx('Today').toLowerCase()) + ' ' + esc(K.mulai + ' ' + X.labelZona()) + '</div></div>' +
         '<span class="tag tag-accent-2">' + esc(t('onTheWay')) + '</span></div>' +
       '<div class="progress"><i style="width:46%"></i></div>' +
       '<div class="flex between t-115 o-65"><span>' + esc(tx('Arriving')) + ' 08:56</span><span>' + esc(t('slotLocked')) + '</span></div></div></div>';
@@ -219,7 +219,8 @@
     h += '</div></div>';
     h += '<div>' + X.labelBagian(esc(t('startTime'))) + '<div class="flex wrap gap-8">';
     for (var j = 0; j < D.TIMES.length; j++) h += '<button class="' + kelas('pill', K.mulai === D.TIMES[j]) + '"' + aksi('mulai', D.TIMES[j]) + '>' + D.TIMES[j] + '</button>';
-    h += '</div></div>';
+    h += '</div><div class="t-115 o-6 lh-145" style="margin-top:8px">' + esc(tx('Times follow')) + ' ' + esc(K.addr.kabkota || K.addr.provinsi || K.addr.negara) + ' · ' + esc(X.labelZona()) +
+      (X.zonaBeda() ? ' · ' + esc(tx('on your phone')) + ' ' + esc(X.jamPonsel(K.mulai)) + ' ' + esc(X.labelPerangkat()) : '') + '</div></div>';
     var adds = X.addonsKini();
     if (adds.length) {
       h += '<div>' + X.labelBagian(esc(t('addonsLbl'))) + '<div class="stack gap-8">';
@@ -368,7 +369,7 @@
     var h = '<div class="screen"><div class="map">' + X.petaHTML(pos && K.tahap <= 1 ? { lat:pos.lat, lng:pos.lng } : X.alamatKini().point, pos ? 'Cleaner position' : 'Map of the visit address') + '<div class="tirai"></div>' +
       '<div class="back"><button class="btn btn-icon btn-plain"' + aksi('ke', 'home') + ' aria-label="Back">' + garis(IK.kembali) + '</button></div><div class="eta">' + esc(eta) + '</div></div>';
     h += '<div class="stack gap-14" style="padding:16px 18px 0">';
-    var jamPos = pos ? new Date(pos.at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : '';
+    var jamPos = pos ? X.jamZona(new Date(pos.at).toISOString()) + ' ' + X.labelZona() : '';
     h += '<div class="t-11 o-6 lh-145" style="margin-top:-4px">' + (pos
       ? (pos.sumber === 'server' ? 'Live position from the EXOCLEAN position server (' + esc(jamPos) + ', refreshed every 5 s).' : 'Cleaner\'s last position from the partner app on this device (' + esc(jamPos) + '). ' + (K.posisiServerAda === false ? 'Position server offline — start app/server/posisi-server.js for other devices.' : 'Waiting for the position server.'))
       : 'Map shows the visit address. ' + (K.posisiServerAda === false ? 'Position server offline (app/server/posisi-server.js) and no position on this device yet.' : K.posisiServerAda ? 'Position server connected — no position sent for ' + esc(K.orderNo) + ' yet.' : 'Checking the position server…')) + '</div>';

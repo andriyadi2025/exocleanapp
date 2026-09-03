@@ -89,9 +89,15 @@
     for (var i = 0; i < 7; i++) { var d = X.hariKe(i); h += '<button class="' + kelas('day', hari === i) + '"' + aksi('pindahHari', i) + '><em>' + esc(I.dowShort(d)) + '</em><b>' + ('0' + d.getDate()).slice(-2) + '</b></button>'; }
     h += '</div></div><div>' + X.labelBagian('New start time') + '<div class="flex wrap gap-8">';
     for (var j = 0; j < D.TIMES.length; j++) h += '<button class="' + kelas('pill', jam === D.TIMES[j]) + '"' + aksi('pindahJam', D.TIMES[j]) + '>' + D.TIMES[j] + '</button>';
-    h += '</div></div><div class="card card-leaf t-125 lh-15">' + esc(X.juruKini().name) + ' ' + esc(tx('keeps the job and the price. Only you can do this — we never move a confirmed booking, and if we ever did, Rp100.000 would already be in your wallet.')) + '</div>';
+    h += '</div><div class="t-115 o-6 lh-145" style="margin-top:8px">' + esc(tx('Times follow')) + ' ' + esc(K.addr.kabkota || K.addr.provinsi || K.addr.negara) + ' · ' + esc(X.labelZona()) + '</div></div>';
+    /* Aturan 4 jam dihitung lewat UTC dari jam kota pesanan, bukan jam ponsel. */
+    var sisa = X.menitKeMulai(), kunci = sisa < 240;
+    h += '<div class="card ' + (kunci ? 'card-clay' : 'card-leaf') + ' t-125 lh-15">' + esc(kunci
+      ? tx('Less than 4 hours before the start — moving it costs Rp50.000 per cleaner.')
+      : tx('More than 4 hours before the start — moving it is free.')) + '</div>';
+    h += '<div class="card card-leaf t-125 lh-15">' + esc(X.juruKini().name) + ' ' + esc(tx('keeps the job and the price. Only you can do this — we never move a confirmed booking, and if we ever did, Rp100.000 would already be in your wallet.')) + '</div>';
     var berubah = hari !== K.hari || jam !== K.mulai, dd = X.hariKe(hari);
-    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (berubah ? aksi('pindahSimpan') : ' disabled') + '>' + (berubah ? esc(tx('Move to')) + ' ' + esc(I.dowShort(dd) + ' ' + I.dayMonth(dd)) + ' · ' + jam : esc(tx('Pick a new slot'))) + '</button>';
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (berubah ? aksi('pindahSimpan') : ' disabled') + '>' + (berubah ? esc(tx('Move to')) + ' ' + esc(I.dowShort(dd) + ' ' + I.dayMonth(dd)) + ' · ' + jam + ' ' + esc(X.labelZona()) : esc(tx('Pick a new slot'))) + '</button>';
     return kerangka(esc(tx('Move time')), h, kaki);
   };
   X.LEMBAR.masalah = function () {

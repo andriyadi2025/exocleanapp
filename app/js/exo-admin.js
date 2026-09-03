@@ -187,13 +187,17 @@ var ADMIN = (function () {
     var h = '<div class="flex gap-8">';
     [['all','All'],['today','Today'],['progress','In progress'],['issue','With issue'],['sub','Subscriptions']].forEach(function (f) { h += pill(S.orderFilter === f[0], f[1], 'orderFilter', f[0]); });
     if (adaDB()) {
-      var hariIni = new Date().toISOString().slice(0, 10);
+      /* "Hari ini" dinilai MENURUT KOTA PESANAN: order Jayapura sudah masuk
+         hari berikutnya dua jam sebelum Jakarta. Jam diberi label zona
+         (WIB/WITA/WIT) supaya admin di kota lain tidak salah baca. */
+      var lokal = new Date(); var hariIni = lokal.getFullYear() + '-' + ('0' + (lokal.getMonth() + 1)).slice(-2) + '-' + ('0' + lokal.getDate()).slice(-2);
+      function zonaOrder(o) { if (!window.ZONA) return ''; if (o.zona && ZONA.sah(o.zona)) return o.zona; return o.wilayah ? (ZONA.dariWilayah(o.wilayah) || '') : ''; }
       var nyata = DB.all('orders').sort(function (a, b) { return (b.tgl || '').localeCompare(a.tgl || ''); }).map(function (o) {
-        var st = STATUS_ORDER[o.status] || [o.status, 'flat'];
-        var tags = (o.tgl === hariIni ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue' : '');
-        return [o.no || o.id, namaUser(o.clientId), o.judul || '', (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || ''), rp(o.nilai), st[0], st[1], tags];
+        var st = STATUS_ORDER[o.status] || [o.status, 'flat'], tz = zonaOrder(o);
+        var tags = (o.tgl === (tz ? ZONA.hariIni(tz) : hariIni) ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue' : '');
+        return [o.no || o.id, namaUser(o.clientId), o.judul || '', (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || '') + (tz ? ' ' + ZONA.singkat(tz) : ''), rp(o.nilai), st[0], st[1], tags];
       }).filter(function (o) { return S.orderFilter === 'all' || o[8].indexOf(S.orderFilter) >= 0; });
-      h += '</div><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Orders from the EXOCLEAN database</div><div class="t-115 o-6">' + nyata.length + ' shown · table orders on this origin · schedules locked to the customer</div></div></div>' +
+      h += '</div><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Orders from the EXOCLEAN database</div><div class="t-115 o-6">' + nyata.length + ' shown · table orders on this origin · schedules locked to the customer · times labelled in the order\'s own zone (WIB/WITA/WIT)</div></div></div>' +
         tabel(['Order','Customer','Service','Cleaner','Schedule','Value','Status'], nyata.length ? nyata.map(function (o) { return ['<span class="id">' + esc(o[0]) + '</span>', esc(o[1]), esc(o[2]), esc(o[3]), esc(o[4]), o[5], chip(o[7], o[6])]; })
           : [['<span class="o-6">No orders in the database on this origin' + (S.orderFilter !== 'all' ? ' for this filter' : '') + '. The marketplace app does not write orders yet; index.html seeds sample orders on first open.</span>', '', '', '', '', '', '']]) + '</div>';
       return h + '<div class="t-115 o-6">Admins can cancel or refund an order, but cannot move a locked schedule — that right sits with the customer only.</div>';

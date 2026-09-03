@@ -37,7 +37,7 @@
   /* ================================================================ PJOB */
   X.LAYAR.pjob = function () {
     var m = X.sopMeta();
-    var h = '<div class="screen">' + X.kepala('Job berjalan', 'EXO-4471 · 09:00–12:00', 'pjobs') + '<div class="stack gap-14" style="padding:6px 18px 0">';
+    var h = '<div class="screen">' + X.kepala('Job berjalan', esc((K.orderNo || 'EXO-4471') + ' · ' + K.mulai + '–' + X.jamSelesai() + ' ' + X.labelZona()) + (X.zonaBeda() ? ' · ' + esc('di ponsel Anda ' + X.jamPonsel(K.mulai) + ' ' + X.labelPerangkat()) : ''), 'pjobs') + '<div class="stack gap-14" style="padding:6px 18px 0">';
     h += '<div class="card elev-sm gap-10"><div class="flex items-center gap-11">' + av('DA', 42, 'leaf') + '<div class="grow"><div class="f-head t-15">Dewi Anggraini</div><div class="t-115 o-65">Kemang Residence 12B · gate 4471</div></div>' +
       '<a class="btn btn-icon btn-primary" href="tel:+6281288904417" aria-label="Telepon">' + garis(IK.telepon, 17) + '</a></div>' +
       '<div class="t-12 lh-15 o-8">Catatan: “Tolong bunyikan bel, ada anjing di dalam. Fokus dapur dan kamar mandi.”</div></div>';
