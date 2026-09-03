@@ -131,6 +131,7 @@
   L('Share', {ja:'共有', ko:'공유', zh:'分享', ar:'مشاركة', ms:'Kongsi', th:'แชร์', vi:'Chia sẻ', tl:'Ibahagi', km:'ចែករំលែក', my:'မျှဝေ'});
   L('General', {ja:'一般', ko:'일반', zh:'通用', ar:'عام', ms:'Umum', th:'ทั่วไป', vi:'Chung', tl:'Pangkalahatan', km:'ទូទៅ', my:'အထွေထွေ'});
   L('This service', {ja:'このサービス', ko:'이 서비스', zh:'本服务', ar:'هذه الخدمة', ms:'Perkhidmatan ini', th:'บริการนี้', vi:'Dịch vụ này', tl:'Serbisyong ito', km:'សេវានេះ', my:'ဤဝန်ဆောင်မှု'});
+  L('in force', {id:'berlaku sejak', ja:'発効', ko:'시행', zh:'生效于', ar:'ساري منذ', ms:'berkuat kuasa', th:'มีผลตั้งแต่', vi:'có hiệu lực từ', tl:'may bisa mula', km:'មានប្រសិទ្ធភាពពី', my:'အသက်ဝင်သည်'});
   L('Privacy', {ja:'プライバシー', ko:'개인정보', zh:'隐私', ar:'الخصوصية', ms:'Privasi', th:'ความเป็นส่วนตัว', vi:'Quyền riêng tư', tl:'Privacy', km:'ឯកជនភាព', my:'ကိုယ်ရေးလုံခြုံမှု'});
   L('Withdraw', {ja:'出金', ko:'출금', zh:'提现', ar:'سحب', ms:'Keluarkan', th:'ถอน', vi:'Rút', tl:'Mag-withdraw', km:'ដក', my:'ထုတ်ယူ'});
   L('Includes Rp100.000 guarantee credit', {ja:'保証クレジットRp100.000を含む', ko:'보증 크레딧 Rp100.000 포함', zh:'含Rp100.000保障额度', ar:'يشمل رصيد ضمان Rp100.000', ms:'Termasuk kredit jaminan Rp100.000', th:'รวมเครดิตรับประกัน Rp100.000', vi:'Gồm Rp100.000 tín dụng bảo đảm', tl:'Kasama ang Rp100.000 guarantee credit', km:'រួមបញ្ចូលឥណទានធានា Rp100.000', my:'အာမခံခရက်ဒစ် Rp100,000 ပါဝင်'});

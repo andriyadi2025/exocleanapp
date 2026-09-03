@@ -155,6 +155,11 @@
   };
 
   /* =============================================================== TERMS */
+  /* tanggal berlaku ketentuan (v2.3) — dibentuk lewat Intl sesuai bahasa aktif */
+  function tglBerlaku() {
+    var d = new Date(2026, 7, 1), o = { day:'numeric', month:'short', year:'numeric' };
+    try { return new Intl.DateTimeFormat(I.locale(), o).format(d); } catch (e) { return '1 Aug 2026'; }
+  }
   function blokSyarat(tab) {
     function bungkus(list) {
       var h = '';
@@ -184,7 +189,7 @@
   }
   X.LAYAR.terms = function () {
     var tabs = [['general','General'],['service','This service'],['prepaid','Prepaid'],['privacy','Privacy']];
-    var h = '<div class="screen">' + X.kepala(esc(tx('Terms & policies')), 'PT EXO POINT · v2.3 · in force 1 Aug 2026', 'profile');
+    var h = '<div class="screen">' + X.kepala(esc(tx('Terms & policies')), esc('PT EXO POINT · v2.3 · ' + tx('in force') + ' ' + tglBerlaku()), 'profile');
     h += '<div class="hscroll pad-x18">';
     for (var i = 0; i < tabs.length; i++) h += '<button class="' + kelas('pill pill-sm', K.termTab === tabs[i][0]) + '"' + aksi('termTab', tabs[i][0]) + '>' + esc(tx(tabs[i][1])) + '</button>';
     h += '</div><div class="stack gap-14" style="padding:16px 18px 0">' + blokSyarat(K.termTab);
