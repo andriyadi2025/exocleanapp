@@ -142,6 +142,8 @@ Menjalankan server pendamping (dari `app/server/`): `npm run dev` (pembayaran),
 `ALLOWED_ORIGINS` di `.env` harus memuat asal aplikasi (bawaan
 http://localhost:8080).
 
+**Terjemahan (2 Sep 2026 malam).** `js/exo-i18n-str.js` melengkapi kamus: Bahasa Indonesia LENGKAP untuk seluruh teks pelanggan (285 teks, termasuk ketentuan layanan, kebijakan privasi, notifikasi, riwayat dompet, pesan sekilas); 11 bahasa lain untuk ±120 label, judul, tombol, dan pesan inti, sisanya jatuh ke Inggris. Penerjemah pasca-render di `exo-core.js` (`terjemahkanDOM`) mencocokkan setiap simpul teks dan atribut dengan kamus, sehingga teks dari data ikut berbahasa. Sisi mitra sengaja Bahasa Indonesia. Yang tidak diterjemahkan: nama orang, kode voucher, running text (isinya ditulis admin).
+
 **Masih butuh dari pemilik, bukan kode:** kredensial Midtrans sandbox, provider
 SMS/WhatsApp (sekarang mode log), Google client id, Facebook app id/secret,
 Turnstile site/secret key, foto petugas asli. Verifikasi secret Turnstile di

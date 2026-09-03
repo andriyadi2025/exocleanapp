@@ -13,7 +13,7 @@
     var poin = ['Schedule-locked bookings', 'Refunds with a dated deadline', 'A human on chat in 60 seconds'];
     var h = '<div class="screen" style="padding:26px 22px 22px">' + X.merek(38, 18);
     h += '<div class="onboard-art"><div class="plate"><img src="' + esc(K.fotoContoh.hero) + '" alt="Hasil pembersihan EXOCLEAN"></div><div class="score">4.9<br>★</div></div>';
-    h += '<h2 style="margin:26px 0 0" class="t-31">We clean<br>all purpose.</h2>' +
+    h += '<h2 style="margin:26px 0 0" class="t-31">' + esc(tx('We clean')) + '<br>' + esc(tx('all purpose.')) + '</h2>' +
          '<p style="margin:12px 0 0" class="t-135 lh-16 o-8">' + esc(tx('Real profiles, real rates, a schedule only you can change — and a Rp100.000 promise if we break it.')) + '</p>';
     h += '<div class="stack gap-9" style="margin-top:20px">';
     for (var i = 0; i < poin.length; i++) h += '<div class="tick"><i>✓</i>' + esc(tx(poin[i])) + '</div>';
@@ -63,7 +63,7 @@
       var srv = K.otpServer === 'terkirim';
       h += '<div class="center" style="margin-top:24px"><div class="auth-icon">' + ikon(IKON.hp, 28) + '</div>' +
         '<div class="f-head t-20" style="margin-top:14px">' + esc(t('twoStep')) + '</div>' +
-        '<div class="t-125 o-7 lh-15" style="margin-top:6px">' + (srv ? 'Code sent by the EXOCLEAN auth server to ' + esc(K.otpTujuan) + '.<br>SMS provider is in log mode — read the code from the server console.' : 'Code sent by WhatsApp to ' + esc(K.otpTujuan) + '.<br>Auth server is offline — simulation, tap paste below.') + '</div>' +
+        '<div class="t-125 o-7 lh-15" style="margin-top:6px">' + (srv ? esc(tx('Code sent by the EXOCLEAN auth server to')) + ' ' + esc(K.otpTujuan) + '.<br>' + esc(tx('SMS provider is in log mode — read the code from the server console.')) : esc(tx('Code sent by WhatsApp to')) + ' ' + esc(K.otpTujuan) + '.<br>' + esc(tx('Auth server is offline — simulation, tap paste below.'))) + '</div>' +
         '<div class="otp">';
       for (var o = 0; o < 6; o++) h += '<i class="' + (K.otp[o] ? 'on' : '') + '">' + esc(K.otp[o] || '') + '</i>';
       h += '</div>';
@@ -114,7 +114,7 @@
     h += '<div style="padding:18px 20px 0"><div class="sec-head"><h4 style="margin:0;font-size:19px">' + esc(t('whatNeeds')) + '</h4>' +
       '<button class="btn btn-ghost t-125"' + aksi('ke', 'catalog') + '>' + esc(t('services9').replace('{n}', jumlah)) + ' →</button></div>';
     if (!tiles.length) {
-      h += '<div class="kosong">Nothing matches “' + esc(K.cari) + '”. <button class="btn btn-ghost t-125"' + aksi('ke', 'catalog') + '>See all ' + jumlah + '</button></div>';
+      h += '<div class="kosong">' + esc(tx('Nothing matches')) + ' “' + esc(K.cari) + '”. <button class="btn btn-ghost t-125"' + aksi('ke', 'catalog') + '>' + esc(tx('See all')) + ' ' + jumlah + '</button></div>';
     } else {
       h += '<div class="svc-grid">';
       for (var i = 0; i < tiles.length; i++) {
@@ -150,7 +150,7 @@
       h += '<div class="near"><div class="flex items-center gap-8">' + X.avJuru(cl, 34, 'leaf') + '<div class="t-12 bold" style="line-height:1.2">' + esc(X.namaDepan(cl)) + '</div></div>' +
         '<div class="t-115 o-7" style="margin-top:9px">' + (cl.rating ? '★ ' + esc(cl.rating) + ' · ' : '') + esc(cl.jobs) + ' ' + esc(tx('jobs')) + '</div>' +
         '<div class="f-head t-14" style="margin-top:5px">' + rp(X.rateFor(cl)) + '</div>' +
-        '<div class="t-11 o-6">' + esc(cl.distance ? cl.distance + ' away' : (cl.years ? cl.years + ' with EXOCLEAN' : 'new')) + '</div></div>';
+        '<div class="t-11 o-6">' + esc(cl.distance ? cl.distance + ' ' + tx('away') : (cl.years ? cl.years + ' ' + tx('with EXOCLEAN') : tx('new'))) + '</div></div>';
     }
     h += '</div></div><div class="spacer-26"></div>';
     return h + '</div>';
@@ -261,7 +261,7 @@
     }
     for (var c = 0; c < urut.length; c++) {
       var j = urut[c], on = pilih.id === j.id, meta = [];
-      if (!j.rating) meta.push('not rated yet');
+      if (!j.rating) meta.push(tx('not rated yet'));
       meta.push(j.jobs + ' ' + tx('jobs'));
       if (j.distance) meta.push(j.distance);
       if (j.years) meta.push(j.years.replace('yrs', tx('yrs')));
@@ -293,10 +293,10 @@
     h += '<div class="card elev-sm gap-10"><div class="flex items-center gap-11">' + X.avJuru(j, 42) +
       '<div class="grow"><div class="f-head t-15">' + esc(j.name) + '</div><div class="t-115 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.ringkasSlot()) + '</div></div></div>' +
       '<div class="rule"></div><div class="flex gap-8 items-start t-125 lh-145"><span style="flex:none;margin-top:2px;color:var(--color-accent-2-700)">' + garis(IK.perisai, 15) + '</span><span>' + esc(tx(X.alamatKini().full)) + '</span></div></div>';
-    var status = !v.live ? 'This code is paused by EXOCLEAN right now.'
-      : !elig ? 'Not valid under ' + rp(v.min) + ' — your cart is ' + rp(X.subtotalN()) + '. We tell you now, not at payment.'
+    var status = !v.live ? tx('This code is paused by EXOCLEAN right now.')
+      : !elig ? tx('Not valid under') + ' ' + rp(v.min) + ' — ' + tx('your cart is') + ' ' + rp(X.subtotalN()) + '. ' + tx('We tell you now, not at payment.')
       : app ? tx('Checked against this cart — valid, applied. No surprises at payment.') : tx('Tap apply and we validate it before you pay.');
-    h += '<div>' + X.labelBagian(esc(t('voucherLbl'))) + '<div class="card card-leaf gap-9"><div class="flex items-center gap-9"><div class="grow t-135 bold">' + esc(v.code) + ' — ' + rp(v.amount) + ' off</div>' +
+    h += '<div>' + X.labelBagian(esc(t('voucherLbl'))) + '<div class="card card-leaf gap-9"><div class="flex items-center gap-9"><div class="grow t-135 bold">' + esc(v.code) + ' — ' + rp(v.amount) + ' ' + esc(tx('off')) + '</div>' +
       '<button class="pill pill-sm' + (elig ? (K.voucher ? ' on' : '') : ' off') + '"' + (elig ? aksi('voucher') : ' disabled') + '>' + esc(!elig ? tx('Not eligible') : app ? tx('Applied ✓') : tx('Apply')) + '</button></div>' +
       '<div class="flex gap-7 items-center t-115 lh-14 o-85"><span class="check-sm">✓</span><span>' + esc(status) + '</span></div></div></div>';
     h += '<div>' + X.labelBagian(esc(t('payWith'))) + '<div class="stack gap-8">';
@@ -336,7 +336,7 @@
     var h = '<div class="screen center" style="padding:28px 22px 22px;align-items:center">' + X.logoMark(52, 'margin-top:10px');
     h += '<div class="done-mark"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-2-800)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="' + IK.centang + '"/></svg></div>';
     h += '<h3 style="margin:22px 0 0;font-size:26px">' + esc(t('slotLocked')) + '</h3>' +
-      '<p style="margin:10px 0 0;max-width:280px" class="t-135 lh-16 o-8">' + esc(j.name) + ' is confirmed for ' + esc(X.ringkasSlot()) + '. Only you can move this booking — and we’ll tell you the moment she starts.</p>';
+      '<p style="margin:10px 0 0;max-width:280px" class="t-135 lh-16 o-8">' + esc(j.name) + ' ' + esc(tx('is confirmed for')) + ' ' + esc(X.ringkasSlot()) + '. ' + esc(tx('Only you can move this booking — and we’ll tell you the moment she starts.')) + '</p>';
     h += '<div class="card elev-sm gap-9" style="margin-top:22px;width:100%;text-align:start">' +
       '<div class="kv"><span>' + esc(tx('Order')) + '</span><span class="f-head">' + esc(K.orderNo) + '</span></div>' +
       '<div class="kv"><span>' + esc(tx('Paid with')) + '</span><span>' + esc(tx(b.name)) + '</span></div>' +
@@ -364,7 +364,7 @@
   };
   X.LAYAR.track = function () {
     var j = X.juruKini(), pos = X.posisiMitra(), jarak = pos && window.U ? U.jarakMeter(pos, X.alamatKini().point) : null;
-    var eta = K.tahap <= 1 ? (jarak != null ? tx('Arriving') + ' in ~' + X.menitTempuh(jarak) + ' min · ' + X.teksJarak(jarak) : tx('Arriving') + ' 08:56') : K.tahap === 2 ? tx('Working') + ' · 1h 12m ' + tx('left') : tx('Finished') + ' 12:04';
+    var eta = K.tahap <= 1 ? (jarak != null ? tx('Arriving') + ' ' + tx('in ~') + X.menitTempuh(jarak) + ' ' + tx('min') + ' · ' + X.teksJarak(jarak) : tx('Arriving') + ' 08:56') : K.tahap === 2 ? tx('Working') + ' · 1h 12m ' + tx('left') : tx('Finished') + ' 12:04';
     var h = '<div class="screen"><div class="map">' + X.petaHTML(pos && K.tahap <= 1 ? { lat:pos.lat, lng:pos.lng } : X.alamatKini().point, pos ? 'Cleaner position' : 'Map of the visit address') + '<div class="tirai"></div>' +
       '<div class="back"><button class="btn btn-icon btn-plain"' + aksi('ke', 'home') + ' aria-label="Back">' + garis(IK.kembali) + '</button></div><div class="eta">' + esc(eta) + '</div></div>';
     h += '<div class="stack gap-14" style="padding:16px 18px 0">';

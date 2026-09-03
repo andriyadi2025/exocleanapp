@@ -54,7 +54,7 @@
     return kerangka('Rahma · support', h, kaki);
   };
   X.LEMBAR.isi = function () {
-    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (K.nominal ? aksi('isiSaldo') : ' disabled') + '>' + (K.nominal ? t('topUp') + ' ' + rp(K.nominal) : 'Pick an amount') + '</button>';
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (K.nominal ? aksi('isiSaldo') : ' disabled') + '>' + (K.nominal ? t('topUp') + ' ' + rp(K.nominal) : tx('Pick an amount')) + '</button>';
     return kerangka(esc(t('topUp')), petakNominal() + '<div class="row" style="cursor:default"><span class="paymark">VA</span><span class="row-main"><b>BCA Virtual Account</b><span>Lands instantly · no fee</span></span></div>' +
       '<div class="t-115 o-6 lh-15" style="padding:2px 4px">Wallet money is withdrawable to your bank at any time. Topping up never buys credit that expires.</div>', kaki);
   };
@@ -64,14 +64,14 @@
       var m = K.mutasi[i], keluar = m.amount < 0;
       h += '<div class="flex items-center gap-11"><span class="txn-ic' + (keluar ? ' out' : '') + '">' + (keluar ? '↓' : '↑') + '</span><div class="grow"><div class="t-13 bold">' + esc(m.label) + '</div><div class="t-11 o-6">' + esc(m.date) + '</div></div><div class="txn-amt' + (keluar ? ' out' : '') + '">' + (keluar ? '− ' : '+ ') + rp(Math.abs(m.amount)) + '</div></div>';
     }
-    var kaki = '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('lembar', 'tarik') + '>' + esc(tx('Withdraw')) + ' to bank</button>';
+    var kaki = '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('lembar', 'tarik') + '>' + esc(tx('Withdraw')) + ' ' + esc(tx('to bank')) + '</button>';
     return kerangka(esc(t('history')), '<div class="card elev-sm gap-12">' + h + '</div>', kaki);
   };
   X.LEMBAR.tarik = function () {
     var cukup = K.nominal && K.nominal <= K.saldo;
-    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (cukup ? aksi('tarikSaldo') : ' disabled') + '>' + (cukup ? tx('Withdraw') + ' ' + rp(K.nominal) : 'Pick an amount') + '</button>';
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (cukup ? aksi('tarikSaldo') : ' disabled') + '>' + (cukup ? tx('Withdraw') + ' ' + rp(K.nominal) : tx('Pick an amount')) + '</button>';
     return kerangka(esc(tx('Withdraw')), petakNominal(K.saldo) + '<div class="row" style="cursor:default"><span class="paymark">BCA</span><span class="row-main"><b>BCA ···4471</b><span>Dewi Anggraini · arrives in 1 working day</span></span></div>' +
-      '<div class="t-115 o-6 lh-15" style="padding:2px 4px">Balance ' + rp(K.saldo) + '. Amounts above it are greyed out rather than failing after you tap.</div>', kaki);
+      '<div class="t-115 o-6 lh-15" style="padding:2px 4px">' + esc(tx('Balance')) + ' ' + rp(K.saldo) + '. ' + esc(tx('Amounts above it are greyed out rather than failing after you tap.')) + '</div>', kaki);
   };
   X.LEMBAR.rincian = function () {
     var h = '<div class="card elev-sm gap-10">', total = 0;
@@ -89,9 +89,9 @@
     for (var i = 0; i < 7; i++) { var d = X.hariKe(i); h += '<button class="' + kelas('day', hari === i) + '"' + aksi('pindahHari', i) + '><em>' + esc(I.dowShort(d)) + '</em><b>' + ('0' + d.getDate()).slice(-2) + '</b></button>'; }
     h += '</div></div><div>' + X.labelBagian('New start time') + '<div class="flex wrap gap-8">';
     for (var j = 0; j < D.TIMES.length; j++) h += '<button class="' + kelas('pill', jam === D.TIMES[j]) + '"' + aksi('pindahJam', D.TIMES[j]) + '>' + D.TIMES[j] + '</button>';
-    h += '</div></div><div class="card card-leaf t-125 lh-15">' + esc(X.juruKini().name) + ' keeps the job and the price. Only you can do this — we never move a confirmed booking, and if we ever did, Rp100.000 would already be in your wallet.</div>';
+    h += '</div></div><div class="card card-leaf t-125 lh-15">' + esc(X.juruKini().name) + ' ' + esc(tx('keeps the job and the price. Only you can do this — we never move a confirmed booking, and if we ever did, Rp100.000 would already be in your wallet.')) + '</div>';
     var berubah = hari !== K.hari || jam !== K.mulai, dd = X.hariKe(hari);
-    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (berubah ? aksi('pindahSimpan') : ' disabled') + '>' + (berubah ? 'Move to ' + esc(I.dowShort(dd) + ' ' + I.dayMonth(dd)) + ' · ' + jam : 'Pick a new slot') + '</button>';
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (berubah ? aksi('pindahSimpan') : ' disabled') + '>' + (berubah ? esc(tx('Move to')) + ' ' + esc(I.dowShort(dd) + ' ' + I.dayMonth(dd)) + ' · ' + jam : esc(tx('Pick a new slot'))) + '</button>';
     return kerangka(esc(tx('Move time')), h, kaki);
   };
   X.LEMBAR.masalah = function () {
@@ -109,13 +109,13 @@
      payment-server.js (Midtrans). Muncul hanya bila servernya menjawab. */
   X.LEMBAR.gateway = function () {
     var g = K.gateway || {}, h = '';
-    if (g.va) h += '<div class="card elev-sm gap-6"><div class="t-11 up o-6">Virtual account ' + esc(g.va.bank) + '</div><div class="f-head t-22 tabular">' + esc(g.va.nomor) + '</div><div class="t-115 o-65">Transfer exactly ' + rp(g.amount) + '. The app polls the gateway every 5 seconds.</div></div>';
+    if (g.va) h += '<div class="card elev-sm gap-6"><div class="t-11 up o-6">' + esc(tx('Virtual account')) + ' ' + esc(g.va.bank) + '</div><div class="f-head t-22 tabular">' + esc(g.va.nomor) + '</div><div class="t-115 o-65">' + esc(tx('Transfer exactly')) + ' ' + rp(g.amount) + '. ' + esc(tx('The app polls the gateway every 5 seconds.')) + '</div></div>';
     if (g.qrImageUrl) h += '<div class="card elev-sm gap-8" style="align-items:center"><img src="' + esc(g.qrImageUrl) + '" alt="QRIS" style="width:220px;height:220px;border-radius:16px;background:#fff"><div class="t-115 o-65">Scan with any bank or e-wallet app · ' + rp(g.amount) + '</div></div>';
     if (g.kodeBayar) h += '<div class="card elev-sm gap-6"><div class="t-11 up o-6">Payment code</div><div class="f-head t-22 tabular">' + esc(g.kodeBayar) + '</div></div>';
     if (g.redirectUrl && !g.qrImageUrl) h += '<a class="btn btn-primary btn-block btn-tall" href="' + esc(g.redirectUrl) + '" target="_blank" rel="noopener">Open payment page</a>';
     h += '<div class="flex items-center gap-9 t-125"><span class="check-sm" style="background:' + (g.status === 'paid' ? 'var(--color-accent-2-500)' : 'var(--color-neutral-400)') + '">' + (g.status === 'paid' ? '✓' : '…') + '</span><span class="grow">Status: <b>' + esc(g.status || 'pending') + '</b>' + (g.gatewayRef ? ' · ref ' + esc(g.gatewayRef) : '') + '</span></div>';
-    h += '<div class="t-115 o-6 lh-15" style="padding:2px 4px">Midtrans ' + esc(g.mode || 'sandbox') + ' via app/server/payment-server.js. Order ' + esc(g.orderId) + '. If payment is not completed within 30 minutes the order cancels itself.</div>';
-    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + aksi('gatewayCek') + '>' + (g.status === 'paid' ? 'Paid ✓ · continue' : 'I have paid · check now') + '</button>';
+    h += '<div class="t-115 o-6 lh-15" style="padding:2px 4px">Midtrans ' + esc(g.mode || 'sandbox') + ' · ' + esc(tx('Order')) + ' ' + esc(g.orderId) + '. ' + esc(tx('If payment is not completed within 30 minutes the order cancels itself.')) + '</div>';
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + aksi('gatewayCek') + '>' + esc(g.status === 'paid' ? tx('Paid ✓ · continue') : tx('I have paid · check now')) + '</button>';
     return kerangka('Complete payment', h, kaki);
   };
 
@@ -152,14 +152,14 @@
     /* Tulis ke tabel orders basis data EXOCLEAN bila ada — pesanan ini lalu
        tampil di index.html dan di Orders konsol admin. */
     var o = X.tulisOrderDB();
-    if (o) sekilas('Order ' + o.no + ' written to the EXOCLEAN database · slot locked to ' + X.namaDepan(X.juruKini()) + '.');
+    if (o) sekilas(tx('Order') + ' ' + o.no + ' ' + tx('written to the EXOCLEAN database · slot locked to') + ' ' + X.namaDepan(X.juruKini()) + '.');
   }
   A.konfirmasi = function () {
     if (!K.payPinOpen) { K.payPinOpen = true; return; }
     if (K.payPin.length < 6) return;
     var n = X.totalN();
     if (K.bayar === 'wallet') {
-      if (n > K.saldo) { sekilas('EXO Wallet is short by ' + rp(n - K.saldo) + '. Top up or pick another method.', 'err'); return; }
+      if (n > K.saldo) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(n - K.saldo) + '. ' + tx('Top up or pick another method.'), 'err'); return; }
       K.saldo -= n; K.mutasi.unshift({ label:I.svcName(K.jasa) + ' · ' + X.namaDepan(X.juruKini()), date:'today · EXO-4471', amount:-n });
       selesaiBayar(); return;
     }
@@ -170,7 +170,7 @@
     var orderId = 'EXO-' + Date.now().toString().slice(-6);
     EXO_SERVER.bayar(K.bayar, orderId, n, { nama:'Dewi Anggraini', email:'dewi.anggraini@gmail.com', telp:'6281288904417' }).then(function (r) {
       K.gatewaySibuk = false;
-      if (r.offline) { sekilas('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).', 'err'); selesaiBayar(); X.gambar(); return; }
+      if (r.offline) { sekilas(tx('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).'), 'err'); selesaiBayar(); X.gambar(); return; }
       if (!r.ok) { sekilas('Gateway refused: ' + (r.error || 'unknown') + '. Nothing was charged.', 'err'); X.gambar(); return; }
       K.gateway = Object.assign({ orderId:orderId, amount:n, status:'pending', mode:'sandbox' }, r.data);
       K.payPinOpen = false; K.payPin = ''; K.lembar = 'gateway';
@@ -182,7 +182,7 @@
     if (g.status === 'paid') { K.lembar = null; K.gateway = null; selesaiBayar(); return; }
     EXO_SERVER.statusBayar(g.orderId).then(function (r) {
       if (r.ok && r.data && r.data.status) { g.status = r.data.status; if (g.gatewayRef == null) g.gatewayRef = r.data.gatewayRef; }
-      if (g.status === 'paid') { sekilas('Payment confirmed by the gateway.'); K.lembar = null; K.gateway = null; selesaiBayar(); }
+      if (g.status === 'paid') { sekilas(tx('Payment confirmed by the gateway.')); K.lembar = null; K.gateway = null; selesaiBayar(); }
       else sekilas('Gateway says: ' + (g.status || 'pending') + '. Complete the payment, then check again.', 'err');
       X.gambar();
     });
@@ -196,7 +196,7 @@
   A.kirimNilai = function () {
     var r = X.tulisRatingDB(K.bintang, K.catatanNilai);
     K.layar = 'orders';
-    sekilas('Thanks — ' + X.namaDepan(X.juruKini()) + ' gets your ' + K.bintang + '★' + (K.tip ? ' and ' + rp(K.tip) + ' tip' : '') + (r ? ' · saved to the database, her rating recomputes from it.' : '.'));
+    sekilas(tx('Thanks —') + ' ' + X.namaDepan(X.juruKini()) + ' ' + tx('gets your') + ' ' + K.bintang + '★' + (K.tip ? ' + ' + rp(K.tip) + ' ' + tx('tip') : '') + (r ? ' · ' + tx('saved to the database, her rating recomputes from it.') : '.'));
   };
   A.bagikanJuru = function () { K.shareTab = 'cleaner'; K.shared = false; K.layar = 'share'; };
   A.keluhan = function (v) { K.keluhan = v; };
@@ -204,7 +204,7 @@
     var isu = null; for (var i = 0; i < D.ISSUES.length; i++) if (D.ISSUES[i].id === K.keluhan) isu = D.ISSUES[i];
     var c = X.tulisKomplainDB((isu ? isu.label : K.keluhan) + ' — EXOCLEAN App', K.fotoKlaim.map(function (f) { return f.id; }));
     K.layar = 'orders'; K.keluhan = null;
-    sekilas('Claim received. A human replies within 60 seconds; decision by tomorrow 17:00.' + (c ? ' Logged as ' + c.id + ' in the complaint table.' : ''));
+    sekilas(tx('Claim received. A human replies within 60 seconds; decision by tomorrow 17:00.') + (c ? ' · ' + c.id : ''));
   };
   A.shareTab = function (v) { K.shareTab = v; K.shared = false; };
   A.shareTarget = function (v) { K.shareTarget = v; K.shared = false; };
@@ -220,30 +220,30 @@
   A.keMitra = function () { K.sisi = 'partner'; K.layar = 'pjobs'; };
   A.kePelanggan = function () { K.sisi = 'customer'; K.layar = 'home'; };
   A.cariKosong = function () { K.cari = ''; };
-  A.pilihAlamat = function (v) { K.alamat = v; K.lembar = null; sekilas('Now booking for ' + tx(X.alamatKini().label) + ' · ' + X.alamatKini().short); };
+  A.pilihAlamat = function (v) { K.alamat = v; K.lembar = null; sekilas(tx('Now booking for') + ' ' + tx(X.alamatKini().label) + ' · ' + X.alamatKini().short); };
   A.lembar = function (v) { K.lembar = v; K.nominal = null; K.pindahHari = null; K.pindahJam = null; };
   A.tutupLembar = function () { K.lembar = null; };
   A.nominal = function (v) { K.nominal = Number(v); };
-  A.isiSaldo = function () { var n = K.nominal; K.saldo += n; K.mutasi.unshift({ label:'Top up · BCA VA', date:'today · instant', amount:n }); K.lembar = null; K.nominal = null; sekilas(rp(n) + ' added. Balance ' + rp(K.saldo) + '.'); };
+  A.isiSaldo = function () { var n = K.nominal; K.saldo += n; K.mutasi.unshift({ label:'Top up · BCA VA', date:'today · instant', amount:n }); K.lembar = null; K.nominal = null; sekilas(rp(n) + ' ' + tx('added. Balance') + ' ' + rp(K.saldo) + '.'); };
   A.tarikSaldo = function () {
-    var n = K.nominal; if (n > K.saldo) { sekilas('Not enough balance for that.', 'err'); return; }
-    K.saldo -= n; K.mutasi.unshift({ label:'Withdraw · BCA ···4471', date:'today · by tomorrow', amount:-n }); K.lembar = null; K.nominal = null; sekilas(rp(n) + ' on the way to BCA ···4471.');
+    var n = K.nominal; if (n > K.saldo) { sekilas(tx('Not enough balance for that.'), 'err'); return; }
+    K.saldo -= n; K.mutasi.unshift({ label:'Withdraw · BCA ···4471', date:'today · by tomorrow', amount:-n }); K.lembar = null; K.nominal = null; sekilas(rp(n) + ' ' + tx('on the way to BCA ···4471.'));
   };
-  A.lewati = function () { K.lewati = !K.lewati; sekilas(K.lewati ? '30 Aug skipped. Your cleaner still holds 6 Sep.' : '30 Aug is back on. Nothing else changed.'); };
+  A.lewati = function () { K.lewati = !K.lewati; sekilas(tx(K.lewati ? '30 Aug skipped. Your cleaner still holds 6 Sep.' : '30 Aug is back on. Nothing else changed.')); };
   A.pindahHari = function (v) { K.pindahHari = Number(v); };
   A.pindahJam = function (v) { K.pindahJam = v; };
-  A.pindahSimpan = function () { if (K.pindahHari !== null) K.hari = K.pindahHari; if (K.pindahJam !== null) K.mulai = K.pindahJam; K.lembar = null; K.pindahHari = null; K.pindahJam = null; sekilas('Moved to ' + X.ringkasSlot() + '. Same cleaner, same price.'); };
+  A.pindahSimpan = function () { if (K.pindahHari !== null) K.hari = K.pindahHari; if (K.pindahJam !== null) K.mulai = K.pindahJam; K.lembar = null; K.pindahHari = null; K.pindahJam = null; sekilas(tx('Moved to') + ' ' + X.ringkasSlot() + '. ' + tx('Same cleaner, same price.')); };
   A.kirimPesan = function () {
     var s = (K.pesanBaru || '').trim(); if (!s) return;
     K.obrolan.push({ from:'me', text:s, time:X.jamSekarang() }); K.pesanBaru = ''; K.mengetik = true;
     setTimeout(function () { K.mengetik = false; K.obrolan.push({ from:'them', text:'Got it — I have your booking open now. Give me half a minute.', time:X.jamSekarang() }); X.gambar(); }, 1400);
   };
-  A.notifAktif = function () { K.notifAktif = !K.notifAktif; sekilas(K.notifAktif ? 'Notifications on — including slot changes and refunds.' : 'Notifications off. You will not hear about slot changes.', K.notifAktif ? 'ok' : 'err'); };
+  A.notifAktif = function () { K.notifAktif = !K.notifAktif; sekilas(tx(K.notifAktif ? 'Notifications on — including slot changes and refunds.' : 'Notifications off. You will not hear about slot changes.'), K.notifAktif ? 'ok' : 'err'); };
   A.prepaid = function (v) { K.prepaid = v; };
   A.beliPrepaid = function () {
     var p = null; for (var i = 0; i < D.PREPAID.length; i++) if (D.PREPAID[i].id === K.prepaid) p = D.PREPAID[i];
     K.mutasi.unshift({ label:t(p.nameKey) + ' · prepaid', date:'today · ' + p.hours + ' hours credited', amount:-p.price });
-    K.layar = 'wallet'; sekilas(t(p.nameKey) + ' bought — ' + p.hours + ' hours ready to book.');
+    K.layar = 'wallet'; sekilas(t(p.nameKey) + ' ' + tx('bought —') + ' ' + p.hours + ' ' + tx('hours ready to book.'));
   };
 
   /* -------- daftar / auth */
@@ -307,7 +307,7 @@
     EXO_SERVER.otpKirim(K.otpTujuan).then(function (r) {
       K.otpSibuk = false;
       if (r.ok) { K.otpServer = 'terkirim'; sekilas('Code sent by the auth server · valid ' + Math.round((r.data.berlakuDetik || 300) / 60) + ' min.'); }
-      else if (r.offline) { K.otpServer = 'simulasi'; sekilas('Auth server offline — OTP simulated. Start app/server/auth-server.js for the real flow.', 'err'); }
+      else if (r.offline) { K.otpServer = 'simulasi'; sekilas(tx('Auth server offline — OTP simulated. Start app/server/auth-server.js for the real flow.'), 'err'); }
       else { K.otpServer = 'simulasi'; sekilas('Auth server refused: ' + (r.error || '') + ' — simulated instead.', 'err'); }
       X.gambar();
     });
@@ -318,8 +318,8 @@
     K.otpSibuk = true;
     EXO_SERVER.otpPeriksa(K.otpTujuan, K.otp).then(function (r) {
       K.otpSibuk = false;
-      if (r.ok) { K.authStep = 'pin'; sekilas('Number verified by the auth server.'); }
-      else { K.otp = ''; sekilas(r.error || 'Wrong code.', 'err'); }
+      if (r.ok) { K.authStep = 'pin'; sekilas(tx('Number verified by the auth server.')); }
+      else { K.otp = ''; sekilas(r.error || tx('Wrong code.'), 'err'); }
       X.gambar();
     });
   };
@@ -377,7 +377,7 @@
   /* Foto profil mitra. */
   A.fotoMitraHapus = function () { var a = X.daftarJuru()[0]; if (a && a.id) { X.simpanFotoMitra(a.id, null); sekilas('Foto profil dihapus.'); } };
   A.pinTekan = function (k) { K.pin = k === '⌫' ? K.pin.slice(0, -1) : (K.pin + k).slice(0, 6); };
-  A.selesaiAuth = function () { K.layar = 'home'; sekilas('Welcome, Dewi. Two-step verification and your PIN are set.'); };
+  A.selesaiAuth = function () { K.layar = 'home'; sekilas(tx('Welcome, Dewi. Two-step verification and your PIN are set.')); };
 
   /* -------- mitra */
   A.terimaJob = function () { K.layar = 'pjob'; sekilas('Job diterima — jadwal terkunci untuk Anda. Ops tidak bisa memindahkannya.'); };
@@ -439,7 +439,7 @@
   /* -------- foto masuk (dipanggil exo-core setelah dikompres) */
   A.fotoMasuk = function (tujuan, rekam) {
     var p = tujuan.split(':');
-    if (p[0] === 'klaim') { if (K.fotoKlaim.length >= 2) { sekilas('Two photos is the limit.', 'err'); return; } K.fotoKlaim.push(rekam); sekilas('Photo attached.'); return; }
+    if (p[0] === 'klaim') { if (K.fotoKlaim.length >= 2) { sekilas(tx('Two photos is the limit.'), 'err'); return; } K.fotoKlaim.push(rekam); sekilas(tx('Photo attached.')); return; }
     if (p[0] === 'sop') { K.sopFoto[p[1]] = K.sopFoto[p[1]] || {}; K.sopFoto[p[1]][p[2]] = rekam; sekilas('Foto ' + (p[2] === 'before' ? 'sebelum' : 'sesudah') + ' terekam ' + rekam.jam + '.'); return; }
     if (p[0] === 'laporan') { K.shots[p[1]] = K.shots[p[1]] || {}; K.shots[p[1]][p[2]] = rekam; sekilas('Foto ' + (p[2] === 'before' ? 'sebelum' : 'sesudah') + ' terekam ' + rekam.jam + ' · lokasi menempel.'); return; }
     if (p[0] === 'mitra') {
@@ -458,7 +458,7 @@
       img.src = rekam.url;
     }
   };
-  A.fotoBuang = function (v) { K.fotoKlaim = K.fotoKlaim.filter(function (f) { return f.id !== v; }); if (window.FOTO) FOTO.hapus(v); sekilas('Photo removed.'); };
+  A.fotoBuang = function (v) { K.fotoKlaim = K.fotoKlaim.filter(function (f) { return f.id !== v; }); if (window.FOTO) FOTO.hapus(v); sekilas(tx('Photo removed.')); };
 
   document.addEventListener('DOMContentLoaded', function () {
     X.pasang(document.getElementById('exo-app'), document.getElementById('exo-lapis'));

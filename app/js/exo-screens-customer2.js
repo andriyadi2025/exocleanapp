@@ -45,7 +45,7 @@
         '<div class="grow"><div class="f-head t-15">Every Saturday · 09:00</div><div class="t-115 o-65">Same cleaner held for you · 3h hourly</div></div><span class="tag tag-accent">' + esc(tx('Active')) + '</span></div>' +
         '<div class="flex gap-7 wrap"><span class="tag tag-neutral' + (K.lewati ? ' strike' : '') + '">30 Aug</span><span class="tag tag-neutral">6 Sep</span><span class="tag tag-neutral">13 Sep</span>' +
         '<button class="tag ' + (K.lewati ? 'tag-accent' : 'tag-outline') + '" style="cursor:pointer;border:1px solid ' + (K.lewati ? 'transparent' : 'var(--color-accent)') + '"' + aksi('lewati') + '>' + (K.lewati ? 'Skipped ✓ · undo' : esc(tx('Skip one'))) + '</button></div>' +
-        '<div class="t-115 o-7 lh-15">' + (K.lewati ? '30 Aug is skipped and you are not charged for it. ' + esc(X.namaDepan(j)) + ' still holds your 6 Sep slot — skipping never costs you the cleaner.' : 'Subscription price is fixed for 3 months. Pause any week without losing your cleaner.') + '</div></div>';
+        '<div class="t-115 o-7 lh-15">' + (K.lewati ? esc(tx('30 Aug is skipped and you are not charged for it.')) + ' ' + esc(X.namaDepan(j)) + ' ' + esc(tx('still holds your 6 Sep slot — skipping never costs you the cleaner.')) : esc(tx('Subscription price is fixed for 3 months. Pause any week without losing your cleaner.'))) + '</div></div>';
       h += '<div class="card card-clay elev-sm gap-10"><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx('Refund in progress')) + '</span><span style="margin-inline-start:auto" class="t-115">Rp180.000</span></div>' +
         '<div class="refund-bar"><i class="on"></i><i class="on"></i><i></i></div>' +
         '<div class="t-125 lh-15">Step 2 of 3 — approved, sent to your bank. <strong>Money by Fri 28 Aug</strong>. If it misses that date we add Rp50.000 credit automatically.</div></div>';
@@ -82,7 +82,7 @@
   /* ================================================================ RATE */
   X.LAYAR.rate = function () {
     var j = X.juruKini(), nd = X.namaDepan(j);
-    var hint = K.bintang === 5 ? nd + ' will be offered your Saturday slot first' : K.bintang >= 4 ? 'Tell us what to improve below' : 'We will call you — this triggers a review, not a penalty';
+    var hint = K.bintang === 5 ? nd + ' ' + tx('will be offered your Saturday slot first') : K.bintang >= 4 ? tx('Tell us what to improve below') : tx('We will call you — this triggers a review, not a penalty');
     var h = '<div class="screen screen-pad"><div class="flex items-center gap-12">' + X.tombolKembali('orders') + '<div class="f-head t-17">' + esc(t('howWasIt')) + '</div></div>';
     h += '<div class="center" style="margin-top:26px"><div style="display:flex;justify-content:center">' + X.avJuru(j, 76) + '</div><div class="f-head t-20" style="margin-top:12px">' + esc(j.name) + '</div>' +
       '<div class="t-12 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(tx('Finished').toLowerCase()) + ' 12:04</div><div class="flex gap-8 jc-center" style="margin-top:20px">';
@@ -95,7 +95,7 @@
     for (var i = 0; i < D.TIPS.length; i++) h += '<button class="' + kelas('pill', K.tip === D.TIPS[i]) + '"' + aksi('tip', D.TIPS[i]) + '>' + (D.TIPS[i] ? rp(D.TIPS[i]) : esc(tx('No tip'))) + '</button>';
     h += '</div></div>';
     h += '<div class="mt-auto stack gap-9" style="padding-top:14px"><button class="btn btn-primary btn-block btn-tall"' + aksi('kirimNilai') + '>' + esc(t('submitRt')) + '</button>' +
-      '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('bagikanJuru') + '>' + esc(tx('Recommend')) + ' ' + esc(nd) + ' to friends</button>' +
+      '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('bagikanJuru') + '>' + esc(tx('Recommend')) + ' ' + esc(nd) + ' ' + esc(tx('to friends')) + '</button>' +
       '<button class="btn btn-ghost" style="align-self:center"' + aksi('ke', 'issue') + '>' + esc(tx('Something went wrong instead')) + '</button></div>';
     return h + '</div>';
   };
@@ -128,10 +128,10 @@
     var j = X.juruKini(), nd = X.namaDepan(j), tab = K.shareTab;
     var tabs = [['invite', tx('Invite a friend')], ['result', tx('My clean')], ['cleaner', tx('Recommend') + ' ' + nd]];
     var kicker = tab === 'invite' ? 'Referral' : tab === 'result' ? 'Before / after' : 'Recommendation';
-    var head = tab === 'invite' ? 'Rp50.000 for you,\nRp50.000 for me.' : tab === 'result' ? '3 hours.\nWhole flat.\nZero chasing.' : nd + ' cleans\nlike it is her own place.';
-    var body = tab === 'invite' ? 'Book your first clean on EXOCLEAN with my code and we both get wallet credit.'
-             : tab === 'result' ? 'Picked my own cleaner, kept my slot, paid ' + rp(X.totalN()) + '. Photos from the visit attached.'
-             : '★ ' + (j.rating || '—') + ' from ' + j.jobs + ' jobs. Book her directly — her rate is her own, no surge.';
+    var head = tab === 'invite' ? tx('Rp50.000 for you,\nRp50.000 for me.') : tab === 'result' ? tx('3 hours.\nWhole flat.\nZero chasing.') : nd + ' ' + tx('cleans\nlike it is her own place.');
+    var body = tab === 'invite' ? tx('Book your first clean on EXOCLEAN with my code and we both get wallet credit.')
+             : tab === 'result' ? tx('Picked my own cleaner, kept my slot, paid') + ' ' + rp(X.totalN()) + '. ' + tx('Photos from the visit attached.')
+             : '★ ' + (j.rating || '—') + ' · ' + j.jobs + ' ' + tx('jobs') + '. ' + tx('Book her directly — her rate is her own, no surge.');
     var h = '<div class="screen screen-pad"><div class="flex items-center gap-12">' + X.tombolKembali('home') + '<div class="hdr-txt"><div class="f-head t-17">' + esc(tx('Share')) + '</div><div class="hdr-sub">Both of you get Rp50.000 when a friend books</div></div></div>';
     h += '<div class="flex gap-8" style="margin-top:16px">';
     for (var i = 0; i < tabs.length; i++) h += '<button class="' + kelas('pill', tab === tabs[i][0]) + '"' + aksi('shareTab', tabs[i][0]) + '>' + esc(tabs[i][1]) + '</button>';
@@ -148,7 +148,7 @@
     h += '</div></div>';
     h += '<div class="card card-leaf gap-9" style="margin-top:16px"><div class="flex items-center gap-10"><div class="grow"><div class="t-13 bold">3 friends joined</div><div class="t-115 o-7">Rp150.000 earned · credited to wallet</div></div><button class="btn btn-ghost t-125"' + aksi('ke', 'wallet') + '>' + esc(t('wallet')) + '</button></div></div>';
     var tgt = null; for (var q = 0; q < D.SHARE_TARGETS.length; q++) if (D.SHARE_TARGETS[q].id === K.shareTarget) tgt = D.SHARE_TARGETS[q];
-    var cta = K.shared ? 'Shared ✓' : K.shareTarget === 'link' ? 'Copy my link' : K.shareTarget === 'save' ? 'Save to gallery' : 'Open ' + (tgt ? tgt.app : 'app');
+    var cta = K.shared ? tx('Shared ✓') : K.shareTarget === 'link' ? tx('Copy my link') : K.shareTarget === 'save' ? tx('Save to gallery') : tx('Open') + ' ' + (tgt ? tgt.app : 'app');
     var note = K.shared ? 'Tracked to your code — credit lands when they finish their first visit.' : 'Image and caption are prepared for you; you can edit the caption in the app you pick.';
     h += '<div class="mt-auto stack gap-9" style="padding-top:14px"><button class="btn btn-primary btn-block btn-tall"' + aksi('bagikan') + '>' + esc(cta) + '</button><div class="center t-115 o-6">' + esc(note) + '</div></div>';
     return h + '</div>';
@@ -216,7 +216,7 @@
     var fav = X.daftarJuru().slice(0, 2), langNow = null;
     for (var q = 0; q < I.LANGS.length; q++) if (I.LANGS[q].code === K.lang) langNow = I.LANGS[q];
     var h = '<div class="screen"><div style="padding:18px 20px 0"><h3 style="margin:0">' + esc(t('profile')) + '</h3></div><div class="stack gap-14" style="padding:16px 20px 0">';
-    h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-12">' + av('DA', 52, 'leaf') + '<div class="grow"><div class="f-head t-17">Dewi Anggraini</div><div class="t-12 o-65">+62 812 8890 4417 · Gold member</div></div></div></div>';
+    h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-12">' + av('DA', 52, 'leaf') + '<div class="grow"><div class="f-head t-17">Dewi Anggraini</div><div class="t-12 o-65">+62 812 8890 4417 · ' + esc(tx('Gold member')) + '</div></div></div></div>';
     h += '<div>' + X.labelBagian(esc(tx('Saved addresses'))) + '<div class="stack gap-9">';
     for (var a = 0; a < D.ADDRESSES.length; a++) {
       var ad = D.ADDRESSES[a];

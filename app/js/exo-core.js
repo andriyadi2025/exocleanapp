@@ -491,6 +491,42 @@ var ExoApp = (function () {
     deret(D.JUMP_CUSTOMER); h += '<span class="sep"></span>'; deret(D.JUMP_PARTNER);
     el.innerHTML = h;
   }
+  /* ============================================== PENERJEMAH PASCA-RENDER
+     Setelah HTML layar terpasang, setiap simpul teks, placeholder, dan
+     aria-label dicocokkan dengan kamus STR (berkunci teks Inggris). Dengan
+     begitu teks yang lahir dari data — ketentuan layanan, notifikasi,
+     riwayat dompet, catatan tahap — ikut berbahasa tanpa membungkus tiap
+     baris dengan tx(). Hanya jalan bila bahasanya bukan Inggris, dan hanya
+     di sisi pelanggan; sisi mitra sengaja Bahasa Indonesia (rancangan). */
+  var POLA_ANGKA = /^(\d[\d.,]*)\s+(.+)$/;
+  function terjemahTeks(t) {
+    var e = I.STR[t];
+    if (e && e[KEADAAN.lang]) return e[KEADAAN.lang];
+    var m = POLA_ANGKA.exec(t);                       /* "3 visits" → "3 kunjungan" */
+    if (m) { var f = I.STR[m[2]]; if (f && f[KEADAAN.lang]) return m[1] + ' ' + f[KEADAAN.lang]; }
+    return null;
+  }
+  function terjemahkanDOM(root) {
+    if (!root || KEADAAN.lang === 'en' || KEADAAN.sisi === 'partner') return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var simpul = [], n;
+    while ((n = walker.nextNode())) simpul.push(n);
+    for (var i = 0; i < simpul.length; i++) {
+      var s = simpul[i].nodeValue, inti = s.trim();
+      if (inti.length < 2 || simpul[i].parentNode.tagName === 'SCRIPT') continue;
+      var hasil = terjemahTeks(inti);
+      if (hasil !== null) simpul[i].nodeValue = s.replace(inti, hasil);
+    }
+    var atr = ['placeholder', 'aria-label', 'title'];
+    var els = root.querySelectorAll('[placeholder],[aria-label],[title]');
+    for (var j = 0; j < els.length; j++) {
+      for (var a = 0; a < atr.length; a++) {
+        var v = els[j].getAttribute(atr[a]); if (!v) continue;
+        var h2 = terjemahTeks(v.trim()); if (h2 !== null) els[j].setAttribute(atr[a], h2);
+      }
+    }
+  }
+
   function gambar() {
     if (!akar) return;
     selaraskanSisi();
@@ -507,6 +543,7 @@ var ExoApp = (function () {
     if (KEADAAN.sekilas) atas += '<div class="toast ' + KEADAAN.sekilas.nada + '" role="status">' + esc(KEADAAN.sekilas.teks) + '</div>';
     lapis.innerHTML = atas;
     lembarTergambar = KEADAAN.lembar;
+    terjemahkanDOM(akar); terjemahkanDOM(lapis);
 
     akar.scrollTop = pindah ? 0 : gulir;
     layarTerakhir = KEADAAN.layar;
