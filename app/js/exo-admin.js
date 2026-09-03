@@ -130,7 +130,7 @@ var ADMIN = (function () {
     catch (e) { dbSiap = false; }
     return dbSiap;
   }
-  var STATUS_ORDER = { dijadwalkan:['Locked','green'], berjalan:['In progress','accent'], selesai:['Done','flat'], diverifikasi:['Verified','flat'], ditagih:['Invoiced','flat'], lunas:['Paid','flat'], dibatalkan:['Cancelled','accent'] };
+  var STATUS_ORDER = { survei:['Survey','accent'], penawaran:['Quote sent','accent'], jemput:['Pickup','accent'], proposal:['Proposal','accent'], belanja:['Shopping','accent'], dijadwalkan:['Locked','green'], berjalan:['In progress','accent'], selesai:['Done','flat'], diverifikasi:['Verified','flat'], ditagih:['Invoiced','flat'], lunas:['Paid','flat'], dibatalkan:['Cancelled','accent'] };
   function tglPendek(iso) { try { return new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short' }); } catch (e) { return iso || ''; } }
   function namaUser(id) { var u = EXO_DB.find('users', id); return u ? u.nama : '—'; }
 

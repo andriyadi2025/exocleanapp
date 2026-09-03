@@ -161,6 +161,63 @@ var EXO_DATA = (function () {
     { title:'Cleaning in progress',note:'Checklist updates live below' },
     { title:'Done & verified',     note:'Photos attached, warranty starts' }
   ];
+  /* ======================================================= ALUR TRANSAKSI
+     Hasil analisa aplikasi sejenis (3 Sep 2026): satu alur "pesan → bayar →
+     datang" tidak cocok untuk semua layanan. Yang dipakai pesaing:
+       · bTaskee/Helpling: pesan instan, mitra konfirmasi ≤60 menit, ditagih
+         SETELAH pekerjaan selesai.
+       · KliknClean/Sejasa: deep cleaning & poles wajib survei dulu, harga
+         dari penawaran, baru dijadwalkan.
+       · Laundryheap: jemput → ditimbang → tagihan final → ditagih sebelum
+         diantar kembali.
+       · Urban Company: pekerjaan tambahan di lokasi (freon, item ekstra)
+         harus DISETUJUI pelanggan di aplikasi sebelum dikerjakan.
+       · Kontrak gedung/kantor: survei → proposal → kontrak → tagihan bulanan.
+     Tiap layanan memakai satu kode alur di bawah; layar Book 3, sukses,
+     pelacakan, mitra, dan konsol admin membaca ALUR_META, bukan menebak. */
+  var ALUR = {
+    hourly:'langsung', deep:'survei', ac:'langsung', sofa:'langsung', laundry:'timbang',
+    office:'kontrak', iron:'langsung', disinfect:'langsung', car:'langsung', hydro:'langsung',
+    poles:'survei', pest:'langsung', pool:'langsung', toren:'langsung', postreno:'survei',
+    tankbig:'survei', care:'langsung', errand:'titip', massage:'langsung', cook:'langsung', building:'kontrak'
+  };
+  var ALUR_META = {
+    langsung:{ label:'Instant booking', cta:'Lock this slot', bayarKapan:'Charged after the visit is confirmed done.',
+      tahap:[
+        { title:'Booking locked', note:'Only you can move it' },
+        { title:'Cleaner confirmed', note:'Confirms within 60 minutes, or we reassign' },
+        { title:'On the way', note:'Live position from the partner app' },
+        { title:'Work in progress', note:'Checklist and photos update live' },
+        { title:'Done & charged', note:'Photos attached, warranty starts, EXO Wallet charged' } ] },
+    survei:{ label:'Survey first', cta:'Request free survey', bayarKapan:'Nothing is charged now. You pay only after you accept the quote.',
+      tahap:[
+        { title:'Survey requested', note:'A supervisor visits free within 24 hours' },
+        { title:'Surveyor visited', note:'Condition graded, scope agreed' },
+        { title:'Quote sent', note:'Fixed price, valid 7 days — accept or decline in the app' },
+        { title:'Schedule locked', note:'Paid on acceptance; crew booked' },
+        { title:'Done & verified', note:'Photos attached, warranty starts' } ] },
+    timbang:{ label:'Weigh at pickup', cta:'Schedule pickup', bayarKapan:'Estimate only. The final price is set when the courier weighs your bag, and charged before delivery.',
+      tahap:[
+        { title:'Pickup scheduled', note:'Courier comes with pickup bags' },
+        { title:'Picked up & weighed', note:'Weight photographed at your door' },
+        { title:'Final price sent', note:'kg × rate — approve in the app' },
+        { title:'Washing & drying', note:'Progress updates from the hub' },
+        { title:'Delivered & charged', note:'EXO Wallet charged on approval' } ] },
+    kontrak:{ label:'Contract', cta:'Request proposal', bayarKapan:'Nothing is charged now. Monthly invoice after the contract is signed.',
+      tahap:[
+        { title:'Proposal requested', note:'Account manager assigned' },
+        { title:'Site survey', note:'Scope, SOP codes and schedule agreed' },
+        { title:'Contract signed', note:'Minimum term per service terms' },
+        { title:'Visits running', note:'Daily/weekly/monthly per SOP' },
+        { title:'Monthly invoice', note:'Photo report and chemical log attached' } ] },
+    titip:{ label:'Errand', cta:'Send shopping list', bayarKapan:'Runner fee charged now. Goods are settled from your receipt after delivery.',
+      tahap:[
+        { title:'List received', note:'Runner confirms brands and substitutes' },
+        { title:'Shopping', note:'Photos before checkout' },
+        { title:'Receipt sent', note:'Approve the goods total in the app' },
+        { title:'On the way', note:'Live position from the partner app' },
+        { title:'Delivered & settled', note:'Goods charged to EXO Wallet on approval' } ] }
+  };
   var CHECK_IDS = ['kitchen','bath','bed','trash'];
   var CHECK_KEYS = ['ckKitchen','ckBath','ckBed','ckTrash'];
   var CHECK_ID_LABELS = ['Dapur & wastafel','Kamar mandi ×2','Kamar tidur & lantai','Buang sampah & foto akhir'];
@@ -668,7 +725,7 @@ var EXO_DATA = (function () {
     WD_HISTORY: WD_HISTORY, BANKS: BANKS, WD_METHODS: WD_METHODS,
     REG_DOCS: REG_DOCS, REG_REQUIRED: REG_REQUIRED, REG_TIMELINE: REG_TIMELINE, KIN_RELS: KIN_RELS,
     RADII: RADII, RADIUS_JOBS: RADIUS_JOBS, RADIUS_TRAVEL: RADIUS_TRAVEL, REPORT_AREAS: REPORT_AREAS,
-    SOP_META: SOP_META, PPE_LABELS: PPE_LABELS, FINDINGS: FINDINGS,
+    SOP_META: SOP_META, PPE_LABELS: PPE_LABELS, FINDINGS: FINDINGS, ALUR: ALUR, ALUR_META: ALUR_META,
     WILAYAH: WILAYAH, ADDR_ORDER: ADDR_ORDER, ADDR_LABELS: ADDR_LABELS, COVERAGE: COVERAGE,
     TABS_CUSTOMER: TABS_CUSTOMER, TABS_PARTNER: TABS_PARTNER, TAB_SCREENS: TAB_SCREENS, PARTNER_SCREENS: PARTNER_SCREENS,
     JUMP_CUSTOMER: JUMP_CUSTOMER, JUMP_PARTNER: JUMP_PARTNER

@@ -100,6 +100,76 @@
     var kaki = '<button class="btn btn-primary btn-block btn-tall"' + (berubah ? aksi('pindahSimpan') : ' disabled') + '>' + (berubah ? esc(tx('Move to')) + ' ' + esc(I.dowShort(dd) + ' ' + I.dayMonth(dd)) + ' · ' + jam + ' ' + esc(X.labelZona()) : esc(tx('Pick a new slot'))) + '</button>';
     return kerangka(esc(tx('Move time')), h, kaki);
   };
+  function totalItem(items) { return items.reduce(function (n, i) { return n + i.harga; }, 0); }
+  X.LEMBAR.penawaran = function () {
+    var p = K.penawaran; if (!p) return kerangka(esc(tx('Quote')), '<div class="t-125 o-7">' + esc(tx('No quote yet.')) + '</div>');
+    var h = '<div class="card elev-sm gap-8">';
+    p.items.forEach(function (i) { h += '<div class="kv"><span>' + esc(i.nama) + '</span><span>' + rp(i.harga) + '</span></div>'; });
+    h += '<div class="kv"><span>' + esc(tx('Platform fee')) + '</span><span>' + rp(D.PLATFORM_FEE) + '</span></div><div class="rule"></div><div class="flex items-baseline between"><span class="f-head t-15">' + esc(t('totalLbl')) + '</span><span class="f-head t-20">' + rp(totalItem(p.items) + D.PLATFORM_FEE) + '</span></div></div>';
+    h += '<div class="card card-leaf t-125 lh-15">' + esc(tx('Fixed price from the survey, valid 7 days. Accepting pays from your chosen method and locks the schedule to')) + ' ' + esc(X.namaDepan(X.juruKini())) + '. ' + esc(tx('Declining costs nothing.')) + '</div>';
+    var kaki = p.status === 'menunggu'
+      ? '<div class="flex gap-8"><button class="btn btn-secondary" style="flex:1"' + aksi('tolakPenawaran') + '>' + esc(tx('Decline')) + '</button><button class="btn btn-primary" style="flex:1"' + aksi('terimaPenawaran') + '>' + esc(tx('Accept & pay')) + ' · ' + rp(totalItem(p.items) + D.PLATFORM_FEE) + '</button></div>'
+      : '<div class="center t-125 o-7">' + esc(p.status === 'diterima' ? tx('Quote accepted') : tx('Quote declined')) + '</div>';
+    return kerangka(esc(tx('Quote from the survey')), h, kaki);
+  };
+  X.LEMBAR.timbang = function () {
+    var w = K.timbangan; if (!w) return kerangka(esc(tx('Weigh result')), '<div class="t-125 o-7">' + esc(tx('Not weighed yet.')) + '</div>');
+    var total = w.total + X.addonTotal() + D.PLATFORM_FEE - (X.voucherApplied() ? X.voucherKini().amount : 0);
+    var h = '<div class="card elev-sm gap-8"><div class="kv"><span>' + esc(tx('Weight at pickup')) + '</span><span>' + w.kg + ' kg</span></div><div class="kv"><span>' + esc(tx('Rate')) + '</span><span>' + rp(w.tarif) + ' / kg</span></div><div class="kv"><span>' + esc(tx('Add-ons')) + '</span><span>' + rp(X.addonTotal()) + '</span></div><div class="kv"><span>' + esc(tx('Platform fee')) + '</span><span>' + rp(D.PLATFORM_FEE) + '</span></div>' + (X.voucherApplied() ? '<div class="kv"><span>' + esc(X.voucherKini().code) + '</span><span>− ' + rp(X.voucherKini().amount) + '</span></div>' : '') + '<div class="rule"></div><div class="flex items-baseline between"><span class="f-head t-15">' + esc(t('totalLbl')) + '</span><span class="f-head t-20">' + rp(total) + '</span></div></div>';
+    h += '<div class="card card-leaf t-125 lh-15">' + esc(tx('The estimate at booking was')) + ' ' + rp(X.totalN()) + '. ' + esc(tx('The final price follows the weight photographed at your door; approving charges it and the washing starts.')) + '</div>';
+    var kaki = w.status === 'menunggu' ? '<button class="btn btn-primary btn-block btn-tall"' + aksi('setujuTimbang') + '>' + esc(tx('Approve & pay')) + ' · ' + rp(total) + '</button>' : '<div class="center t-125 o-7">' + esc(tx('Final price approved')) + '</div>';
+    return kerangka(esc(tx('Final price after weighing')), h, kaki);
+  };
+  X.LEMBAR.struk = function () {
+    var r = K.struk; if (!r) return kerangka(esc(tx('Receipt')), '<div class="t-125 o-7">' + esc(tx('No receipt yet.')) + '</div>');
+    var h = '<div class="card elev-sm gap-8"><div class="kv"><span>' + esc(tx('Goods on the receipt')) + '</span><span>' + rp(r.total) + '</span></div><div class="kv"><span>' + esc(tx('Runner fee')) + '</span><span>' + esc(tx('paid at booking')) + '</span></div>' + (r.catatan ? '<div class="t-115 o-7">' + esc(r.catatan) + '</div>' : '') + '</div>';
+    h += '<div class="card card-leaf t-125 lh-15">' + esc(tx('Goods are settled at cost against the photographed receipt — never marked up. Approving charges your EXO Wallet and the runner heads to you.')) + '</div>';
+    var kaki = r.status === 'menunggu' ? '<button class="btn btn-primary btn-block btn-tall"' + aksi('setujuStruk') + '>' + esc(tx('Approve goods total')) + ' · ' + rp(r.total) + '</button>' : '<div class="center t-125 o-7">' + esc(tx('Goods total approved')) + '</div>';
+    return kerangka(esc(tx('Shopping receipt')), h, kaki);
+  };
+  X.LEMBAR.ekstra = function () {
+    var list = K.ekstra || [], h = '';
+    if (!list.length) h = '<div class="t-125 o-7">' + esc(tx('No extra work proposed.')) + '</div>';
+    list.forEach(function (e) {
+      h += '<div class="card elev-sm gap-8"><div class="flex items-center gap-8"><div class="grow"><div class="t-135 bold">' + esc(e.nama) + '</div><div class="t-115 o-65">' + rp(e.harga) + '</div></div>' +
+        (e.status === 'menunggu' ? '<button class="btn btn-secondary" style="height:36px"' + aksi('ekstraPutus', e.id + ':tidak') + '>' + esc(tx('Decline')) + '</button><button class="btn btn-primary" style="height:36px"' + aksi('ekstraPutus', e.id + ':ya') + '>' + esc(tx('Approve')) + '</button>'
+          : '<span class="tag ' + (e.status === 'diterima' ? 'tag-accent' : 'tag-neutral') + '">' + esc(e.status === 'diterima' ? tx('Approved') : tx('Declined')) + '</span>') + '</div></div>';
+    });
+    h += '<div class="card card-leaf t-125 lh-15">' + esc(tx('Anything found on site beyond the original scope is priced here first. Nothing extra is done, or charged, until you approve it.')) + '</div>';
+    return kerangka(esc(tx('Extra work on site')), h);
+  };
+  /* ---- sisi mitra ---- */
+  X.LEMBAR.kirimPenawaran = function () {
+    var f = K.penawaranForm;
+    var h = '<div class="t-125 lh-15 o-85">Hasil survei ditulis sebagai penawaran harga tetap. Pelanggan menyetujui atau menolak di aplikasinya; jadwal terkunci hanya setelah disetujui dan dibayar.</div>' +
+      '<div class="field"><label>Lingkup 1</label><input class="input" data-simpan="penawaranForm.a" value="' + esc(f.a) + '" placeholder="mis. Deep cleaning 3 kamar + 2 kamar mandi"></div>' +
+      '<div class="field"><label>Harga 1 (Rp)</label><input class="input" type="number" inputmode="numeric" data-simpan="penawaranForm.ha" value="' + esc(f.ha) + '"></div>' +
+      '<div class="field"><label>Lingkup 2 (opsional)</label><input class="input" data-simpan="penawaranForm.b" value="' + esc(f.b) + '" placeholder="mis. Bahan kimia & mesin"></div>' +
+      '<div class="field"><label>Harga 2 (Rp)</label><input class="input" type="number" inputmode="numeric" data-simpan="penawaranForm.hb" value="' + esc(f.hb) + '"></div>';
+    return kerangka('Kirim penawaran survei', h, '<button class="btn btn-primary btn-block btn-tall"' + aksi('kirimPenawaran') + '>Kirim ke pelanggan</button>');
+  };
+  X.LEMBAR.kirimTimbang = function () {
+    var h = '<div class="t-125 lh-15 o-85">Timbang di depan pelanggan dan foto angkanya. Harga akhir = kg × tarif Anda; pelanggan menyetujui di aplikasi sebelum cucian dibawa.</div>' +
+      '<div class="field"><label>Berat (kg)</label><input class="input" type="number" step="0.1" inputmode="decimal" data-simpan="timbangForm" value="' + esc(K.timbangForm) + '" placeholder="mis. 6.5"></div>' +
+      '<div class="t-115 o-6">Tarif Anda ' + rp(X.rateFor(X.juruKini())) + ' / kg</div>';
+    return kerangka('Kirim hasil timbang', h, '<button class="btn btn-primary btn-block btn-tall"' + aksi('kirimTimbang') + '>Kirim ke pelanggan</button>');
+  };
+  X.LEMBAR.kirimStruk = function () {
+    var f = K.strukForm;
+    var h = '<div class="t-125 lh-15 o-85">Foto struk, tulis totalnya. Barang ditagih ke dompet pelanggan sesuai struk setelah disetujui — tidak ada mark-up.</div>' +
+      '<div class="field"><label>Total belanja di struk (Rp)</label><input class="input" type="number" inputmode="numeric" data-simpan="strukForm.total" value="' + esc(f.total) + '"></div>' +
+      '<div class="field"><label>Catatan (barang pengganti, kosong, dsb.)</label><input class="input" data-simpan="strukForm.catatan" value="' + esc(f.catatan) + '"></div>';
+    return kerangka('Kirim struk belanja', h, '<button class="btn btn-primary btn-block btn-tall"' + aksi('kirimStruk') + '>Kirim ke pelanggan</button>');
+  };
+  X.LEMBAR.ajukanEkstra = function () {
+    var f = K.ekstraForm;
+    var h = '<div class="t-125 lh-15 o-85">Ada yang di luar lingkup (isi freon, noda membandel, item tambahan)? Ajukan dulu — jangan dikerjakan sebelum pelanggan menyetujui di aplikasinya.</div>' +
+      '<div class="field"><label>Pekerjaan tambahan</label><input class="input" data-simpan="ekstraForm.nama" value="' + esc(f.nama) + '" placeholder="mis. Isi freon R32 1 unit"></div>' +
+      '<div class="field"><label>Harga (Rp)</label><input class="input" type="number" inputmode="numeric" data-simpan="ekstraForm.harga" value="' + esc(f.harga) + '"></div>';
+    var daftar = (K.ekstra || []).map(function (e) { return '<div class="kv"><span>' + esc(e.nama) + ' · ' + rp(e.harga) + '</span><span>' + esc(e.status) + '</span></div>'; }).join('');
+    if (daftar) h += '<div class="card elev-sm gap-6"><div class="t-115 o-6">Sudah diajukan</div>' + daftar + '</div>';
+    return kerangka('Ajukan pekerjaan tambahan', h, '<button class="btn btn-primary btn-block btn-tall"' + aksi('ajukanEkstra') + '>Ajukan ke pelanggan</button>');
+  };
   X.LEMBAR.masalah = function () {
     var h = '';
     for (var i = 0; i < D.PARTNER_ISSUES.length; i++) h += '<button class="row"' + aksi('kirimMasalah', D.PARTNER_ISSUES[i].id) + '><span class="row-main"><b>' + esc(D.PARTNER_ISSUES[i].label) + '</b><span>' + esc(D.PARTNER_ISSUES[i].note) + '</span></span><span>' + garis(IK.kanan, 16) + '</span></button>';
@@ -160,8 +230,18 @@
     var o = X.tulisOrderDB();
     if (o) sekilas(tx('Order') + ' ' + o.no + ' ' + tx('written to the EXOCLEAN database · slot locked to') + ' ' + X.namaDepan(X.juruKini()) + '.');
   }
+  /* Alur survei, timbang, dan kontrak tidak menagih apa pun saat ini: pesanan
+     dibuat, tahap mulai dari nol, pembayaran menyusul saat pelanggan
+     menyetujui penawaran / hasil timbang / tagihan bulanan. */
+  function selesaiTanpaBayar() {
+    K.layar = 'success'; K.tahap = 0; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false;
+    K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = [];
+    var o = X.tulisOrderDB();
+    if (o) sekilas(tx('Order') + ' ' + o.no + ' · ' + tx(X.alurMeta().tahap[0].title) + '.');
+  }
   A.konfirmasi = function () {
-    if (!K.payPinOpen) { K.payPinOpen = true; return; }
+    if (!X.tagihanSekarang()) { selesaiTanpaBayar(); return; }
+    if (!K.payPinOpen) { K.payPinOpen = true; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; return; }
     if (K.payPin.length < 6) return;
     var n = X.totalN();
     if (K.bayar === 'wallet') {
@@ -193,7 +273,94 @@
       X.gambar();
     });
   };
-  A.tahapMaju = function () { K.tahap = (K.tahap + 1) % 4; };
+  /* Menagih dompet untuk jumlah yang baru disetujui pelanggan (penawaran,
+     timbangan, struk, tambahan). Metode selain dompet dianggap ditagih lewat
+     gateway saat pelunasan — di sini dicatat saja. */
+  function tagihDompet(jumlah, label) {
+    if (K.bayar === 'wallet') {
+      if (jumlah > K.saldo) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(jumlah - K.saldo) + '. ' + tx('Top up or pick another method.'), 'err'); return false; }
+      K.saldo -= jumlah;
+    }
+    K.mutasi.unshift({ label:label, date:'today · ' + (K.orderNo || 'EXO'), amount:-jumlah });
+    return true;
+  }
+  function penawaranContoh() {
+    var dasar = X.lineFor(X.rateFor(X.juruKini()));
+    return { status:'menunggu', at:new Date().toISOString(), items:[
+      { nama:tx('Scope as surveyed') + ' · ' + I.svcName(K.jasa), harga:Math.round(dasar * 1.1 / 1000) * 1000 },
+      { nama:tx('Materials & machines'), harga:Math.round(dasar * 0.15 / 1000) * 1000 } ] };
+  }
+  A.tahapMaju = function () {
+    var a = X.alurKini(), n = X.tahapAlur().length, berikut = K.tahap + 1;
+    if (berikut >= n) { K.tahap = 0; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; X.simpanAlurDB(); return; }
+    /* tahap keputusan: mitra mengirim, pelanggan menyetujui — simulasi membuat kirimannya bila belum ada */
+    if (a === 'survei' && berikut === 2 && !K.penawaran) K.penawaran = penawaranContoh();
+    if (a === 'timbang' && berikut === 2 && !K.timbangan) { var kg = Math.max(2, K.jam + 1.5); K.timbangan = { status:'menunggu', kg:kg, tarif:X.rateFor(X.juruKini()), total:Math.round(kg * X.rateFor(X.juruKini())), at:new Date().toISOString() }; }
+    if (a === 'titip' && berikut === 2 && !K.struk) K.struk = { status:'menunggu', total:187500, catatan:tx('Receipt photo attached'), at:new Date().toISOString() };
+    /* tidak boleh melewati tahap keputusan sebelum pelanggan memutuskan */
+    var tunggu = (a === 'survei' && K.penawaran) || (a === 'timbang' && K.timbangan) || (a === 'titip' && K.struk);
+    if (berikut === 3 && tunggu && tunggu.status === 'menunggu') { sekilas(tx('Waiting for your decision — open the card above.'), 'err'); K.tahap = 2; X.simpanAlurDB(); return; }
+    K.tahap = berikut; X.simpanAlurDB();
+  };
+  /* ---- keputusan pelanggan ---- */
+  A.terimaPenawaran = function () {
+    var p = K.penawaran; if (!p) return;
+    var total = p.items.reduce(function (n, i) { return n + i.harga; }, 0) + D.PLATFORM_FEE;
+    if (!tagihDompet(total, I.svcName(K.jasa) + ' · ' + tx('quote accepted'))) return;
+    p.status = 'diterima'; p.total = total; K.tahap = 3; K.lembar = null; X.simpanAlurDB();
+    sekilas(tx('Quote accepted') + ' · ' + rp(total) + ' · ' + tx('schedule locked to') + ' ' + X.namaDepan(X.juruKini()) + '.');
+  };
+  A.tolakPenawaran = function () { if (!K.penawaran) return; K.penawaran.status = 'ditolak'; K.lembar = null; X.simpanAlurDB(); sekilas(tx('Quote declined. Nothing is charged; the survey stays free.'), 'err'); };
+  A.setujuTimbang = function () {
+    var t = K.timbangan; if (!t) return;
+    var total = t.total + X.addonTotal() + D.PLATFORM_FEE - (X.voucherApplied() ? X.voucherKini().amount : 0);
+    if (!tagihDompet(total, I.svcName(K.jasa) + ' · ' + t.kg + ' kg')) return;
+    t.status = 'diterima'; t.totalTagihan = total; K.tahap = 3; K.lembar = null; X.simpanAlurDB();
+    sekilas(tx('Final price approved') + ' · ' + rp(total) + '.');
+  };
+  A.setujuStruk = function () {
+    var r = K.struk; if (!r) return;
+    if (!tagihDompet(r.total, tx('Goods') + ' · ' + I.svcName(K.jasa))) return;
+    r.status = 'diterima'; K.tahap = 3; K.lembar = null; X.simpanAlurDB();
+    sekilas(tx('Goods total approved') + ' · ' + rp(r.total) + '.');
+  };
+  A.ekstraPutus = function (v) {
+    var p = String(v).split(':'), id = p[0], ya = p[1] === 'ya';
+    var e = (K.ekstra || []).filter(function (x) { return x.id === id; })[0]; if (!e) return;
+    if (ya) { if (!tagihDompet(e.harga, tx('Extra work') + ' · ' + e.nama)) return; e.status = 'diterima'; sekilas(tx('Extra approved') + ' · ' + esc(e.nama) + ' · ' + rp(e.harga)); }
+    else { e.status = 'ditolak'; sekilas(tx('Extra declined — the cleaner sticks to the original scope.'), 'err'); }
+    if (!X.keputusanMenunggu().length) K.lembar = null;
+    X.simpanAlurDB();
+  };
+  /* ---- kiriman mitra (formulir lewat data-simpan) ---- */
+  A.kirimPenawaran = function () {
+    var f = K.penawaranForm, items = [];
+    if (f.a && Number(f.ha) > 0) items.push({ nama:f.a, harga:Number(f.ha) });
+    if (f.b && Number(f.hb) > 0) items.push({ nama:f.b, harga:Number(f.hb) });
+    if (!items.length) { sekilas('Isi minimal satu baris penawaran dengan harga.', 'err'); return; }
+    K.penawaran = { status:'menunggu', at:new Date().toISOString(), items:items }; K.tahap = Math.max(K.tahap, 2); K.lembar = null; X.simpanAlurDB();
+    sekilas('Penawaran terkirim ke pelanggan · ' + rp(items.reduce(function (n, i) { return n + i.harga; }, 0)) + '. Jadwal terkunci setelah disetujui.');
+  };
+  A.kirimTimbang = function () {
+    var kg = Number(String(K.timbangForm).replace(',', '.'));
+    if (!(kg > 0)) { sekilas('Isi berat dalam kg.', 'err'); return; }
+    var tarif = X.rateFor(X.juruKini());
+    K.timbangan = { status:'menunggu', kg:kg, tarif:tarif, total:Math.round(kg * tarif), at:new Date().toISOString() }; K.tahap = Math.max(K.tahap, 2); K.lembar = null; X.simpanAlurDB();
+    sekilas('Hasil timbang terkirim · ' + kg + ' kg × ' + rp(tarif) + ' = ' + rp(Math.round(kg * tarif)) + '. Menunggu persetujuan pelanggan.');
+  };
+  A.kirimStruk = function () {
+    var total = Number(K.strukForm.total);
+    if (!(total > 0)) { sekilas('Isi total struk belanja.', 'err'); return; }
+    K.struk = { status:'menunggu', total:total, catatan:K.strukForm.catatan || '', at:new Date().toISOString() }; K.tahap = Math.max(K.tahap, 2); K.lembar = null; X.simpanAlurDB();
+    sekilas('Struk terkirim · ' + rp(total) + '. Barang ditagih setelah pelanggan menyetujui.');
+  };
+  A.ajukanEkstra = function () {
+    var f = K.ekstraForm, harga = Number(f.harga);
+    if (!f.nama || !(harga > 0)) { sekilas('Isi nama pekerjaan tambahan dan harganya.', 'err'); return; }
+    K.ekstra = (K.ekstra || []).concat([{ id:'ex_' + Date.now().toString(36), nama:f.nama, harga:harga, status:'menunggu', at:new Date().toISOString() }]);
+    K.ekstraForm = { nama:'', harga:'' }; K.lembar = null; X.simpanAlurDB();
+    sekilas('Diajukan ke pelanggan: ' + f.nama + ' · ' + rp(harga) + '. Jangan dikerjakan sebelum disetujui.');
+  };
   A.ceklis = function (v) { K.ceklis[v] = !K.ceklis[v]; };
   A.tabPesanan = function (v) { K.tabPesanan = v; };
   A.bintang = function (v) { K.bintang = Number(v); };

@@ -45,6 +45,22 @@
     h += '<div class="card elev-sm gap-11"><div class="f-head t-15">Checklist tugas — pelanggan melihat ini langsung</div>' + X.barisCeklis(true) + '</div>';
     h += '<div class="card card-leaf gap-8"><div class="kv"><span>Upah job</span><span>Rp 234.000</span></div><div class="kv"><span>Biaya platform</span><span>− Rp 3.000</span></div>' +
       '<div class="flex between f-head t-16"><span>Anda terima</span><span>Rp 231.000</span></div><div class="t-115 o-7">Dibayarkan ke BCA ···4471 setiap Senin, atau instan dengan biaya Rp2.500.</div></div><div class="spacer-14"></div></div>';
+    /* Alur transaksi layanan ini: apa yang harus dikirim mitra sebelum
+       pekerjaan lanjut (penawaran survei, hasil timbang, struk) dan tambahan
+       di lokasi yang wajib disetujui pelanggan dulu. */
+    var alur = X.alurKini(), am = X.alurMeta();
+    var LABEL_ALUR = { langsung:'Pesanan instan', survei:'Survei dulu', timbang:'Timbang saat jemput', kontrak:'Kontrak', titip:'Titip belanja' };
+    var statusKirim = alur === 'survei' ? (K.penawaran ? 'Penawaran ' + K.penawaran.status : 'Penawaran belum dikirim')
+      : alur === 'timbang' ? (K.timbangan ? 'Timbangan ' + K.timbangan.kg + ' kg · ' + K.timbangan.status : 'Belum ditimbang')
+      : alur === 'titip' ? (K.struk ? 'Struk ' + rp(K.struk.total) + ' · ' + K.struk.status : 'Struk belum dikirim')
+      : alur === 'kontrak' ? 'Proposal & kontrak lewat account manager' : 'Ditagih ke pelanggan setelah selesai';
+    var ekstraMenunggu = (K.ekstra || []).filter(function (e) { return e.status === 'menunggu'; }).length;
+    h += '<div class="card elev-sm gap-9"><div class="flex items-center gap-8"><span class="tag tag-accent-2">' + esc(LABEL_ALUR[alur]) + '</span><span class="t-115 o-65">tahap ' + (Math.min(K.tahap, am.tahap.length - 1) + 1) + '/' + am.tahap.length + '</span></div>' +
+      '<div class="t-125 lh-15">' + esc(statusKirim) + (ekstraMenunggu ? ' · ' + ekstraMenunggu + ' tambahan menunggu persetujuan' : '') + '</div><div class="flex gap-8 wrap">' +
+      (alur === 'survei' ? '<button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('lembar', 'kirimPenawaran') + '>Kirim penawaran</button>' : '') +
+      (alur === 'timbang' ? '<button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('lembar', 'kirimTimbang') + '>Kirim hasil timbang</button>' : '') +
+      (alur === 'titip' ? '<button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('lembar', 'kirimStruk') + '>Kirim struk</button>' : '') +
+      '<button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('lembar', 'ajukanEkstra') + '>Ajukan tambahan</button></div></div>';
     h += '<div class="actionbar actionbar--tight"><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'masalah') + '>Laporkan masalah</button><button class="btn btn-primary" style="flex:1"' + aksi('selesaikanJob') + '>Selesaikan job</button></div>';
     return h + '</div>';
   };

@@ -318,14 +318,17 @@
     h += '<div class="card elev-sm gap-8">';
     for (var l = 0; l < lines.length; l++) h += '<div class="kv"><span>' + esc(lines[l][0]) + '</span><span>' + esc(lines[l][1]) + '</span></div>';
     h += '<div class="rule"></div><div class="flex items-baseline between"><span class="f-head t-15">' + esc(t('totalLbl')) + '</span><span class="f-head t-22">' + rp(X.totalN()) + '</span></div></div>';
-    h += '<div class="note-i"><i>i</i><span>' + esc(tx('Charged after the visit is confirmed done. Cancelling or rescheduling within 4 hours costs Rp50.000 per cleaner. Refunds go to your EXO Wallet within 3 working days.')) + '</span></div><div class="spacer-12"></div></div>';
+    var am = X.alurMeta();
+    h += '<div class="card card-leaf gap-6"><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx(am.label)) + '</span><span class="t-115 o-75">' + esc(tx('How this service is settled')) + '</span></div><div class="t-125 lh-15">' + esc(tx(am.bayarKapan)) + '</div></div>';
+    h += '<div class="note-i"><i>i</i><span>' + esc(tx('Cancelling or rescheduling within 4 hours costs Rp50.000 per cleaner. Refunds go to your EXO Wallet within 3 working days.')) + '</span></div><div class="spacer-12"></div></div>';
     h += '<div class="actionbar actionbar--col">';
     if (K.payPinOpen) {
       h += '<div class="stack gap-11" style="padding-bottom:12px"><div class="flex items-center gap-10"><span class="av av-leaf" style="--s:26px">' + ikon(IKON.gembok, 14) + '</span>' +
         '<div class="grow t-125 bold">' + esc(tx('Enter your 6-digit transaction PIN')) + '</div><button class="btn btn-ghost t-12"' + aksi('batalPin') + '>' + esc(tx('Cancel')) + '</button></div>' +
         X.pinDots(K.payPin, true) + X.keypad('payPinTekan', true) + '<div class="center t-11 o-6">Or use Face ID · PIN is never shared with support</div></div>';
     }
-    var lbl = K.gatewaySibuk ? 'Contacting payment gateway…' : !K.payPinOpen ? tx('Lock this slot') + ' · ' + rp(X.totalN()) : K.payPin.length < 6 ? tx('Enter PIN to pay') : tx('Confirm payment') + ' · ' + rp(X.totalN());
+    var tagih = X.tagihanSekarang();
+    var lbl = K.gatewaySibuk ? 'Contacting payment gateway…' : !K.payPinOpen ? tx(am.cta) + (tagih ? ' · ' + rp(tagih) : '') : K.payPin.length < 6 ? tx('Enter PIN to pay') : tx('Confirm payment') + ' · ' + rp(X.totalN());
     h += '<button class="btn btn-primary btn-block" style="height:50px;font-size:15px;margin:0"' + (K.gatewaySibuk ? ' disabled' : aksi('konfirmasi')) + '>' + esc(lbl) + '</button></div>';
     return h + '</div>';
   };
@@ -336,12 +339,16 @@
     for (var i = 0; i < D.PAYMENTS.length; i++) if (D.PAYMENTS[i].id === K.bayar) b = D.PAYMENTS[i];
     var h = '<div class="screen center" style="padding:28px 22px 22px;align-items:center">' + X.logoMark(52, 'margin-top:10px');
     h += '<div class="done-mark"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-2-800)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="' + IK.centang + '"/></svg></div>';
-    h += '<h3 style="margin:22px 0 0;font-size:26px">' + esc(t('slotLocked')) + '</h3>' +
-      '<p style="margin:10px 0 0;max-width:280px" class="t-135 lh-16 o-8">' + esc(j.name) + ' ' + esc(tx('is confirmed for')) + ' ' + esc(X.ringkasSlot()) + '. ' + esc(tx('Only you can move this booking — and we’ll tell you the moment she starts.')) + '</p>';
+    var am = X.alurMeta(), a = X.alurKini();
+    var judulSukses = a === 'langsung' ? t('slotLocked') : tx(am.tahap[0].title);
+    var teksSukses = a === 'langsung' ? esc(j.name) + ' ' + esc(tx('is confirmed for')) + ' ' + esc(X.ringkasSlot()) + '. ' + esc(tx('Only you can move this booking — and we’ll tell you the moment she starts.'))
+      : esc(tx(am.tahap[0].note)) + '. ' + esc(tx('Next:')) + ' ' + esc(tx(am.tahap[1].title).toLowerCase()) + ' — ' + esc(tx(am.tahap[1].note).toLowerCase()) + '.';
+    h += '<h3 style="margin:22px 0 0;font-size:26px">' + esc(judulSukses) + '</h3>' +
+      '<p style="margin:10px 0 0;max-width:280px" class="t-135 lh-16 o-8">' + teksSukses + '</p>';
     h += '<div class="card elev-sm gap-9" style="margin-top:22px;width:100%;text-align:start">' +
       '<div class="kv"><span>' + esc(tx('Order')) + '</span><span class="f-head">' + esc(K.orderNo) + '</span></div>' +
-      '<div class="kv"><span>' + esc(tx('Paid with')) + '</span><span>' + esc(tx(b.name)) + '</span></div>' +
-      '<div class="kv"><span>' + esc(t('totalLbl')) + '</span><span>' + rp(X.totalN()) + '</span></div>' +
+      '<div class="kv"><span>' + esc(tx(X.tagihanSekarang() ? 'Paid with' : 'Pay later with')) + '</span><span>' + esc(tx(b.name)) + '</span></div>' +
+      '<div class="kv"><span>' + esc(X.tagihanSekarang() ? t('totalLbl') : tx('Estimate')) + '</span><span>' + rp(X.totalN()) + (X.tagihanSekarang() ? '' : ' · ' + esc(tx('not charged yet'))) + '</span></div>' +
       '<div class="kv"><span>' + esc(tx('Warranty')) + '</span><span>' + esc(I.warrantyText(s.warranty)) + '</span></div></div>';
     h += '<div class="mt-auto stack gap-9" style="width:100%">' +
       '<button class="btn btn-primary btn-block btn-tall"' + aksi('ke', 'track') + '>' + esc(t('trackVisit')) + '</button>' +
@@ -374,14 +381,21 @@
       ? (pos.sumber === 'server' ? 'Live position from the EXOCLEAN position server (' + esc(jamPos) + ', refreshed every 5 s).' : 'Cleaner\'s last position from the partner app on this device (' + esc(jamPos) + '). ' + (K.posisiServerAda === false ? 'Position server offline — start app/server/posisi-server.js for other devices.' : 'Waiting for the position server.'))
       : 'Map shows the visit address. ' + (K.posisiServerAda === false ? 'Position server offline (app/server/posisi-server.js) and no position on this device yet.' : K.posisiServerAda ? 'Position server connected — no position sent for ' + esc(K.orderNo) + ' yet.' : 'Checking the position server…')) + '</div>';
     h += '<div class="card elev-md gap-12"><div class="flex items-center gap-11">' + X.avJuru(j, 46) +
-      '<div class="grow"><div class="f-head t-16">' + esc(j.name) + '</div><div class="t-115 o-65">★ ' + esc(j.rating || '—') + ' · B 3421 QLX · ' + esc(tx(D.STAGES[K.tahap].title)) + '</div></div>' +
+      '<div class="grow"><div class="f-head t-16">' + esc(j.name) + '</div><div class="t-115 o-65">★ ' + esc(j.rating || '—') + ' · B 3421 QLX · ' + esc(tx(X.tahapAlur()[Math.min(K.tahap, X.tahapAlur().length - 1)].title)) + '</div></div>' +
       '<a class="btn btn-icon btn-primary" href="tel:+6281288904417" aria-label="Call">' + garis(IK.telepon, 17) + '</a>' +
       '<button class="btn btn-icon btn-secondary btn-soft"' + aksi('lembar', 'obrol') + ' aria-label="Chat">' + garis(IK.obrol, 17) + '</button></div><div class="stack">';
-    for (var i = 0; i < D.STAGES.length; i++) {
+    var tahapan = X.tahapAlur(), menunggu = X.keputusanMenunggu();
+    if (menunggu.length) {
+      var JUDUL = { penawaran:'Quote is ready — accept to lock the schedule', timbang:'Weight recorded — approve the final price', struk:'Receipt sent — approve the goods total', ekstra:'Extra work proposed on site — approve or decline' };
+      for (var m = 0; m < menunggu.length; m++) h += '<button class="card card-clay gap-6" style="text-align:start;cursor:pointer"' + aksi('lembar', menunggu[m]) + '><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx('Needs your decision')) + '</span></div><div class="f-head t-15">' + esc(tx(JUDUL[menunggu[m]])) + '</div></button>';
+    }
+    h += '<div class="card elev-sm gap-6"><div class="flex items-center gap-8"><span class="tag tag-accent-2">' + esc(tx(X.alurMeta().label)) + '</span><span class="t-115 o-6">' + esc(tx('Step')) + ' ' + (Math.min(K.tahap, tahapan.length - 1) + 1) + '/' + tahapan.length + '</span></div><div class="stack">';
+    for (var i = 0; i < tahapan.length; i++) {
       var lewat = i <= K.tahap;
       h += '<div class="stage"><div class="stage-rail"><span class="' + kelas('stage-dot', lewat) + '">' + (lewat ? '✓' : '') + '</span><span class="' + kelas('stage-line', i < K.tahap) + '"></span></div>' +
-        '<div class="stage-body"><b>' + esc(tx(D.STAGES[i].title)) + '</b><span>' + esc(D.STAGES[i].note) + '</span></div></div>';
+        '<div class="stage-body"><b>' + esc(tx(tahapan[i].title)) + '</b><span>' + esc(tx(tahapan[i].note)) + '</span></div></div>';
     }
+    h += '</div></div>';
     h += '</div><button class="btn btn-secondary btn-block" style="margin:0"' + aksi('tahapMaju') + '>' + esc(tx('Simulate next status')) + '</button></div>';
     h += '<div class="card card-leaf gap-10"><div class="f-head t-15">' + esc(t('liveCheck')) + '</div>' + X.barisCeklis(false) + '</div>';
     h += '<div class="card elev-sm gap-9"><div class="flex items-center gap-9">' + av('RA', 30, 'soft') + '<div class="grow"><div class="t-13 bold">' + esc(tx('Rahma from support')) + '</div><div class="t-11 o-6">' + esc(tx('Human, replies in ~40s · not a bot')) + '</div></div>' +

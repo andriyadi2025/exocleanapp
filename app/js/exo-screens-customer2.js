@@ -38,7 +38,7 @@
       '<button class="' + kelas('pill', K.tabPesanan === 'past') + '"' + aksi('tabPesanan', 'past') + '>' + esc(t('past')) + '</button></div>';
     h += '<div class="stack gap-12" style="padding:16px 20px 0">';
     if (K.tabPesanan === 'up') {
-      h += '<div class="card elev-md gap-12"><div class="flex items-center gap-10"><span class="tag tag-accent-2">' + esc(tx('Today')) + '</span><span class="t-115 o-6">EXO-4471</span><span style="margin-inline-start:auto" class="t-115 c-leaf-800">' + esc(t('slotLocked')) + '</span></div>' +
+      h += '<div class="card elev-md gap-12"><div class="flex items-center gap-10"><span class="tag tag-accent-2">' + esc(tx('Today')) + '</span><span class="t-115 o-6">EXO-4471</span><span style="margin-inline-start:auto" class="t-115 c-leaf-800">' + esc(tx(X.tahapAlur()[Math.min(K.tahap, X.tahapAlur().length - 1)].title)) + '</span></div>' +
         '<div class="flex items-center gap-11">' + X.avJuru(j, 44) + '<div class="grow"><div class="f-head t-15">' + esc(j.name) + '</div><div class="t-115 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.ringkasSlot()) + '</div></div></div>' +
         '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'track') + '>' + esc(tx('Track')) + '</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'pindah') + '>' + esc(tx('Move time')) + '</button></div></div>';
       h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-9"><span class="av av-leaf" style="--s:26px">' + ikon(IKON.kalender, 14) + '</span>' +

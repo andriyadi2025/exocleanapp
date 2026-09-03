@@ -29,6 +29,8 @@ var ExoApp = (function () {
     jasa:'hourly', jam:3, regu:1, hari:1, mulai:'09:00', tambahan:{},
     juru:'sw', bayar:'wallet', voucher:true, tahap:1,
     bintang:5, pujian:{ 'Spotless finish':true }, tip:20000, catatanNilai:'',
+    /* alur transaksi per layanan: keputusan yang menunggu pelanggan */
+    penawaran:null, timbangan:null, struk:null, ekstra:[], ekstraForm:{ nama:'', harga:'' }, penawaranForm:{ a:'', ha:'', b:'', hb:'' }, timbangForm:'', strukForm:{ total:'', catatan:'' },
     keluhan:null, tabPesanan:'up', saring:'best',
     ceklis:{ kitchen:true, bath:true }, daring:true,
     shareTab:'invite', shareTarget:'wa', shared:false, termTab:'general',
@@ -133,6 +135,42 @@ var ExoApp = (function () {
 
   /* ============================================================ HITUNGAN */
   function jasaKini() { return D.SERVICES[KEADAAN.jasa]; }
+  /* Kode alur transaksi layanan yang sedang dipesan dan metadatanya. */
+  function alurKini() { return D.ALUR[KEADAAN.jasa] || 'langsung'; }
+  function alurMeta() { return D.ALUR_META[alurKini()]; }
+  function tahapAlur() { return alurMeta().tahap; }
+  /* Total yang ditagih SAAT INI menurut alurnya: langsung = seluruhnya,
+     titip = ongkos kurir saja (barang menyusul dari struk), lainnya = nol. */
+  function tagihanSekarang() {
+    var a = alurKini();
+    if (a === 'langsung' || a === 'titip') return totalN();
+    return 0;
+  }
+  /* Total tambahan yang sudah disetujui pelanggan di lokasi. */
+  function ekstraDisetujui() { var n = 0; (KEADAAN.ekstra || []).forEach(function (e) { if (e.status === 'diterima') n += e.harga; }); return n; }
+  function keputusanMenunggu() {
+    var K = KEADAAN, a = alurKini(), d = [];
+    if (a === 'survei' && K.penawaran && K.penawaran.status === 'menunggu') d.push('penawaran');
+    if (a === 'timbang' && K.timbangan && K.timbangan.status === 'menunggu') d.push('timbang');
+    if (a === 'titip' && K.struk && K.struk.status === 'menunggu') d.push('struk');
+    if ((K.ekstra || []).some(function (e) { return e.status === 'menunggu'; })) d.push('ekstra');
+    return d;
+  }
+  /* Status pesanan di basis data menurut alur dan tahap. */
+  function statusAlur() {
+    var a = alurKini(), t = KEADAAN.tahap;
+    if (a === 'survei') return t >= 3 ? 'dijadwalkan' : t === 2 ? 'penawaran' : 'survei';
+    if (a === 'timbang') return t >= 4 ? 'selesai' : t >= 1 ? 'jemput' : 'dijadwalkan';
+    if (a === 'kontrak') return t >= 2 ? 'dijadwalkan' : 'proposal';
+    if (a === 'titip') return t >= 4 ? 'selesai' : 'belanja';
+    return t >= 4 ? 'selesai' : t >= 3 ? 'berjalan' : 'dijadwalkan';
+  }
+  function simpanAlurDB() {
+    if (!pakaiDB() || !KEADAAN.orderDbId) return;
+    var K = KEADAAN;
+    EXO_DB.update('orders', K.orderDbId, { status: statusAlur(), exo: Object.assign({}, (EXO_DB.find('orders', K.orderDbId) || {}).exo || {},
+      { alur: alurKini(), tahap: K.tahap, penawaran: K.penawaran, timbangan: K.timbangan, struk: K.struk, ekstra: K.ekstra, ekstraDisetujui: ekstraDisetujui() }) });
+  }
   function addonsKini() { return D.ADDON_SETS[KEADAAN.jasa] || []; }
   function bulat(r) { return r >= 20000 ? Math.round(r / 1000) * 1000 : Math.round(r / 500) * 500; }
   function rateFor(j) { return bulat(jasaKini().rate * (j.factor || 1)); }
@@ -389,8 +427,8 @@ var ExoApp = (function () {
       /* jam dinding di atas berlaku di zona ini; padanan UTC-nya untuk pembanding lintas kota */
       zona: tz, mulaiUtc: keUTC(tgl, KEADAAN.mulai, tz), selesaiUtc: keUTC(tgl, selesai, tz),
       teamId:null, workerIds:[j.id], supervisorId:null,
-      status:'dijadwalkan', nilai:totalN(), checklist:[],
-      sumber:'exo-app', exo:{ jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true }
+      status: alurKini() === 'langsung' ? 'dijadwalkan' : alurKini() === 'survei' ? 'survei' : alurKini() === 'timbang' ? 'jemput' : alurKini() === 'kontrak' ? 'proposal' : 'belanja', nilai:totalN(), checklist:[],
+      sumber:'exo-app', exo:{ alur:alurKini(), jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true }
     });
     if (EXO_DB.log) EXO_DB.log(o.clientId, 'Memesan lewat EXOCLEAN App · ' + o.no, 'order', o.id);
     KEADAAN.orderDbId = o.id; KEADAAN.orderNo = o.no;
@@ -689,6 +727,7 @@ var ExoApp = (function () {
     voucherKini:voucherKini, voucherEligible:voucherEligible, voucherApplied:voucherApplied,
     qtyStep:qtyStep, qtyMin:qtyMin, qtyMax:qtyMax, qtyText:qtyText, layananDijeda:layananDijeda, terbitan:terbitan,
     hariKe:hariKe, ringkasSlot:ringkasSlot, alamatKini:alamatKini,
+    alurKini:alurKini, alurMeta:alurMeta, tahapAlur:tahapAlur, tagihanSekarang:tagihanSekarang, ekstraDisetujui:ekstraDisetujui, keputusanMenunggu:keputusanMenunggu, statusAlur:statusAlur, simpanAlurDB:simpanAlurDB,
     zonaPesanan:zonaPesanan, labelZona:labelZona, labelPerangkat:labelPerangkat, zonaBeda:zonaBeda, jamZona:jamZona, jamPonsel:jamPonsel,
     keUTC:keUTC, mulaiUTC:mulaiUTC, jamSelesai:jamSelesai, menitKeMulai:menitKeMulai, dalamKunci4Jam:dalamKunci4Jam, wilayahPesanan:wilayahPesanan, sopMeta:sopMeta, ppeComplete:ppeComplete, sopSelesai:sopSelesai,
     coverage:coverage, addrFilled:addrFilled,
