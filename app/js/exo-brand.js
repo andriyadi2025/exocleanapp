@@ -22,6 +22,10 @@ var EXO_BRAND = (function () {
      rancangan (RAMP di "EXOCLEAN App.dc.html"). Warna di luar daftar ini
      ditolak: kontras terhadap latar aplikasi belum diperiksa untuknya. */
   var RAMP = {
+    /* Tosca resmi Brand Guidelines EXOCLEAN 2023 — pilihan bawaan. */
+    '#009183': ['#e0f2f0','#c2e5e1','#94d1cb','#52b4ab','#009183','#018478','#02766a','#036359','#045048'],
+    /* Teal resmi, sebagai aksen alternatif. */
+    '#66cbc4': ['#edf9f8','#daf3f1','#bfe9e6','#97dcd7','#66cbc4','#5ab7b1','#4da19a','#3c837e','#2a6661'],
     '#109080': ['#e5f4f1','#c7eae4','#9edcd2','#54bdb0','#109080','#0d8072','#0b6b60','#08544b','#063c36'],
     '#70d0c0': ['#edf9f7','#d9f2ee','#b9e8e0','#a3e4d8','#70d0c0','#4bb8a7','#26786c','#1a564d','#123f38'],
     '#c67139': ['#f8e9dd','#f0d2ba','#e3b48e','#d6935f','#c67139','#b26232','#94512a','#733f21','#522d17'],
@@ -30,7 +34,7 @@ var EXO_BRAND = (function () {
   };
 
   var BAWAAN = {
-    accent:      '#109080',
+    accent:      '#009183',
     markSrc:     'assets/exoclean-mark.png',
     wordSrc:     'assets/exoclean-wordmark.png',
     appName:     'EXOCLEAN',
@@ -49,7 +53,12 @@ var EXO_BRAND = (function () {
   function baca() {
     try {
       var s = localStorage.getItem(KUNCI);
-      return s ? Object.assign({}, BAWAAN, JSON.parse(s)) : Object.assign({}, BAWAAN);
+      var b = s ? Object.assign({}, BAWAAN, JSON.parse(s)) : Object.assign({}, BAWAAN);
+      /* Migrasi 3 Sep 2026: aksen lama #109080 (sebelum pedoman merek dipakai)
+         dibaca sebagai tosca resmi, supaya tampilan yang sudah terlanjur
+         diterbitkan ikut berpindah tanpa harus diterbitkan ulang. */
+      if (b.accent === '#109080') b.accent = '#009183';
+      return b;
     } catch (e) { return Object.assign({}, BAWAAN); }
   }
 

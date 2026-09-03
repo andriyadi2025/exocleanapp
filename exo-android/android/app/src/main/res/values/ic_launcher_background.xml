@@ -2,5 +2,5 @@
 <!-- Diambil dari piksel sudut app/assets/icon-512.png oleh
      perbaiki-adaptif.js. Jangan disunting tangan: ia ditulis ulang. -->
 <resources>
-    <color name="ic_launcher_background">#0F766E</color>
+    <color name="ic_launcher_background">#009183</color>
 </resources>
