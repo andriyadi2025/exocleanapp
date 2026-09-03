@@ -365,6 +365,45 @@
     'still holds your 6 Sep slot — skipping never costs you the cleaner.':'tetap memegang slot 6 Sep Anda — melewati tidak pernah membuat Anda kehilangan petugas.',
     'Your control':'Kendali Anda', 'Lengkap':'Lengkap'
   };
+  /* Layanan perawatan & pribadi (3 Sep 2026): add-on dan ketentuan. */
+  var ID_CARE = {
+    'Overnight shift':'Shift malam', 'Meal preparation':'Menyiapkan makanan', 'simple home cooking':'masakan rumah sederhana', 'Second caregiver':'Pengasuh kedua', 'for two people':'untuk dua orang',
+    'Cold-chain bag':'Tas pendingin', 'frozen & chilled':'beku & dingin', 'Extra waiting time':'Waktu tunggu tambahan', 'per 30 min queue':'per 30 menit antre', 'Beyond 10 km':'Lebih dari 10 km', 'per extra 5 km':'per tambahan 5 km',
+    'Extra 30 minutes':'Tambah 30 menit', 'same therapist':'terapis yang sama', 'Body scrub':'Lulur badan', 'Massage table':'Meja pijat', 'brought by the therapist':'dibawa terapis',
+    'Minimum 4 hours per visit with one caregiver; 8- and 12-hour shifts are available.':'Minimal 4 jam per kunjungan dengan satu pengasuh; tersedia shift 8 dan 12 jam.',
+    'Companionship, feeding, bathing and toileting help, mobility support':'Menemani, membantu makan, mandi, dan ke toilet, membantu berpindah',
+    'Reminders for medication already prescribed, light tidying of the care area':'Mengingatkan obat yang sudah diresepkan, merapikan ringan area perawatan',
+    'Child care: supervision, meals, homework help and play':'Pengasuhan anak: pengawasan, makan, bantu PR, dan bermain',
+    'Injections, wound care or any medical procedure':'Suntik, perawatan luka, atau tindakan medis apa pun',
+    'Heavy housework beyond the care area — book a cleaning service for that':'Pekerjaan rumah berat di luar area perawatan — pesan layanan cleaning untuk itu',
+    'A vetted caregiver with first-aid training, ID checked and police clearance':'Pengasuh terverifikasi dengan pelatihan P3K, KTP dicek, dan SKCK',
+    'A care plan, the medication list and an emergency contact':'Rencana perawatan, daftar obat, dan kontak darurat',
+    'Meals, diapers and personal items of the person cared for':'Makanan, popok, dan perlengkapan pribadi orang yang dirawat',
+    'Caregivers are not nurses. Medication is given only as written by a doctor, and no injections or medical procedures are done.':'Pengasuh bukan perawat medis. Obat diberikan hanya sesuai tulisan dokter, tanpa suntikan atau tindakan medis.',
+    'Per trip within 10 km of your address; goods are paid at cost against the receipt.':'Per trip dalam 10 km dari alamat Anda; barang dibayar sesuai harga di struk.',
+    'Grocery and market shopping from your list, with photos before checkout':'Belanja bahan makanan dan pasar sesuai daftar Anda, difoto sebelum bayar',
+    'Pick up or drop off parcels, documents, laundry and keys':'Mengambil atau mengantar paket, dokumen, laundry, dan kunci',
+    'Queueing for bills, permits and returns':'Mengantre untuk tagihan, perizinan, dan pengembalian barang',
+    'Goods above Rp2.000.000 per trip without a deposit':'Barang di atas Rp2.000.000 per trip tanpa deposit',
+    'Live animals, hazardous goods and anything illegal':'Hewan hidup, barang berbahaya, dan apa pun yang ilegal',
+    'A runner with ID checked and an insulated bag for cold items':'Kurir dengan KTP dicek dan tas pendingin untuk barang dingin',
+    'A receipt photo and an itemised total in the app':'Foto struk dan rincian total di aplikasi',
+    'A clear list with brands and which substitutes are allowed':'Daftar yang jelas dengan merek dan pengganti yang boleh',
+    'Payment for the goods, settled from your EXO Wallet on delivery':'Pembayaran barang, dipotong dari EXO Wallet saat diantar',
+    'Alcohol, cigarettes, prescription medicines and cash withdrawals cannot be bought on your behalf.':'Alkohol, rokok, obat resep, dan tarik tunai tidak bisa dibelikan atas nama Anda.',
+    'Per 60-minute session at your home; a therapist of the same gender can be requested at no charge.':'Per sesi 60 menit di rumah Anda; terapis sesama jenis bisa diminta tanpa biaya.',
+    'Traditional, relaxation, deep-tissue and reflexology massage':'Pijat tradisional, relaksasi, deep-tissue, dan refleksi',
+    'Body scrub and a warm compress after the massage':'Lulur badan dan kompres hangat setelah pijat',
+    'Prenatal massage after week 12 with a trained therapist':'Pijat ibu hamil setelah minggu ke-12 dengan terapis terlatih',
+    'Medical or physiotherapy treatment, wet cupping':'Terapi medis atau fisioterapi, bekam basah',
+    'Any request outside wellness — the session ends and is charged in full':'Permintaan apa pun di luar kebugaran — sesi dihentikan dan ditagih penuh',
+    'A certified therapist, fresh linen, massage oil and towels':'Terapis bersertifikat, sprei bersih, minyak pijat, dan handuk',
+    'A folding massage table on request':'Meja pijat lipat bila diminta',
+    'A quiet room or a clear space of about 2×2 m':'Ruang tenang atau area kosong sekitar 2×2 m',
+    'Shower access before the session':'Akses kamar mandi sebelum sesi',
+    'Wellness massage only. Not for acute injury, fever, pregnancy under 12 weeks or skin infections — tell us before booking.':'Hanya pijat kebugaran. Tidak untuk cedera akut, demam, kehamilan di bawah 12 minggu, atau infeksi kulit — beri tahu kami sebelum memesan.'
+  };
+  Object.keys(ID_CARE).forEach(function (k) { ID[k] = ID_CARE[k]; });
   Object.keys(ID).forEach(function (k) { id(k, ID[k]); });
 
   /* Pesan sekilas (toast) — Indonesia */

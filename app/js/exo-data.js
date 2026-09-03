@@ -33,17 +33,24 @@ var EXO_DATA = (function () {
     pool:     { name:'Swimming pool care',       rate:550000,  unit:'/visit', warranty:'7-day water check' },
     toren:    { name:'Water tank cleaning',      rate:350000,  unit:'/tank',  warranty:'6-month schedule' },
     postreno: { name:'Post-renovation cleaning', rate:135000,  unit:'/hour',  warranty:'7-day free redo' },
-    tankbig:  { name:'Building tank & reservoir',rate:2400000, unit:'/tank',  warranty:'6-month schedule' }
+    tankbig:  { name:'Building tank & reservoir',rate:2400000, unit:'/tank',  warranty:'6-month schedule' },
+    /* Ditambahkan 3 Sep 2026: layanan perawatan & pribadi. */
+    care:     { name:'Elderly, child & patient care', rate:55000, unit:'/hour',    warranty:'Vetted caregiver, free replacement' },
+    errand:   { name:'Shopping & errands',        rate:35000,   unit:'/trip',    warranty:'Receipt-matched, cover up to Rp1jt' },
+    massage:  { name:'Massage & body care',       rate:150000,  unit:'/session', warranty:'Certified therapist' }
   };
 
-  var DEFAULT_QTY = { '/hour':3, '/unit':2, '/seat':3, '/kg':5, '/room':2, '/car':1, '/visit':1, '/m²':12, '/tank':1 };
+  var DEFAULT_QTY = { '/hour':3, '/unit':2, '/seat':3, '/kg':5, '/room':2, '/car':1, '/visit':1, '/m²':12, '/tank':1, '/trip':1, '/session':1 };
+  /* Kuantitas awal per LAYANAN, mengalahkan DEFAULT_QTY per unit: perawatan minimal 4 jam. */
+  var MIN_QTY = { postreno:6, care:4 };
   var STEP_QTY    = { '/m²':4 };
   var SURVEY_FIRST = { postreno:true, tankbig:true, deep:true };
 
   var CATALOG_GROUPS = [
     { key:'grpHome', keys:['hourly','deep','iron','laundry','sofa','hydro'] },
     { key:'grpTech', keys:['ac','disinfect','pest','toren','poles','pool','car'] },
-    { key:'grpBiz',  keys:['office','postreno','tankbig'] }
+    { key:'grpBiz',  keys:['office','postreno','tankbig'] },
+    { key:'grpCare', keys:['care','errand','massage'] }
   ];
 
   /* Sembilan ubin cepat di beranda. `daun` = nada hijau kedua. */
@@ -111,7 +118,16 @@ var EXO_DATA = (function () {
              {id:'pipe', name:'Distribution pipe flush', note:'per riser', price:900000}],
     car:[{id:'interior', name:'Interior vacuum & wipe', note:'+30 min', price:60000},
          {id:'wax', name:'Wax & polish', note:'+40 min', price:95000},
-         {id:'engine', name:'Engine bay clean', note:'dry method', price:70000}]
+         {id:'engine', name:'Engine bay clean', note:'dry method', price:70000}],
+    care:[{id:'night', name:'Overnight shift', note:'20:00–08:00', price:250000},
+          {id:'meal', name:'Meal preparation', note:'simple home cooking', price:45000},
+          {id:'twocare', name:'Second caregiver', note:'for two people', price:180000}],
+    errand:[{id:'cold', name:'Cold-chain bag', note:'frozen & chilled', price:15000},
+            {id:'wait', name:'Extra waiting time', note:'per 30 min queue', price:20000},
+            {id:'far', name:'Beyond 10 km', note:'per extra 5 km', price:15000}],
+    massage:[{id:'ext30', name:'Extra 30 minutes', note:'same therapist', price:60000},
+             {id:'scrub', name:'Body scrub', note:'+30 min', price:85000},
+             {id:'table', name:'Massage table', note:'brought by the therapist', price:30000}]
   };
 
   var TIMES = ['08:00','09:00','10:00','13:00','15:00','17:00'];
@@ -285,6 +301,24 @@ var EXO_DATA = (function () {
       cant:['Removing structural debris heavier than one pick-up load without the haul-away add-on','Repainting, plastering or any repair work','Working while contractors are still on site'],
       weBring:['Industrial vacuum, scrapers, dust masks, safe solvents'], youBring:['Water and power, plus building permission for waste removal'],
       note:'This replaces the old rule that turned post-renovation jobs away. Survey is free and the quote is fixed before work starts.'},
+    care:{min:'Minimum 4 hours per visit with one caregiver; 8- and 12-hour shifts are available.',
+      can:['Companionship, feeding, bathing and toileting help, mobility support','Reminders for medication already prescribed, light tidying of the care area','Child care: supervision, meals, homework help and play'],
+      cant:['Injections, wound care or any medical procedure','Heavy housework beyond the care area — book a cleaning service for that'],
+      weBring:['A vetted caregiver with first-aid training, ID checked and police clearance'],
+      youBring:['A care plan, the medication list and an emergency contact','Meals, diapers and personal items of the person cared for'],
+      note:'Caregivers are not nurses. Medication is given only as written by a doctor, and no injections or medical procedures are done.'},
+    errand:{min:'Per trip within 10 km of your address; goods are paid at cost against the receipt.',
+      can:['Grocery and market shopping from your list, with photos before checkout','Pick up or drop off parcels, documents, laundry and keys','Queueing for bills, permits and returns'],
+      cant:['Goods above Rp2.000.000 per trip without a deposit','Live animals, hazardous goods and anything illegal'],
+      weBring:['A runner with ID checked and an insulated bag for cold items','A receipt photo and an itemised total in the app'],
+      youBring:['A clear list with brands and which substitutes are allowed','Payment for the goods, settled from your EXO Wallet on delivery'],
+      note:'Alcohol, cigarettes, prescription medicines and cash withdrawals cannot be bought on your behalf.'},
+    massage:{min:'Per 60-minute session at your home; a therapist of the same gender can be requested at no charge.',
+      can:['Traditional, relaxation, deep-tissue and reflexology massage','Body scrub and a warm compress after the massage','Prenatal massage after week 12 with a trained therapist'],
+      cant:['Medical or physiotherapy treatment, wet cupping','Any request outside wellness — the session ends and is charged in full'],
+      weBring:['A certified therapist, fresh linen, massage oil and towels','A folding massage table on request'],
+      youBring:['A quiet room or a clear space of about 2×2 m','Shower access before the session'],
+      note:'Wellness massage only. Not for acute injury, fever, pregnancy under 12 weeks or skin infections — tell us before booking.'},
     tankbig:{min:'For building reservoirs above 2.000 litres; quoted per tank after a site check.',
       can:['Draining, high-pressure wash, sludge removal, food-grade sterilisation','Before–after photo report and a chemical log for building management'],
       cant:['Structural repair of the tank, pumps or valves','Confined-space entry without the building’s written permit'],
@@ -465,6 +499,18 @@ var EXO_DATA = (function () {
       alat:[['Pompa industri',''],['Kit ruang terbatas & tali',''],['Blower ventilasi',''],['Lampu kerja tahan air','']],
       chem:[['Sterilisasi food-grade skala besar',''],['Penetral endapan','']],
       steps:[['Izin kerja tertulis dari gedung','tanpa ini pekerjaan batal',true],['Uji gas & ventilasi paksa','',true],['Petugas pengawas berjaga di luar','wajib',true],['Kuras, semprot tekanan tinggi, angkat lumpur','',true],['Sterilisasi & bilas menyeluruh','',true],['Ambil sampel air & tutup izin kerja','',true]]},
+    care:{code:'C-001', title:'Perawatan Lansia, Anak & Pasien', ppe:['gloves','mask'],
+      alat:[['Kartu identitas & sertifikat P3K','tunjukkan saat tiba'],['Termometer & tensimeter','catat di laporan'],['Sarung tangan sekali pakai','']],
+      chem:[['Hand sanitizer','sebelum & sesudah kontak'],['Sabun cuci tangan','']],
+      steps:[['Serah terima dengan keluarga','baca rencana perawatan, foto daftar obat',true],['Cek kondisi & kebutuhan awal','suhu, tekanan darah bila diminta',false],['Bantu makan & minum sesuai jadwal','',false],['Bantu mandi, ganti pakaian, toileting','jaga privasi',false],['Ingatkan obat sesuai resep','catat jam & dosis',true],['Laporan akhir & serah terima kembali','foto catatan harian',true]]},
+    errand:{code:'C-002', title:'Belanja & Titip Barang', ppe:['mask'],
+      alat:[['Tas belanja & tas pendingin',''],['Ponsel berkamera','foto struk'],['Helm & jas hujan','']],
+      chem:[],
+      steps:[['Konfirmasi daftar belanja lewat chat','sebut merek & pengganti yang boleh',false],['Foto barang sebelum bayar','',true],['Foto struk & total','',true],['Antar ke alamat','kabari saat 5 menit lagi',false],['Serah terima & cocokkan struk','foto barang diterima',true]]},
+    massage:{code:'C-003', title:'Pijat & Perawatan Tubuh', ppe:['mask'],
+      alat:[['Sprei & handuk bersih','satu set per pelanggan'],['Minyak pijat & lulur','tanya alergi dulu'],['Meja pijat lipat','bila dipesan']],
+      chem:[['Hand sanitizer','sebelum & sesudah'],['Minyak pijat hipoalergenik','']],
+      steps:[['Tanya riwayat kesehatan & area yang dihindari','catat',false],['Siapkan ruang, sprei, handuk','foto',true],['Sesi pijat sesuai pilihan','jaga batas profesional',false],['Kompres hangat & air minum','',false],['Rapikan & serah terima','foto ruang rapi',true]]},
     'default':{code:'D-012', title:'Pembersihan Toilet & Urinal', ppe:['gloves','mask','shoes'],
       alat:[['Sikat toilet & sikat nat','kode warna biru'],['Wet mop + ember biru','khusus area toilet'],['Lap microfiber biru','ganti tiap 2 bilik'],['Spray bottle berlabel','tidak boleh tanpa label'],['Rambu lantai basah','pasang sebelum mulai']],
       chem:[['Pembersih porselen (asam ringan)','1:20 · kontak 3 menit'],['Desinfektan permukaan','1:100 · jangan dicampur'],['Pembersih kaca/cermin','semprot ke lap'],['Pewangi ruangan','setelah lantai kering']],
@@ -579,7 +625,7 @@ var EXO_DATA = (function () {
   var JUMP_PARTNER  = [['preg','Daftar mitra'],['pjobs','Job feed'],['pjob','Active job'],['proute','Route'],['psop','SOP checklist'],['preport','Before-after'],['pearn','Earnings'],['pwallet','Dompet mitra']];
 
   return {
-    SERVICES: SERVICES, DEFAULT_QTY: DEFAULT_QTY, STEP_QTY: STEP_QTY, SURVEY_FIRST: SURVEY_FIRST,
+    SERVICES: SERVICES, DEFAULT_QTY: DEFAULT_QTY, MIN_QTY: MIN_QTY, STEP_QTY: STEP_QTY, SURVEY_FIRST: SURVEY_FIRST,
     CATALOG_GROUPS: CATALOG_GROUPS, HOME_TILES: HOME_TILES, CLEANERS: CLEANERS, MIN_FACTOR: MIN_FACTOR,
     ADDON_SETS: ADDON_SETS, TIMES: TIMES, VOUCHER: VOUCHER, PLATFORM_FEE: PLATFORM_FEE, CREW_FEE: CREW_FEE,
     PAYMENTS: PAYMENTS, STAGES: STAGES, CHECK_IDS: CHECK_IDS, CHECK_KEYS: CHECK_KEYS, CHECK_ID_LABELS: CHECK_ID_LABELS, CHECK_TIMES: CHECK_TIMES,

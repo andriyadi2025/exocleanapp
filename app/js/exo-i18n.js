@@ -113,6 +113,7 @@ var EXO_I18N = (function () {
     catalogSub:{en:'{n} services · lowest rate in your area', id:'{n} layanan · tarif terendah di pasar Anda', ja:'{n}サービス・お住まいの地域の最安値', ko:'{n}개 서비스 · 지역 최저가', zh:'{n} 项服务 · 您所在区域最低价', ar:'{n} خدمة · أقل سعر في منطقتك', ms:'{n} perkhidmatan · kadar terendah di kawasan anda', th:'{n} บริการ · ราคาต่ำสุดในพื้นที่', vi:'{n} dịch vụ · giá thấp nhất khu vực', tl:'{n} serbisyo · pinakamababang presyo', km:'សេវា {n} · តម្លៃទាបបំផុត', my:'ဝန်ဆောင်မှု {n} ခု'},
     grpHome:{en:'Home & routine', id:'Rumah & rutin', ja:'住まい・定期', ko:'집·정기', zh:'家居与日常', ar:'المنزل والروتين', ms:'Rumah & rutin', th:'บ้านและงานประจำ', vi:'Nhà & định kỳ', tl:'Bahay at rutin', km:'ផ្ទះ និងទម្លាប់', my:'အိမ်နှင့်ပုံမှန်'},
     grpTech:{en:'Technical & periodic', id:'Teknis & berkala', ja:'技術・定期点検', ko:'기술·정기', zh:'技术与定期', ar:'تقني ودوري', ms:'Teknikal & berkala', th:'เทคนิคและตามรอบ', vi:'Kỹ thuật & định kỳ', tl:'Teknikal at pana-panahon', km:'បច្ចេកទេស', my:'နည်းပညာနှင့်အချိန်ပိုင်း'},
+    grpCare:{en:'Care & personal', id:'Perawatan & pribadi', ja:'ケア・パーソナル', ko:'돌봄·개인', zh:'照护与个人', ar:'رعاية وخدمات شخصية', ms:'Penjagaan & peribadi', th:'ดูแลและส่วนตัว', vi:'Chăm sóc & cá nhân', tl:'Pangangalaga at personal', km:'ថែទាំ និងផ្ទាល់ខ្លួន', my:'စောင့်ရှောက်မှုနှင့် ကိုယ်ပိုင်'},
     grpBiz:{en:'Business', id:'Bisnis', ja:'法人', ko:'비즈니스', zh:'企业', ar:'الأعمال', ms:'Perniagaan', th:'ธุรกิจ', vi:'Doanh nghiệp', tl:'Negosyo', km:'អាជីវកម្ម', my:'စီးပွားရေး'},
     fromPrefix:{en:'from', id:'dari', ja:'最安', ko:'최저', zh:'起', ar:'من', ms:'dari', th:'เริ่ม', vi:'từ', tl:'mula', km:'ចាប់ពី', my:'စ'},
     perHour:{en:'/ hour', id:'/ jam', ja:'/ 時間', ko:'/ 시간', zh:'/ 小时', ar:'/ ساعة', ms:'/ jam', th:'/ ชม.', vi:'/ giờ', tl:'/ oras', km:'/ ម៉ោង', my:'/ နာရီ'},
@@ -181,11 +182,17 @@ var EXO_I18N = (function () {
     pool:{en:'Pool care', id:'Perawatan kolam renang', ja:'プール管理', ko:'수영장 관리', zh:'泳池养护', ar:'العناية بالمسبح', ms:'Penjagaan kolam', th:'ดูแลสระว่ายน้ำ', vi:'Chăm sóc hồ bơi', tl:'Pool care', km:'ថែទាំអាងហែល', my:'ရေကူးကန်ထိန်း'},
     toren:{en:'Water tank cleaning', id:'Cuci toren air', ja:'貯水タンク清掃', ko:'물탱크 청소', zh:'水塔清洗', ar:'تنظيف خزان المياه', ms:'Cuci tangki air', th:'ล้างถังน้ำ', vi:'Vệ sinh bồn nước', tl:'Linis ng tangke', km:'សម្អាតធុងទឹក', my:'ရေတိုင်ကီသန့်စင်'},
     postreno:{en:'Post-renovation cleaning', id:'Pembersihan pasca renovasi', ja:'リフォーム後清掃', ko:'리모델링 후 청소', zh:'装修后清洁', ar:'تنظيف بعد التجديد', ms:'Pembersihan pasca renovasi', th:'ทำความสะอาดหลังรีโนเวท', vi:'Vệ sinh sau sửa chữa', tl:'Linis pagkatapos ng renovation', km:'សម្អាតក្រោយជួសជុល', my:'ပြင်ဆင်ပြီးသန့်ရှင်းရေး'},
+    care:{en:'Elderly, child & patient care', id:'Perawatan lansia, anak & pasien', ja:'高齢者・子ども・患者ケア', ko:'노인·아동·환자 돌봄', zh:'老人、儿童与病患照护', ar:'رعاية المسنين والأطفال والمرضى', ms:'Penjagaan warga emas, kanak-kanak & pesakit', th:'ดูแลผู้สูงอายุ เด็ก และผู้ป่วย', vi:'Chăm sóc người già, trẻ em & bệnh nhân', tl:'Pag-aalaga sa matanda, bata at pasyente', km:'ថែទាំមនុស្សចាស់ កុមារ និងអ្នកជំងឺ', my:'သက်ကြီး၊ ကလေး၊ လူနာ စောင့်ရှောက်မှု'},
+    errand:{en:'Shopping & errands', id:'Belanja & titip barang', ja:'買い物・お使い代行', ko:'장보기·심부름', zh:'代购与跑腿', ar:'التسوق والمهمات', ms:'Beli-belah & suruhan', th:'ซื้อของและฝากธุระ', vi:'Đi chợ & việc vặt', tl:'Pamimili at pag-uutos', km:'ទិញទំនិញ និងបញ្ជូនរបស់', my:'ဈေးဝယ်ခြင်းနှင့် အလုပ်ကိစ္စ'},
+    massage:{en:'Massage & body care', id:'Pijat & perawatan tubuh', ja:'マッサージ・ボディケア', ko:'마사지·바디케어', zh:'按摩与身体护理', ar:'التدليك والعناية بالجسم', ms:'Urut & penjagaan badan', th:'นวดและดูแลร่างกาย', vi:'Massage & chăm sóc cơ thể', tl:'Masahe at pangangalaga sa katawan', km:'ម៉ាស្សា និងថែទាំរាងកាយ', my:'အနှိပ်နှင့် ခန္ဓာကိုယ်စောင့်ရှောက်မှု'},
     tankbig:{en:'Building tank & reservoir', id:'Tangki & reservoir gedung', ja:'ビル貯水槽清掃', ko:'건물 저수조 청소', zh:'楼宇水箱与蓄水池', ar:'خزانات المباني', ms:'Tangki & takungan bangunan', th:'ถังเก็บน้ำอาคาร', vi:'Bể chứa tòa nhà', tl:'Tangke ng gusali', km:'អាងស្តុកទឹកអគារ', my:'အဆောက်အအုံရေကန်'},
     car:{en:'Car wash at home', id:'Cuci mobil di rumah', ja:'出張洗車', ko:'출장 세차', zh:'上门洗车', ar:'غسيل السيارة منزلياً', ms:'Cuci kereta di rumah', th:'ล้างรถถึงบ้าน', vi:'Rửa xe tại nhà', tl:'Car wash sa bahay', km:'លាងឡានដល់ផ្ទះ', my:'အိမ်ရောက်ကားဆေး'}
   };
 
   var WARRANTY = {
+    'Vetted caregiver, free replacement':{en:'Vetted caregiver, free replacement', id:'Pengasuh terverifikasi, ganti gratis', ja:'審査済みケアラー・無料交代', ko:'검증된 돌봄인, 무료 교체', zh:'经审核的看护，免费更换', ar:'مقدم رعاية موثق، استبدال مجاني', ms:'Penjaga disemak, ganti percuma', th:'ผู้ดูแลผ่านการตรวจสอบ เปลี่ยนฟรี', vi:'Người chăm sóc đã xác minh, thay miễn phí', tl:'Beripikadong tagapag-alaga, libreng palit', km:'អ្នកថែទាំបានផ្ទៀងផ្ទាត់ ប្ដូរឥតគិតថ្លៃ', my:'စိစစ်ပြီးစောင့်ရှောက်သူ၊ အခမဲ့အစားထိုး'},
+    'Receipt-matched, cover up to Rp1jt':{en:'Receipt-matched, cover up to Rp1jt', id:'Sesuai struk, jaminan hingga Rp1jt', ja:'レシート照合・Rp1jtまで補償', ko:'영수증 대조, Rp1jt까지 보상', zh:'凭小票核对，最高赔付Rp1jt', ar:'مطابق للإيصال، تغطية حتى Rp1jt', ms:'Padan resit, lindungan hingga Rp1jt', th:'ตรวจกับใบเสร็จ คุ้มครองถึง Rp1jt', vi:'Đối chiếu hóa đơn, bồi thường đến Rp1jt', tl:'Tugma sa resibo, sagot hanggang Rp1jt', km:'ផ្ទៀងតាមវិក្កយបត្រ ធានាដល់ Rp1jt', my:'ပြေစာနှင့်တိုက်ဆိုင်၊ Rp1jt အထိ အာမခံ'},
+    'Certified therapist':{en:'Certified therapist', id:'Terapis bersertifikat', ja:'認定セラピスト', ko:'공인 테라피스트', zh:'持证理疗师', ar:'معالج معتمد', ms:'Terapis bertauliah', th:'นักบำบัดมีใบรับรอง', vi:'Kỹ thuật viên có chứng chỉ', tl:'Sertipikadong therapist', km:'អ្នកព្យាបាលមានវិញ្ញាបនបត្រ', my:'အသိအမှတ်ပြု အနှိပ်ဆရာ'},
     '48-hour free redo':{en:'48-hour free redo', id:'Ulang gratis 48 jam', ja:'48時間以内やり直し無料', ko:'48시간 무료 재작업', zh:'48小时免费返工', ar:'إعادة مجانية خلال ٤٨ ساعة', ms:'Ulang percuma 48 jam', th:'ทำซ้ำฟรีใน 48 ชม.', vi:'Làm lại miễn phí 48 giờ', tl:'Libreng ulit sa 48 oras', km:'ធ្វើឡើងវិញឥតគិតថ្លៃ៤៨ម៉ោង', my:'၄၈ နာရီအခမဲ့ပြန်လုပ်'},
     '7-day free redo':{en:'7-day free redo', id:'Ulang gratis 7 hari', ja:'7日以内やり直し無料', ko:'7일 무료 재작업', zh:'7天免费返工', ar:'إعادة مجانية خلال ٧ أيام', ms:'Ulang percuma 7 hari', th:'ทำซ้ำฟรีใน 7 วัน', vi:'Làm lại miễn phí 7 ngày', tl:'Libreng ulit sa 7 araw', km:'ធ្វើឡើងវិញ៧ថ្ងៃ', my:'၇ ရက်အခမဲ့ပြန်လုပ်'},
     '14-day free redo':{en:'14-day free redo', id:'Ulang gratis 14 hari', ja:'14日以内やり直し無料', ko:'14일 무료 재작업', zh:'14天免费返工', ar:'إعادة مجانية خلال ١٤ يوماً', ms:'Ulang percuma 14 hari', th:'ทำซ้ำฟรีใน 14 วัน', vi:'Làm lại miễn phí 14 ngày', tl:'Libreng ulit sa 14 araw', km:'ធ្វើឡើងវិញ១៤ថ្ងៃ', my:'၁၄ ရက်အခမဲ့ပြန်လုပ်'},
@@ -206,6 +213,8 @@ var EXO_I18N = (function () {
     '/car':{en:'per car', id:'per mobil', ja:'1台あたり', ko:'차량당', zh:'每辆', ar:'للسيارة', ms:'sebuah kereta', th:'ต่อคัน', vi:'mỗi xe', tl:'kada sasakyan', km:'ក្នុងមួយឡាន', my:'တစ်စီး'},
     '/visit':{en:'per visit', id:'per kunjungan', ja:'1回あたり', ko:'방문당', zh:'每次上门', ar:'للزيارة', ms:'setiap lawatan', th:'ต่อครั้ง', vi:'mỗi lần', tl:'kada bisita', km:'ក្នុងមួយដង', my:'တစ်ကြိမ်'},
     '/m²':{en:'per m²', id:'per m²', ja:'1㎡あたり', ko:'㎡당', zh:'每平方米', ar:'للمتر المربع', ms:'setiap m²', th:'ต่อ ตร.ม.', vi:'mỗi m²', tl:'kada m²', km:'ក្នុងមួយម²', my:'တစ်စတုရန်းမီတာ'},
+    '/trip':{en:'per trip', id:'per trip', ja:'1回あたり', ko:'1회당', zh:'每趟', ar:'للرحلة', ms:'setiap trip', th:'ต่อเที่ยว', vi:'mỗi chuyến', tl:'kada biyahe', km:'ក្នុងមួយជើង', my:'တစ်ခေါက်'},
+    '/session':{en:'per session', id:'per sesi', ja:'1回あたり', ko:'세션당', zh:'每次', ar:'للجلسة', ms:'setiap sesi', th:'ต่อครั้ง', vi:'mỗi buổi', tl:'kada sesyon', km:'ក្នុងមួយវគ្គ', my:'တစ်ကြိမ်'},
     '/tank':{en:'per tank', id:'per toren', ja:'1基あたり', ko:'탱크당', zh:'每个水塔', ar:'للخزان', ms:'setiap tangki', th:'ต่อถัง', vi:'mỗi bồn', tl:'kada tangke', km:'ក្នុងមួយធុង', my:'တစ်လုံး'}
   };
 
@@ -218,6 +227,8 @@ var EXO_I18N = (function () {
     '/car':{en:'cars', id:'mobil', ja:'台', ko:'대', zh:'辆', ar:'سيارات', ms:'kereta', th:'คัน', vi:'xe', tl:'sasakyan', km:'ឡាន', my:'စီး'},
     '/visit':{en:'visits', id:'kunjungan', ja:'回', ko:'회', zh:'次', ar:'زيارات', ms:'lawatan', th:'ครั้ง', vi:'lần', tl:'bisita', km:'ដង', my:'ကြိမ်'},
     '/m²':{en:'m²', id:'m²', ja:'㎡', ko:'㎡', zh:'㎡', ar:'م²', ms:'m²', th:'ตร.ม.', vi:'m²', tl:'m²', km:'ម²', my:'စ.မီ'},
+    '/trip':{en:'trips', id:'trip', ja:'回', ko:'회', zh:'趟', ar:'رحلات', ms:'trip', th:'เที่ยว', vi:'chuyến', tl:'biyahe', km:'ជើង', my:'ခေါက်'},
+    '/session':{en:'sessions', id:'sesi', ja:'回', ko:'세션', zh:'次', ar:'جلسات', ms:'sesi', th:'ครั้ง', vi:'buổi', tl:'sesyon', km:'វគ្គ', my:'ကြိမ်'},
     '/tank':{en:'tanks', id:'toren', ja:'基', ko:'개 탱크', zh:'个', ar:'خزانات', ms:'tangki', th:'ถัง', vi:'bồn', tl:'tangke', km:'ធុង', my:'လုံး'}
   };
 

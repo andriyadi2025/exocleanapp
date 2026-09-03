@@ -131,7 +131,7 @@
   A.lompat = function (v) { K.layar = v; K.sisi = D.PARTNER_SCREENS.indexOf(v) >= 0 ? 'partner' : 'customer'; };
   A.pilihJasa = function (v) {
     K.jasa = v; K.layar = 'svc'; K.kit = {}; K.sopDone = {}; K.ppe = {}; K.sopFoto = {}; K.tambahan = {};
-    K.jam = v === 'postreno' ? 6 : (D.DEFAULT_QTY[D.SERVICES[v].unit] || 1);
+    K.jam = D.MIN_QTY[v] || D.DEFAULT_QTY[D.SERVICES[v].unit] || 1;
     K.regu = v === 'postreno' ? 2 : 1;
   };
   A.pesanCepat = function () {
