@@ -1,0 +1,29 @@
+# Hasil bangkitan — jangan disimpan di repositori.
+#
+# www/ disusun ulang dari ../app oleh siapkan-www.js setiap kali. Menyimpannya
+# berarti dua salinan kode yang sama yang pelan-pelan berbeda isinya, dan yang
+# dibaca orang belum tentu yang dibungkus.
+www/
+
+# assets/ dibangkitkan buat-ikon.js dari ../app/assets/icon-512.png.
+assets/
+
+node_modules/
+
+# Keluaran Gradle.
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/capacitor-cordova-android-plugins/build/
+
+# Kunci penanda tangan — TIDAK BOLEH masuk repositori.
+#
+# Siapa pun yang memegang keystore beserta sandinya bisa menerbitkan pembaruan
+# yang dipercaya Android sebagai aplikasi yang sama. Kehilangannya juga tidak
+# bisa dipulihkan: aplikasi yang sudah terbit di Play Store TIDAK BISA lagi
+# diperbarui tanpa kunci aslinya.
+*.keystore
+*.jks
+keystore.properties

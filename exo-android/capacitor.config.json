@@ -1,0 +1,13 @@
+{
+  "appId": "id.exoclean.app",
+  "appName": "EXOCLEAN",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

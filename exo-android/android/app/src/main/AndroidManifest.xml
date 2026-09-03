@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+    <!-- ==================================================================
+         IZIN
+
+         Ditulis karena kode webnya MEMANG memakainya, bukan karena "biasanya
+         perlu". Meminta izin yang tidak dipakai membuat orang menolak izin
+         yang dipakai.
+
+           INTERNET        menyinkronkan ke data-server; tanpa ini aplikasinya
+                           tetap jalan penuh secara luring
+           CAMERA          <input capture="environment"> untuk bukti foto
+                           sebelum–sesudah, dan getUserMedia
+           LOCATION        navigator.geolocation di app/js/utils.js, untuk
+                           absen di lokasi
+           READ_MEDIA_*    memilih foto yang SUDAH ada di galeri (Android 13+)
+           READ_EXTERNAL   hal yang sama di Android 12 ke bawah
+         ================================================================== -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+
+    <!-- Kamera TIDAK diwajibkan: tablet tanpa kamera belakang tetap boleh
+         memasang aplikasinya. Petugas memakai kamera, supervisor sering
+         hanya membaca laporan. android:required="true" akan menyembunyikan
+         aplikasi ini dari perangkat mereka di Play Store, tanpa ada yang
+         tahu sebabnya. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+</manifest>

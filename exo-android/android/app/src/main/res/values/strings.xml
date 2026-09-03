@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EXOCLEAN</string>
+    <string name="title_activity_main">EXOCLEAN</string>
+    <string name="package_name">id.exoclean.app</string>
+    <string name="custom_url_scheme">id.exoclean.app</string>
+</resources>

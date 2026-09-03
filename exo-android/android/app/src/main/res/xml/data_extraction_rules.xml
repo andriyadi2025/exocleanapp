@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ==========================================================================
+     ATURAN PENGAMBILAN DATA (Android 12+)
+
+     Seluruh data MCS tersimpan di localStorage WebView: akun staf, nomor
+     induk kependudukan, alamat rumah, kontak darurat, dan catatan gaji. Itu
+     data pribadi pegawai orang lain, bukan data pribadi pemilik ponsel.
+
+     Karena itu keduanya ditolak:
+
+       cloud-backup     data pegawai tidak boleh naik ke akun Google milik
+                        siapa pun yang kebetulan memegang ponselnya
+       device-transfer  memindahkan ponsel tidak boleh memindahkan sesi dan
+                        data korporat ke perangkat baru tanpa masuk ulang
+
+     KONSEKUENSINYA HARUS DISADARI: ponsel hilang berarti data lokalnya
+     hilang. Ketahanan data datang dari sinkronisasi ke data-server, BUKAN
+     dari cadangan Google. Selama sinkronisasi belum dinyalakan, aplikasi ini
+     menyimpan satu-satunya salinan datanya di ponsel itu sendiri.
+     ========================================================================== -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
