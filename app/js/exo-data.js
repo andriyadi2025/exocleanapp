@@ -44,7 +44,7 @@ var EXO_DATA = (function () {
 
   var DEFAULT_QTY = { '/hour':3, '/unit':2, '/seat':3, '/kg':5, '/room':2, '/car':1, '/visit':1, '/m²':12, '/tank':1, '/trip':1, '/session':1, '/month':1 };
   /* Kuantitas awal per LAYANAN, mengalahkan DEFAULT_QTY per unit: perawatan minimal 4 jam. */
-  var MIN_QTY = { postreno:6, care:4, cook:2 };
+  var MIN_QTY = { postreno:6, care:4, cook:2, building:6 };
   var STEP_QTY    = { '/m²':4 };
   var SURVEY_FIRST = { postreno:true, tankbig:true, deep:true, building:true };
 

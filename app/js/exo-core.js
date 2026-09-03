@@ -153,8 +153,10 @@ var ExoApp = (function () {
   function voucherApplied() { return KEADAAN.voucher && voucherEligible(); }
   function totalN() { return subtotalN() + D.PLATFORM_FEE - (voucherApplied() ? voucherKini().amount : 0); }
   function qtyStep() { return D.STEP_QTY[jasaKini().unit] || 1; }
-  function qtyMin()  { return jasaKini().unit === '/hour' ? 2 : qtyStep(); }
-  function qtyMax()  { var u = jasaKini().unit; return u === '/m²' ? 200 : u === '/kg' ? 30 : 8; }
+  /* Batas bawah mengikuti MIN_QTY per layanan (perawatan 4 jam, memasak 2 jam,
+     paket gedung 6 bulan) sebelum jatuh ke aturan per unit. */
+  function qtyMin()  { return D.MIN_QTY[KEADAAN.jasa] || (jasaKini().unit === '/hour' ? 2 : qtyStep()); }
+  function qtyMax()  { var u = jasaKini().unit; return u === '/m²' ? 200 : u === '/kg' ? 30 : u === '/month' ? 24 : 8; }
   function qtyText(n) {
     var w = I.countWord(jasaKini().unit);
     if (KEADAAN.lang === 'en' && n === 1 && w.slice(-1) === 's' && w !== 'kg') w = w.slice(0, -1);
