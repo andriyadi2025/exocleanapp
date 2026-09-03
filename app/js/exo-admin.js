@@ -45,7 +45,9 @@ var ADMIN = (function () {
     {id:'tankbig', name:'Building tank & reservoir', unit:'per tank', floor:1800000, ceiling:3200000, step:100000, fee:'Contract', warranty:'6-month', live:true},
     {id:'care', name:'Elderly, child & patient care', unit:'per hour', floor:45000, ceiling:75000, step:5000, fee:'Rp 3.000', warranty:'Free replacement', live:true},
     {id:'errand', name:'Shopping & errands', unit:'per trip', floor:25000, ceiling:50000, step:5000, fee:'Rp 3.000', warranty:'Receipt cover Rp1jt', live:true},
-    {id:'massage', name:'Massage & body care', unit:'per session', floor:120000, ceiling:220000, step:10000, fee:'Rp 3.000', warranty:'Certified', live:true}
+    {id:'massage', name:'Massage & body care', unit:'per session', floor:120000, ceiling:220000, step:10000, fee:'Rp 3.000', warranty:'Certified', live:true},
+    {id:'cook', name:'Cooking & meal prep', unit:'per hour', floor:50000, ceiling:90000, step:5000, fee:'Rp 3.000', warranty:'Hygiene-trained', live:true},
+    {id:'building', name:'Building periodic package', unit:'per month', floor:3500000, ceiling:7500000, step:250000, fee:'Contract', warranty:'Contract SLA', live:true}
   ];
   if (pub.bands) SERVICES.forEach(function (x) { if (pub.bands[x.id]) { x.floor = pub.bands[x.id].floor; x.ceiling = pub.bands[x.id].ceiling; } });
   var PROMOS = [

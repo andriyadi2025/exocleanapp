@@ -403,6 +403,32 @@
     'Shower access before the session':'Akses kamar mandi sebelum sesi',
     'Wellness massage only. Not for acute injury, fever, pregnancy under 12 weeks or skin infections — tell us before booking.':'Hanya pijat kebugaran. Tidak untuk cedera akut, demam, kehamilan di bawah 12 minggu, atau infeksi kulit — beri tahu kami sebelum memesan.'
   };
+  var ID_COOK = {
+    'Grocery run before cooking':'Belanja bahan sebelum memasak', 'Weekly meal-prep containers':'Wadah meal prep mingguan', '10 portions':'10 porsi', 'Special diet menu':'Menu diet khusus', 'low salt, diabetic, kids':'rendah garam, diabetes, anak',
+    'Glass facade quarterly':'Kaca fasad tiap 3 bulan', 'up to 4 floors':'hingga 4 lantai', 'Pest control quarterly':'Pest control tiap 3 bulan', 'common areas':'area bersama', 'Garden & parking sweep':'Sapu taman & parkir', 'daily':'harian',
+    'Minimum 2 hours per visit; ingredients are yours, or bought on the way with the grocery-run add-on.':'Minimal 2 jam per kunjungan; bahan dari Anda, atau dibelikan di jalan dengan tambahan belanja bahan.',
+    'Daily home cooking for up to 6 people from your recipes or ours':'Masakan rumah harian untuk hingga 6 orang dari resep Anda atau kami',
+    'Weekly meal prep, portioned and labelled for the fridge':'Meal prep mingguan, diporsi dan diberi label untuk kulkas',
+    'Kitchen left clean: dishes washed, stove and counters wiped':'Dapur ditinggal bersih: piring dicuci, kompor dan meja dilap',
+    'Catering for events above 10 people — book through customer service':'Katering acara di atas 10 orang — pesan lewat layanan pelanggan',
+    'Cooking with ingredients that are spoiled or past their date':'Memasak dengan bahan yang rusak atau kedaluwarsa',
+    'A cook with food-hygiene training, hairnet, apron and a food thermometer':'Juru masak terlatih higiene pangan, hairnet, apron, dan termometer makanan',
+    'Ingredients, a working stove, cookware and containers':'Bahan, kompor yang berfungsi, alat masak, dan wadah',
+    'Your menu or dietary notes, at the latest the evening before':'Menu atau catatan diet Anda, paling lambat malam sebelumnya',
+    'Home cooking only. Tell us about allergies and diets before booking — the cook follows your list and does not diagnose.':'Hanya masakan rumah. Beri tahu alergi dan diet sebelum memesan — juru masak mengikuti daftar Anda dan tidak mendiagnosis.',
+    'Monthly contract, minimum 6 months, priced per building after a survey.':'Kontrak bulanan, minimal 6 bulan, harga per gedung setelah survei.',
+    'Daily lobby, lift and corridor cleaning with a supervisor on site':'Pembersihan harian lobi, lift, dan koridor dengan supervisor di lokasi',
+    'Water tank cleaning every 6 months and weekly pool care included':'Cuci toren tiap 6 bulan dan perawatan kolam mingguan sudah termasuk',
+    'Monthly report with photos, chemical log and a checklist per SOP':'Laporan bulanan dengan foto, log kimia, dan checklist sesuai SOP',
+    'Structural repairs, painting and pest treatment without a separate order':'Perbaikan struktur, pengecatan, dan pest control tanpa pesanan terpisah',
+    'Units inside residents\' apartments — those are booked by each resident':'Unit di dalam apartemen penghuni — dipesan oleh masing-masing penghuni',
+    'A dedicated team, machines, chemicals and PPE per SOP':'Tim khusus, mesin, bahan kimia, dan APD sesuai SOP',
+    'An account manager and a monthly review meeting':'Account manager dan rapat evaluasi bulanan',
+    'Storage space, water and power, and building access permits':'Ruang simpan, air dan listrik, serta izin akses gedung',
+    'One contact person for daily coordination':'Satu orang kontak untuk koordinasi harian',
+    'One agreed schedule replaces separate bookings: water tanks every 6 months, pool weekly, lobby and lifts daily, with one monthly invoice.':'Satu jadwal yang disepakati menggantikan pesanan terpisah: toren tiap 6 bulan, kolam mingguan, lobi dan lift harian, dengan satu tagihan bulanan.'
+  };
+  Object.keys(ID_COOK).forEach(function (k) { ID[k] = ID_COOK[k]; });
   Object.keys(ID_CARE).forEach(function (k) { ID[k] = ID_CARE[k]; });
   Object.keys(ID).forEach(function (k) { id(k, ID[k]); });
 

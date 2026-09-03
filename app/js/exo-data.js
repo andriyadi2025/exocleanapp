@@ -37,20 +37,22 @@ var EXO_DATA = (function () {
     /* Ditambahkan 3 Sep 2026: layanan perawatan & pribadi. */
     care:     { name:'Elderly, child & patient care', rate:55000, unit:'/hour',    warranty:'Vetted caregiver, free replacement' },
     errand:   { name:'Shopping & errands',        rate:35000,   unit:'/trip',    warranty:'Receipt-matched, cover up to Rp1jt' },
-    massage:  { name:'Massage & body care',       rate:150000,  unit:'/session', warranty:'Certified therapist' }
+    massage:  { name:'Massage & body care',       rate:150000,  unit:'/session', warranty:'Certified therapist' },
+    cook:     { name:'Cooking & meal prep',       rate:65000,   unit:'/hour',    warranty:'Hygiene-trained cook' },
+    building: { name:'Building periodic package', rate:4500000, unit:'/month',   warranty:'Contract SLA' }
   };
 
-  var DEFAULT_QTY = { '/hour':3, '/unit':2, '/seat':3, '/kg':5, '/room':2, '/car':1, '/visit':1, '/m²':12, '/tank':1, '/trip':1, '/session':1 };
+  var DEFAULT_QTY = { '/hour':3, '/unit':2, '/seat':3, '/kg':5, '/room':2, '/car':1, '/visit':1, '/m²':12, '/tank':1, '/trip':1, '/session':1, '/month':1 };
   /* Kuantitas awal per LAYANAN, mengalahkan DEFAULT_QTY per unit: perawatan minimal 4 jam. */
-  var MIN_QTY = { postreno:6, care:4 };
+  var MIN_QTY = { postreno:6, care:4, cook:2 };
   var STEP_QTY    = { '/m²':4 };
-  var SURVEY_FIRST = { postreno:true, tankbig:true, deep:true };
+  var SURVEY_FIRST = { postreno:true, tankbig:true, deep:true, building:true };
 
   var CATALOG_GROUPS = [
     { key:'grpHome', keys:['hourly','deep','iron','laundry','sofa','hydro'] },
     { key:'grpTech', keys:['ac','disinfect','pest','toren','poles','pool','car'] },
-    { key:'grpBiz',  keys:['office','postreno','tankbig'] },
-    { key:'grpCare', keys:['care','errand','massage'] }
+    { key:'grpBiz',  keys:['office','postreno','tankbig','building'] },
+    { key:'grpCare', keys:['care','errand','massage','cook'] }
   ];
 
   /* Sembilan ubin cepat di beranda. `daun` = nada hijau kedua. */
@@ -127,7 +129,13 @@ var EXO_DATA = (function () {
             {id:'far', name:'Beyond 10 km', note:'per extra 5 km', price:15000}],
     massage:[{id:'ext30', name:'Extra 30 minutes', note:'same therapist', price:60000},
              {id:'scrub', name:'Body scrub', note:'+30 min', price:85000},
-             {id:'table', name:'Massage table', note:'brought by the therapist', price:30000}]
+             {id:'table', name:'Massage table', note:'brought by the therapist', price:30000}],
+    cook:[{id:'grocer', name:'Grocery run before cooking', note:'+45 min', price:35000},
+          {id:'prep', name:'Weekly meal-prep containers', note:'10 portions', price:120000},
+          {id:'diet', name:'Special diet menu', note:'low salt, diabetic, kids', price:40000}],
+    building:[{id:'facade', name:'Glass facade quarterly', note:'up to 4 floors', price:900000},
+              {id:'pestq', name:'Pest control quarterly', note:'common areas', price:450000},
+              {id:'garden', name:'Garden & parking sweep', note:'daily', price:1200000}]
   };
 
   var TIMES = ['08:00','09:00','10:00','13:00','15:00','17:00'];
@@ -319,6 +327,18 @@ var EXO_DATA = (function () {
       weBring:['A certified therapist, fresh linen, massage oil and towels','A folding massage table on request'],
       youBring:['A quiet room or a clear space of about 2×2 m','Shower access before the session'],
       note:'Wellness massage only. Not for acute injury, fever, pregnancy under 12 weeks or skin infections — tell us before booking.'},
+    cook:{min:'Minimum 2 hours per visit; ingredients are yours, or bought on the way with the grocery-run add-on.',
+      can:['Daily home cooking for up to 6 people from your recipes or ours','Weekly meal prep, portioned and labelled for the fridge','Kitchen left clean: dishes washed, stove and counters wiped'],
+      cant:['Catering for events above 10 people — book through customer service','Cooking with ingredients that are spoiled or past their date'],
+      weBring:['A cook with food-hygiene training, hairnet, apron and a food thermometer'],
+      youBring:['Ingredients, a working stove, cookware and containers','Your menu or dietary notes, at the latest the evening before'],
+      note:'Home cooking only. Tell us about allergies and diets before booking — the cook follows your list and does not diagnose.'},
+    building:{min:'Monthly contract, minimum 6 months, priced per building after a survey.',
+      can:['Daily lobby, lift and corridor cleaning with a supervisor on site','Water tank cleaning every 6 months and weekly pool care included','Monthly report with photos, chemical log and a checklist per SOP'],
+      cant:['Structural repairs, painting and pest treatment without a separate order','Units inside residents\' apartments — those are booked by each resident'],
+      weBring:['A dedicated team, machines, chemicals and PPE per SOP','An account manager and a monthly review meeting'],
+      youBring:['Storage space, water and power, and building access permits','One contact person for daily coordination'],
+      note:'One agreed schedule replaces separate bookings: water tanks every 6 months, pool weekly, lobby and lifts daily, with one monthly invoice.'},
     tankbig:{min:'For building reservoirs above 2.000 litres; quoted per tank after a site check.',
       can:['Draining, high-pressure wash, sludge removal, food-grade sterilisation','Before–after photo report and a chemical log for building management'],
       cant:['Structural repair of the tank, pumps or valves','Confined-space entry without the building’s written permit'],
@@ -511,6 +531,14 @@ var EXO_DATA = (function () {
       alat:[['Sprei & handuk bersih','satu set per pelanggan'],['Minyak pijat & lulur','tanya alergi dulu'],['Meja pijat lipat','bila dipesan']],
       chem:[['Hand sanitizer','sebelum & sesudah'],['Minyak pijat hipoalergenik','']],
       steps:[['Tanya riwayat kesehatan & area yang dihindari','catat',false],['Siapkan ruang, sprei, handuk','foto',true],['Sesi pijat sesuai pilihan','jaga batas profesional',false],['Kompres hangat & air minum','',false],['Rapikan & serah terima','foto ruang rapi',true]]},
+    cook:{code:'C-004', title:'Memasak & Meal Prep', ppe:['gloves','mask','apron'],
+      alat:[['Hairnet & apron','pakai sebelum masuk dapur'],['Termometer makanan','daging ≥ 75 °C'],['Wadah & label tanggal','untuk meal prep']],
+      chem:[['Sabun cuci tangan','20 detik sebelum mulai'],['Sabun cuci piring',''],['Sanitizer talenan','setelah daging mentah']],
+      steps:[['Cek menu, alergi, dan bahan bersama pelanggan','foto bahan',true],['Cuci tangan, pakai hairnet & apron','',false],['Pisahkan talenan daging & sayur','',false],['Masak sesuai menu, cek suhu','catat suhu daging',false],['Porsi & label wadah meal prep','tanggal masak',true],['Cuci alat, lap kompor & meja','foto dapur bersih',true]]},
+    building:{code:'B-011', title:'Paket Berkala Gedung', ppe:['gloves','mask','shoes','goggles'],
+      alat:[['Mesin polisher & wet vacuum',''],['Pompa toren & alat kolam',''],['Checklist harian per lantai','ditandatangani supervisor']],
+      chem:[['Pembersih lantai multi-purpose','1:40'],['Desinfektan handrail & tombol lift','1:100'],['Kaporit & pH kolam','sesuai log']],
+      steps:[['Briefing tim & cek jadwal bulan ini','foto papan jadwal',true],['Lobi, lift, koridor: sapu, pel, lap','harian',false],['Kolam: sikat, vakum, cek pH','mingguan, catat log',true],['Toren: kuras & sterilisasi','tiap 6 bulan, foto sebelum–sesudah',true],['Inspeksi supervisor & temuan','',false],['Laporan bulanan ke pengelola','foto & log kimia',true]]},
     'default':{code:'D-012', title:'Pembersihan Toilet & Urinal', ppe:['gloves','mask','shoes'],
       alat:[['Sikat toilet & sikat nat','kode warna biru'],['Wet mop + ember biru','khusus area toilet'],['Lap microfiber biru','ganti tiap 2 bilik'],['Spray bottle berlabel','tidak boleh tanpa label'],['Rambu lantai basah','pasang sebelum mulai']],
       chem:[['Pembersih porselen (asam ringan)','1:20 · kontak 3 menit'],['Desinfektan permukaan','1:100 · jangan dicampur'],['Pembersih kaca/cermin','semprot ke lap'],['Pewangi ruangan','setelah lantai kering']],

@@ -241,7 +241,29 @@ var EXO_TERMS = (function (I) {
     'A certified therapist, fresh linen, massage oil and towels',
     'A folding massage table on request',
     'A quiet room or a clear space of about 2×2 m',
-    'Shower access before the session'
+    'Shower access before the session',
+    /* memasak & paket berkala gedung */
+    'Minimum 2 hours per visit; ingredients are yours, or bought on the way with the grocery-run add-on.',
+    'Home cooking only. Tell us about allergies and diets before booking — the cook follows your list and does not diagnose.',
+    'Daily home cooking for up to 6 people from your recipes or ours',
+    'Weekly meal prep, portioned and labelled for the fridge',
+    'Kitchen left clean: dishes washed, stove and counters wiped',
+    'Catering for events above 10 people — book through customer service',
+    'Cooking with ingredients that are spoiled or past their date',
+    'A cook with food-hygiene training, hairnet, apron and a food thermometer',
+    'Ingredients, a working stove, cookware and containers',
+    'Your menu or dietary notes, at the latest the evening before',
+    'Monthly contract, minimum 6 months, priced per building after a survey.',
+    'One agreed schedule replaces separate bookings: water tanks every 6 months, pool weekly, lobby and lifts daily, with one monthly invoice.',
+    'Daily lobby, lift and corridor cleaning with a supervisor on site',
+    'Water tank cleaning every 6 months and weekly pool care included',
+    'Monthly report with photos, chemical log and a checklist per SOP',
+    'Structural repairs, painting and pest treatment without a separate order',
+    'Units inside residents\' apartments — those are booked by each resident',
+    'A dedicated team, machines, chemicals and PPE per SOP',
+    'An account manager and a monthly review meeting',
+    'Storage space, water and power, and building access permits',
+    'One contact person for daily coordination'
   ];
   var LENGKAP = {};
   function pasang(lang, daftar) {

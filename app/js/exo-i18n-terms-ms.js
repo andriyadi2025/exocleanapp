@@ -226,5 +226,27 @@ EXO_TERMS.pasang('ms', [
   'Terapis bertauliah, linen bersih, minyak urut dan tuala',
   'Meja urut lipat atas permintaan',
   'Bilik sunyi atau ruang kosong kira-kira 2×2 m',
-  'Akses mandi sebelum sesi'
+  'Akses mandi sebelum sesi',
+  /* memasak & paket berkala gedung */
+  'Minimum 2 jam setiap lawatan; bahan daripada anda, atau dibeli dalam perjalanan dengan tambahan beli-belah.',
+  'Masakan rumah sahaja. Beritahu alahan dan diet sebelum menempah — tukang masak mengikut senarai anda dan tidak mendiagnosis.',
+  'Masakan rumah harian untuk sehingga 6 orang daripada resipi anda atau kami',
+  'Penyediaan makanan mingguan, dibahagi dan dilabel untuk peti sejuk',
+  'Dapur ditinggalkan bersih: pinggan dibasuh, dapur dan kaunter dilap',
+  'Katering acara melebihi 10 orang — tempah melalui khidmat pelanggan',
+  'Memasak dengan bahan yang rosak atau tamat tempoh',
+  'Tukang masak terlatih kebersihan makanan, jaring rambut, apron dan termometer makanan',
+  'Bahan, dapur yang berfungsi, peralatan masak dan bekas',
+  'Menu atau nota diet anda, selewat-lewatnya malam sebelumnya',
+  'Kontrak bulanan, minimum 6 bulan, harga setiap bangunan selepas tinjauan.',
+  'Satu jadual yang dipersetujui menggantikan tempahan berasingan: tangki air setiap 6 bulan, kolam mingguan, lobi dan lif harian, dengan satu invois bulanan.',
+  'Pembersihan harian lobi, lif dan koridor dengan penyelia di lokasi',
+  'Termasuk pembersihan tangki air setiap 6 bulan dan penjagaan kolam mingguan',
+  'Laporan bulanan dengan foto, log kimia dan senarai semak mengikut SOP',
+  'Pembaikan struktur, mengecat dan rawatan perosak tanpa pesanan berasingan',
+  'Unit dalam pangsapuri penghuni — ditempah oleh setiap penghuni',
+  'Pasukan khusus, mesin, bahan kimia dan PPE mengikut SOP',
+  'Pengurus akaun dan mesyuarat semakan bulanan',
+  'Ruang simpanan, air dan kuasa, serta permit akses bangunan',
+  'Seorang kenalan untuk penyelarasan harian'
 ]);

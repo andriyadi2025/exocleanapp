@@ -226,5 +226,27 @@ EXO_TERMS.pasang('tl', [
   'Sertipikadong therapist, malinis na linen, massage oil at tuwalya',
   'Nakatiklop na massage table kapag hiniling',
   'Tahimik na kwarto o bakanteng espasyo na humigit-kumulang 2×2 m',
-  'Access sa shower bago ang sesyon'
+  'Access sa shower bago ang sesyon',
+  /* memasak & paket berkala gedung */
+  'Minimum 2 oras bawat bisita; sa iyo ang mga sangkap, o bibilhin sa daan gamit ang add-on na pamimili.',
+  'Lutong-bahay lamang. Sabihin ang allergy at diyeta bago mag-book — sinusunod ng kusinero ang listahan mo at hindi nagdi-diagnose.',
+  'Araw-araw na lutong-bahay para sa hanggang 6 na tao mula sa iyong resipi o sa amin',
+  'Lingguhang meal prep, nakaporsyon at may label para sa ref',
+  'Malinis ang kusina pag-alis: hinugasan ang pinggan, pinunasan ang kalan at mesa',
+  'Catering para sa mahigit 10 tao — mag-book sa customer service',
+  'Pagluluto gamit ang sirang o expired na sangkap',
+  'Kusinerong may food-hygiene training, hairnet, apron at food thermometer',
+  'Mga sangkap, gumaganang kalan, kagamitang panluto at lalagyan',
+  'Iyong menu o tala ng diyeta, pinakahuli ay gabi bago nito',
+  'Buwanang kontrata, minimum 6 buwan, presyo bawat gusali pagkatapos ng survey.',
+  'Isang napagkasunduang iskedyul ang papalit sa hiwalay na booking: tangke tuwing 6 buwan, pool lingguhan, lobby at elevator araw-araw, isang buwanang invoice.',
+  'Araw-araw na paglilinis ng lobby, elevator at pasilyo na may supervisor sa lugar',
+  'Kasama ang paglilinis ng tangke tuwing 6 buwan at lingguhang pangangalaga ng pool',
+  'Buwanang report na may litrato, chemical log at checklist ayon sa SOP',
+  'Structural repair, pagpipintura at pest treatment nang walang hiwalay na order',
+  'Loob ng unit ng residente — bawat residente ang magbu-book',
+  'Nakatalagang team, makina, kemikal at PPE ayon sa SOP',
+  'Account manager at buwanang review meeting',
+  'Espasyong imbakan, tubig at kuryente, at permit sa pagpasok sa gusali',
+  'Isang contact person para sa araw-araw na koordinasyon'
 ]);

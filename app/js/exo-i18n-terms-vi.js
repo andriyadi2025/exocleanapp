@@ -226,5 +226,27 @@ EXO_TERMS.pasang('vi', [
   'Kỹ thuật viên có chứng chỉ, khăn trải sạch, dầu massage và khăn',
   'Giường massage gấp theo yêu cầu',
   'Phòng yên tĩnh hoặc khoảng trống khoảng 2×2 m',
-  'Được tắm trước buổi massage'
+  'Được tắm trước buổi massage',
+  /* memasak & paket berkala gedung */
+  'Tối thiểu 2 giờ mỗi lần; nguyên liệu của bạn, hoặc mua trên đường với dịch vụ thêm đi chợ.',
+  'Chỉ nấu ăn gia đình. Hãy báo dị ứng và chế độ ăn trước khi đặt — đầu bếp làm theo danh sách của bạn và không chẩn đoán.',
+  'Nấu ăn gia đình hằng ngày cho tối đa 6 người theo công thức của bạn hoặc của chúng tôi',
+  'Chuẩn bị bữa ăn hằng tuần, chia phần và dán nhãn cho tủ lạnh',
+  'Bếp được dọn sạch: rửa chén, lau bếp và mặt bàn',
+  'Tiệc trên 10 người — đặt qua chăm sóc khách hàng',
+  'Nấu bằng nguyên liệu hỏng hoặc hết hạn',
+  'Đầu bếp được đào tạo vệ sinh thực phẩm, lưới tóc, tạp dề và nhiệt kế thực phẩm',
+  'Nguyên liệu, bếp hoạt động, dụng cụ nấu và hộp đựng',
+  'Thực đơn hoặc ghi chú ăn kiêng của bạn, chậm nhất tối hôm trước',
+  'Hợp đồng theo tháng, tối thiểu 6 tháng, giá theo tòa nhà sau khảo sát.',
+  'Một lịch thống nhất thay cho các đơn riêng lẻ: bồn nước mỗi 6 tháng, hồ bơi hằng tuần, sảnh và thang máy hằng ngày, một hóa đơn mỗi tháng.',
+  'Vệ sinh sảnh, thang máy và hành lang hằng ngày với giám sát tại chỗ',
+  'Bao gồm vệ sinh bồn nước mỗi 6 tháng và chăm sóc hồ bơi hằng tuần',
+  'Báo cáo hằng tháng với ảnh, nhật ký hóa chất và danh sách kiểm tra theo SOP',
+  'Sửa chữa kết cấu, sơn và diệt côn trùng khi không có đơn riêng',
+  'Bên trong căn hộ cư dân — do từng cư dân tự đặt',
+  'Đội chuyên trách, máy móc, hóa chất và PPE theo SOP',
+  'Người quản lý khách hàng và họp đánh giá hằng tháng',
+  'Chỗ lưu trữ, nước và điện, cùng giấy phép ra vào tòa nhà',
+  'Một đầu mối liên hệ để phối hợp hằng ngày'
 ]);
