@@ -91,6 +91,11 @@ var ExoApp = (function () {
     if (sumberDB !== null) return sumberDB;
     sumberDB = !!(window.DB && window.PASAR && adaBasisData());
     if (sumberDB) { try { DB.init(); } catch (e) { sumberDB = false; } }
+    /* Basis data yang ada tetapi belum punya satu pun mitra (instalasi baru,
+       sebelum konsol admin menyemai atau mitra mendaftar) diperlakukan seperti
+       tidak ada: roster contoh dari rancangan lebih baik daripada marketplace
+       kosong. Begitu ada mitra sungguhan, mereka yang tayang. */
+    if (sumberDB) { try { if (!DB.all('users').some(function (u) { return u.role === 'worker'; })) sumberDB = false; } catch (e) { sumberDB = false; } }
     return sumberDB;
   }
   /* Faktor = tarif per jam yang ditetapkan Super Admin ÷ tarif dasar per

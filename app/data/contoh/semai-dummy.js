@@ -214,7 +214,12 @@ var SEMAI_DUMMY = (function () {
     opsi = opsi || {};
     if (!window.DB || !window.U) return { ok:false, alasan:'DB / U belum dimuat.' };
     try { if (!DB.raw) DB.init(); } catch (e) { return { ok:false, alasan:'Basis data tidak bisa dibuka: ' + e.message }; }
-    if (!DB.all('users').length) return { ok:false, alasan:'Basis data kosong — buka index.html dulu supaya tersemai, baru jalankan ini.' };
+    /* Basis data kosong (EXOCLEAN App berdiri sendiri, tanpa aplikasi manajemen
+       yang menyemai peran dan akun): buat satu akun admin sistem supaya kolom
+       olehId/olehNama pada tarif dan persetujuan tetap menunjuk ke orang. */
+    if (!DB.all('users').length) {
+      DB.insert('users', { role:'admin', nama:'Rina Kartika', jabatan:'Super Admin (IT)', email:'admin@exoclean.id', pass:'123456', telp:'081234567001', aktif:true, sumber:'dummy', createdAt:new Date().toISOString() });
+    }
 
     benih = 20260902;
     var adminRow = DB.where('users', function (x) { return x.role === 'admin'; })[0], admin = adminRow ? adminRow.id : 'u_admin';
