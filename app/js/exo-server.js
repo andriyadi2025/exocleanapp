@@ -74,7 +74,7 @@ var EXO_SERVER = (function () {
 
   /* ---------------------------------------------------- login sosial
      Token dari Google Identity Services / Facebook SDK diverifikasi di
-     auth-server (GOOGLE_CLIENT_ID / FACEBOOK_APP_SECRET); browser tidak
+     auth-server (GOOGLE_CLIENT_ID dan rahasia aplikasi Facebook); browser tidak
      pernah memutuskan sendiri bahwa token itu sah. */
   function loginGoogle(idToken) { return kirim('auth', '/api/auth/google', { token:idToken }); }
   function loginFacebook(accessToken) { return kirim('auth', '/api/auth/facebook', { token:accessToken }); }

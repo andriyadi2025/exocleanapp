@@ -11,7 +11,7 @@
      googleClientId   — Google Cloud Console → OAuth client (Web). Harus sama
                         dengan GOOGLE_CLIENT_ID di server/.env.
      facebookAppId    — Meta for Developers → App ID. Pasangannya
-                        FACEBOOK_APP_ID / FACEBOOK_APP_SECRET di server/.env.
+                        FACEBOOK_APP_ID dan rahasia aplikasi Facebook di server/.env.
      turnstileSiteKey — Cloudflare Turnstile site key (captcha tanpa teka-teki).
                         Secret key-nya diverifikasi server; belum ada endpoint
                         untuk itu, jadi token hanya dicek ADA-nya di klien.
