@@ -62,6 +62,18 @@ var EXO_SERVER = (function () {
     });
   }
   function statusBayar(orderId) { return kirim('pay', '/api/pay/status', { gateway:'midtrans', orderId:orderId }); }
+  /* Penahanan dana (pre-authorization): di Midtrans hanya kartu kredit.
+     Kanal lain dibalas { tunda:true } supaya aplikasi mencatat tagihan
+     tertunda dan menagihnya lewat gateway setelah kunjungan selesai. */
+  function tahan(id, orderId, amount, pelanggan) {
+    if (id !== 'card') return Promise.resolve({ ok:false, tunda:true });
+    return cekSehat('pay', '/api/pay/health').then(function (ok) {
+      if (!ok) return { ok:false, offline:true };
+      return kirim('pay', '/api/pay/authorize', { gateway:'midtrans', orderId:orderId, channel:'cc', amount:amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId + ' (hold)', invoiceNo:orderId });
+    });
+  }
+  function tangkap(orderId, amount) { return kirim('pay', '/api/pay/capture', { gateway:'midtrans', orderId:orderId, amount:amount }); }
+  function lepas(orderId) { return kirim('pay', '/api/pay/cancel', { gateway:'midtrans', orderId:orderId }); }
 
   /* -------------------------------------------------------------- OTP */
   function otpKirim(telp) {
@@ -111,6 +123,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

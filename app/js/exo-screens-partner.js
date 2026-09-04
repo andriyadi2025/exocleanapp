@@ -53,7 +53,9 @@
     var statusKirim = alur === 'survei' ? (K.penawaran ? 'Penawaran ' + K.penawaran.status : 'Penawaran belum dikirim')
       : alur === 'timbang' ? (K.timbangan ? 'Timbangan ' + K.timbangan.kg + ' kg · ' + K.timbangan.status : 'Belum ditimbang')
       : alur === 'titip' ? (K.struk ? 'Struk ' + rp(K.struk.total) + ' · ' + K.struk.status : 'Struk belum dikirim')
-      : alur === 'kontrak' ? 'Proposal & kontrak lewat account manager' : 'Ditagih ke pelanggan setelah selesai';
+      : alur === 'kontrak' ? 'Proposal & kontrak lewat account manager'
+      : (K.penahanan && K.penahanan.status === 'ditahan') ? 'Dana pelanggan ditahan ' + rp(X.totalTahanan()) + ' · ditangkap saat Anda menyelesaikan job' + (K.langganan ? ' · paket ' + K.langganan.frekuensi + ', kunjungan ke-' + (K.langganan.kunjunganSelesai + 1) : '')
+      : (K.penahanan && K.penahanan.status === 'ditangkap') ? 'Dana pelanggan ' + rp(K.penahanan.ditangkap) + ' sudah ditangkap' : 'Ditagih ke pelanggan setelah selesai';
     var ekstraMenunggu = (K.ekstra || []).filter(function (e) { return e.status === 'menunggu'; }).length;
     h += '<div class="card elev-sm gap-9"><div class="flex items-center gap-8"><span class="tag tag-accent-2">' + esc(LABEL_ALUR[alur]) + '</span><span class="t-115 o-65">tahap ' + (Math.min(K.tahap, am.tahap.length - 1) + 1) + '/' + am.tahap.length + '</span></div>' +
       '<div class="t-125 lh-15">' + esc(statusKirim) + (ekstraMenunggu ? ' · ' + ekstraMenunggu + ' tambahan menunggu persetujuan' : '') + '</div><div class="flex gap-8 wrap">' +

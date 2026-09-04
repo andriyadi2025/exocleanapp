@@ -263,7 +263,10 @@ var EXO_TERMS = (function (I) {
     'A dedicated team, machines, chemicals and PPE per SOP',
     'An account manager and a monthly review meeting',
     'Storage space, water and power, and building access permits',
-    'One contact person for daily coordination'
+    'One contact person for daily coordination',
+    'Weekly, fortnightly and monthly plans take 10%, 7% and 5% off every visit; the price is locked for 3 months and the same cleaner is held for you.',
+    'Plans carry a minimum of 4 visits (3 for monthly). Cancelling earlier charges back the discount already received on completed visits; skipping a visit is free and does not count against the minimum.',
+    'For instant bookings the amount is held on your EXO Wallet or card at booking and charged only once the visit is confirmed done. Extras you approve on site are added to the hold. Cancelling releases the hold, less the late fee if within 4 hours.'
   ];
   var LENGKAP = {};
   function pasang(lang, daftar) {

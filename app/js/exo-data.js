@@ -218,6 +218,24 @@ var EXO_DATA = (function () {
         { title:'On the way', note:'Live position from the partner app' },
         { title:'Delivered & settled', note:'Goods charged to EXO Wallet on approval' } ] }
   };
+  /* Penahanan dana: alur yang TIDAK ditagih saat memesan — jumlahnya ditahan
+     (pre-authorization) di EXO Wallet / kartu, ditangkap setelah kunjungan
+     dikonfirmasi selesai (termasuk tambahan yang disetujui di lokasi), atau
+     dilepas bila dibatalkan. Seperti Gojek/Grab: dana ditahan saat pesan,
+     tertagih setelah layanan selesai. */
+  var TAHAN_DANA = { langsung:true };
+  /* Paket berkala ala Helpling: diskon per kunjungan dengan komitmen minimal.
+     Batal sebelum minimal → diskon kunjungan yang sudah selesai ditagih
+     kembali; melewati satu kunjungan gratis. Harga terkunci 3 bulan. */
+  var LANGGANAN = {
+    layanan:{ hourly:true, iron:true, care:true, cook:true, pool:true, massage:true, car:true },
+    kunciBulan:3,
+    pilihan:[
+      { id:'sekali',      label:'One-off',       diskon:0,    min:0, hari:0 },
+      { id:'mingguan',    label:'Weekly',        diskon:0.10, min:4, hari:7 },
+      { id:'dwimingguan', label:'Every 2 weeks', diskon:0.07, min:4, hari:14 },
+      { id:'bulanan',     label:'Monthly',       diskon:0.05, min:3, hari:28 } ]
+  };
   var CHECK_IDS = ['kitchen','bath','bed','trash'];
   var CHECK_KEYS = ['ckKitchen','ckBath','ckBed','ckTrash'];
   var CHECK_ID_LABELS = ['Dapur & wastafel','Kamar mandi ×2','Kamar tidur & lantai','Buang sampah & foto akhir'];
@@ -421,6 +439,10 @@ var EXO_DATA = (function () {
       ['warn','Cancelling or rescheduling within 4 hours of the start time costs Rp50.000 per cleaner.'],
       ['warn','The cleaner waits up to 45 minutes after arriving (30 minutes for AC). With no response the order is cancelled, a Rp50.000 per cleaner call-out fee applies and the rest is returned to your EXO Wallet.'],
       ['warn','If payment is not completed within 30 minutes of booking, the order cancels itself and you book again.']] },
+    { title:'Recurring plans and holds', items:[
+      ['ok','Weekly, fortnightly and monthly plans take 10%, 7% and 5% off every visit; the price is locked for 3 months and the same cleaner is held for you.'],
+      ['warn','Plans carry a minimum of 4 visits (3 for monthly). Cancelling earlier charges back the discount already received on completed visits; skipping a visit is free and does not count against the minimum.'],
+      ['ok','For instant bookings the amount is held on your EXO Wallet or card at booking and charged only once the visit is confirmed done. Extras you approve on site are added to the hold. Cancelling releases the hold, less the late fee if within 4 hours.']] },
     { title:'On site', items:[
       ['ok','EXOCLEAN provides tools and cleaning fluids to EXOCLEAN standard. If you insist on your own fluids, we are not liable for damage they cause.'],
       ['ok','Both sides check the area before work starts and after it finishes. Raise anything while the cleaner is still on site — after they leave we cannot process it.'],
@@ -725,7 +747,7 @@ var EXO_DATA = (function () {
     WD_HISTORY: WD_HISTORY, BANKS: BANKS, WD_METHODS: WD_METHODS,
     REG_DOCS: REG_DOCS, REG_REQUIRED: REG_REQUIRED, REG_TIMELINE: REG_TIMELINE, KIN_RELS: KIN_RELS,
     RADII: RADII, RADIUS_JOBS: RADIUS_JOBS, RADIUS_TRAVEL: RADIUS_TRAVEL, REPORT_AREAS: REPORT_AREAS,
-    SOP_META: SOP_META, PPE_LABELS: PPE_LABELS, FINDINGS: FINDINGS, ALUR: ALUR, ALUR_META: ALUR_META,
+    SOP_META: SOP_META, PPE_LABELS: PPE_LABELS, FINDINGS: FINDINGS, ALUR: ALUR, ALUR_META: ALUR_META, TAHAN_DANA: TAHAN_DANA, LANGGANAN: LANGGANAN,
     WILAYAH: WILAYAH, ADDR_ORDER: ADDR_ORDER, ADDR_LABELS: ADDR_LABELS, COVERAGE: COVERAGE,
     TABS_CUSTOMER: TABS_CUSTOMER, TABS_PARTNER: TABS_PARTNER, TAB_SCREENS: TAB_SCREENS, PARTNER_SCREENS: PARTNER_SCREENS,
     JUMP_CUSTOMER: JUMP_CUSTOMER, JUMP_PARTNER: JUMP_PARTNER

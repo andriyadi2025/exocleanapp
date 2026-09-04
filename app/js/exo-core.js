@@ -31,6 +31,8 @@ var ExoApp = (function () {
     bintang:5, pujian:{ 'Spotless finish':true }, tip:20000, catatanNilai:'',
     /* alur transaksi per layanan: keputusan yang menunggu pelanggan */
     penawaran:null, timbangan:null, struk:null, ekstra:[], ekstraForm:{ nama:'', harga:'' }, penawaranForm:{ a:'', ha:'', b:'', hb:'' }, timbangForm:'', strukForm:{ total:'', catatan:'' },
+    /* penahanan dana & paket berkala */
+    frekuensi:'sekali', langganan:null, penahanan:null, saldoTertahan:0, dibatalkan:false, batalPaket:false,
     keluhan:null, tabPesanan:'up', saring:'best',
     ceklis:{ kitchen:true, bath:true }, daring:true,
     shareTab:'invite', shareTarget:'wa', shared:false, termTab:'general',
@@ -159,6 +161,7 @@ var ExoApp = (function () {
   /* Status pesanan di basis data menurut alur dan tahap. */
   function statusAlur() {
     var a = alurKini(), t = KEADAAN.tahap;
+    if (KEADAAN.dibatalkan) return 'dibatalkan';
     if (a === 'survei') return t >= 3 ? 'dijadwalkan' : t === 2 ? 'penawaran' : 'survei';
     if (a === 'timbang') return t >= 4 ? 'selesai' : t >= 1 ? 'jemput' : 'dijadwalkan';
     if (a === 'kontrak') return t >= 2 ? 'dijadwalkan' : 'proposal';
@@ -169,8 +172,73 @@ var ExoApp = (function () {
     if (!pakaiDB() || !KEADAAN.orderDbId) return;
     var K = KEADAAN;
     EXO_DB.update('orders', K.orderDbId, { status: statusAlur(), exo: Object.assign({}, (EXO_DB.find('orders', K.orderDbId) || {}).exo || {},
-      { alur: alurKini(), tahap: K.tahap, penawaran: K.penawaran, timbangan: K.timbangan, struk: K.struk, ekstra: K.ekstra, ekstraDisetujui: ekstraDisetujui() }) });
+      { alur: alurKini(), tahap: K.tahap, penawaran: K.penawaran, timbangan: K.timbangan, struk: K.struk, ekstra: K.ekstra, ekstraDisetujui: ekstraDisetujui(), penahanan: K.penahanan, langganan: K.langganan, frekuensi: K.frekuensi }) });
   }
+  /* ====================================================== PENAHANAN DANA
+     Pesanan instan tidak ditagih saat memesan. Dananya DITAHAN (pre-auth)
+     di EXO Wallet atau kartu, DITANGKAP setelah kunjungan dikonfirmasi
+     selesai — termasuk tambahan yang disetujui di lokasi — atau DILEPAS
+     bila dibatalkan (dipotong biaya bila kurang dari 4 jam). Kanal tanpa
+     pre-auth (QRIS, VA, e-wallet) dicatat sebagai tagihan tertunda (mode
+     'tunda') dan ditagih lewat gateway saat selesai. Saldo dompet yang
+     bisa dipakai = saldo − yang sedang ditahan. */
+  function ditahanDulu() { return !!D.TAHAN_DANA[alurKini()]; }
+  function saldoTersedia() { return KEADAAN.saldo - (KEADAAN.saldoTertahan || 0); }
+  function namaBayar(id) { for (var i = 0; i < D.PAYMENTS.length; i++) if (D.PAYMENTS[i].id === id) return D.PAYMENTS[i].name; return id; }
+  function tahanDana(jumlah, metode, tambahan) {
+    var h = Object.assign({ id:'HOLD-' + Date.now().toString(36).toUpperCase().slice(-6), metode:metode, jumlah:jumlah, ekstra:0, status:'ditahan',
+      at:new Date().toISOString(), mode:'simulasi', orderId:null, ref:null, ditangkap:null }, tambahan || {});
+    if (metode === 'wallet') KEADAAN.saldoTertahan = (KEADAAN.saldoTertahan || 0) + jumlah;
+    KEADAAN.penahanan = h;
+    KEADAAN.mutasi.unshift({ label:I.tx('Held') + ' · ' + I.svcName(KEADAAN.jasa) + ' · ' + I.tx(namaBayar(metode)), date:'today · ' + h.id, amount:-jumlah, tahan:true });
+    return h;
+  }
+  function tambahTahanan(jumlah) {
+    var h = KEADAAN.penahanan; if (!h || h.status !== 'ditahan') return false;
+    if (h.metode === 'wallet') { if (jumlah > saldoTersedia()) return false; KEADAAN.saldoTertahan += jumlah; }
+    h.ekstra += jumlah;
+    KEADAAN.mutasi.unshift({ label:I.tx('Held') + ' · ' + I.tx('Extra work'), date:'today · ' + h.id, amount:-jumlah, tahan:true });
+    return true;
+  }
+  function totalTahanan() { var h = KEADAAN.penahanan; return h ? h.jumlah + h.ekstra : 0; }
+  function tangkapDana() {
+    var h = KEADAAN.penahanan; if (!h || h.status !== 'ditahan') return null;
+    var total = h.jumlah + h.ekstra;
+    if (h.metode === 'wallet') { KEADAAN.saldo -= total; KEADAAN.saldoTertahan = Math.max(0, KEADAAN.saldoTertahan - total); }
+    h.status = 'ditangkap'; h.ditangkap = total; h.ditangkapAt = new Date().toISOString();
+    KEADAAN.mutasi.unshift({ label:I.tx('Charged') + ' · ' + I.svcName(KEADAAN.jasa) + ' · ' + namaDepan(juruKini()), date:'today · ' + KEADAAN.orderNo, amount:-total });
+    return h;
+  }
+  function lepasDana(potongan) {
+    var h = KEADAAN.penahanan; if (!h || h.status !== 'ditahan') return null;
+    var total = h.jumlah + h.ekstra, fee = Math.min(potongan || 0, total);
+    if (h.metode === 'wallet') { KEADAAN.saldoTertahan = Math.max(0, KEADAAN.saldoTertahan - total); KEADAAN.saldo -= fee; }
+    h.status = 'dilepas'; h.dilepas = total - fee; h.potongan = fee; h.dilepasAt = new Date().toISOString();
+    KEADAAN.mutasi.unshift({ label:I.tx('Released') + ' · ' + I.svcName(KEADAAN.jasa), date:'today · ' + h.id, amount:total - fee, lepas:true });
+    if (fee) KEADAAN.mutasi.unshift({ label:I.tx('Late cancellation fee') + ' · ' + KEADAAN.orderNo, date:'today', amount:-fee });
+    return h;
+  }
+
+  /* ========================================================== LANGGANAN
+     Paket berkala hanya untuk layanan berulang beralur instan. Diskon
+     dihitung dari baris petugas (bukan add-on), komitmen minimal dan tarik
+     kembali diskon mengikuti D.LANGGANAN. */
+  function bisaLangganan() { return !!D.LANGGANAN.layanan[KEADAAN.jasa] && alurKini() === 'langsung'; }
+  function pilihanFrekuensi() { return D.LANGGANAN.pilihan; }
+  function cariFrekuensi(id) { var p = pilihanFrekuensi(); for (var i = 0; i < p.length; i++) if (p[i].id === id) return p[i]; return p[0]; }
+  function frekuensiKini() { return cariFrekuensi(bisaLangganan() ? KEADAAN.frekuensi : 'sekali'); }
+  function diskonLangganan() { var f = frekuensiKini(); return f.diskon ? bulat(lineFor(rateFor(juruKini())) * f.diskon) : 0; }
+  function buatLangganan() {
+    var f = frekuensiKini(); if (!f.diskon) { KEADAAN.langganan = null; return null; }
+    var mulai = hariKe(KEADAAN.hari), kunci = new Date(mulai.getTime()); kunci.setMonth(kunci.getMonth() + D.LANGGANAN.kunciBulan);
+    KEADAAN.langganan = { frekuensi:f.id, diskon:f.diskon, hari:f.hari, minKunjungan:f.min, kunjunganSelesai:0, hargaKunjungan:totalN(), diskonKunjungan:diskonLangganan(),
+      mulai:isoTgl(mulai), terkunciSampai:isoTgl(kunci), status:'aktif', at:new Date().toISOString() };
+    return KEADAAN.langganan;
+  }
+  /* n tanggal kunjungan berikutnya dari hari yang sedang dipegang. */
+  function kunjunganBerikut(n) { var l = KEADAAN.langganan, out = []; if (!l) return out; for (var i = 0; i < n; i++) out.push(hariKe(KEADAAN.hari + i * l.hari)); return out; }
+  /* Diskon yang ditarik kembali bila paket dibatalkan sebelum komitmen minimal. */
+  function tarikDiskon() { var l = KEADAAN.langganan; if (!l || l.status !== 'aktif') return 0; return l.kunjunganSelesai < l.minKunjungan ? l.diskonKunjungan * l.kunjunganSelesai : 0; }
   function addonsKini() { return D.ADDON_SETS[KEADAAN.jasa] || []; }
   function bulat(r) { return r >= 20000 ? Math.round(r / 1000) * 1000 : Math.round(r / 500) * 500; }
   function rateFor(j) { return bulat(jasaKini().rate * (j.factor || 1)); }
@@ -193,7 +261,7 @@ var ExoApp = (function () {
   }
   function voucherEligible() { return voucherKini().live && subtotalN() >= D.VOUCHER.min; }
   function voucherApplied() { return KEADAAN.voucher && voucherEligible(); }
-  function totalN() { return subtotalN() + D.PLATFORM_FEE - (voucherApplied() ? voucherKini().amount : 0); }
+  function totalN() { return subtotalN() - diskonLangganan() + D.PLATFORM_FEE - (voucherApplied() ? voucherKini().amount : 0); }
   function qtyStep() { return D.STEP_QTY[jasaKini().unit] || 1; }
   /* Batas bawah mengikuti MIN_QTY per layanan (perawatan 4 jam, memasak 2 jam,
      paket gedung 6 bulan) sebelum jatuh ke aturan per unit. */
@@ -428,7 +496,7 @@ var ExoApp = (function () {
       zona: tz, mulaiUtc: keUTC(tgl, KEADAAN.mulai, tz), selesaiUtc: keUTC(tgl, selesai, tz),
       teamId:null, workerIds:[j.id], supervisorId:null,
       status: alurKini() === 'langsung' ? 'dijadwalkan' : alurKini() === 'survei' ? 'survei' : alurKini() === 'timbang' ? 'jemput' : alurKini() === 'kontrak' ? 'proposal' : 'belanja', nilai:totalN(), checklist:[],
-      sumber:'exo-app', exo:{ alur:alurKini(), jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true }
+      sumber:'exo-app', exo:{ alur:alurKini(), jasa:KEADAAN.jasa, jam:KEADAAN.jam, regu:KEADAAN.regu, tambahan:Object.keys(KEADAAN.tambahan).filter(function (k) { return KEADAAN.tambahan[k]; }), bayar:KEADAAN.bayar, voucher:voucherApplied() ? voucherKini().code : null, terkunci:true, frekuensi:KEADAAN.frekuensi, langganan:KEADAAN.langganan, penahanan:KEADAAN.penahanan }
     });
     if (EXO_DB.log) EXO_DB.log(o.clientId, 'Memesan lewat EXOCLEAN App · ' + o.no, 'order', o.id);
     KEADAAN.orderDbId = o.id; KEADAAN.orderNo = o.no;
@@ -728,6 +796,8 @@ var ExoApp = (function () {
     qtyStep:qtyStep, qtyMin:qtyMin, qtyMax:qtyMax, qtyText:qtyText, layananDijeda:layananDijeda, terbitan:terbitan,
     hariKe:hariKe, ringkasSlot:ringkasSlot, alamatKini:alamatKini,
     alurKini:alurKini, alurMeta:alurMeta, tahapAlur:tahapAlur, tagihanSekarang:tagihanSekarang, ekstraDisetujui:ekstraDisetujui, keputusanMenunggu:keputusanMenunggu, statusAlur:statusAlur, simpanAlurDB:simpanAlurDB,
+    ditahanDulu:ditahanDulu, saldoTersedia:saldoTersedia, namaBayar:namaBayar, tahanDana:tahanDana, tambahTahanan:tambahTahanan, totalTahanan:totalTahanan, tangkapDana:tangkapDana, lepasDana:lepasDana,
+    bisaLangganan:bisaLangganan, pilihanFrekuensi:pilihanFrekuensi, cariFrekuensi:cariFrekuensi, frekuensiKini:frekuensiKini, diskonLangganan:diskonLangganan, buatLangganan:buatLangganan, kunjunganBerikut:kunjunganBerikut, tarikDiskon:tarikDiskon,
     zonaPesanan:zonaPesanan, labelZona:labelZona, labelPerangkat:labelPerangkat, zonaBeda:zonaBeda, jamZona:jamZona, jamPonsel:jamPonsel,
     keUTC:keUTC, mulaiUTC:mulaiUTC, jamSelesai:jamSelesai, menitKeMulai:menitKeMulai, dalamKunci4Jam:dalamKunci4Jam, wilayahPesanan:wilayahPesanan, sopMeta:sopMeta, ppeComplete:ppeComplete, sopSelesai:sopSelesai,
     coverage:coverage, addrFilled:addrFilled,

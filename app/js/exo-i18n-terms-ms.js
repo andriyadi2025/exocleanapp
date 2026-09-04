@@ -248,5 +248,8 @@ EXO_TERMS.pasang('ms', [
   'Pasukan khusus, mesin, bahan kimia dan PPE mengikut SOP',
   'Pengurus akaun dan mesyuarat semakan bulanan',
   'Ruang simpanan, air dan kuasa, serta permit akses bangunan',
-  'Seorang kenalan untuk penyelarasan harian'
+  'Seorang kenalan untuk penyelarasan harian',
+  'Pelan mingguan, dua mingguan dan bulanan mendapat diskaun 10%, 7% dan 5% setiap lawatan; harga dikunci 3 bulan dan pembersih sama dikekalkan untuk anda.',
+  'Pelan mempunyai komitmen minimum 4 lawatan (3 untuk bulanan). Batal lebih awal mencaj semula diskaun yang diterima pada lawatan yang selesai; melangkau satu lawatan percuma dan tidak menjejaskan minimum.',
+  'Untuk tempahan segera, jumlahnya ditahan di EXO Wallet atau kad anda semasa tempahan dan dicaj hanya selepas lawatan disahkan selesai. Tambahan yang anda luluskan di lokasi dimasukkan ke dana ditahan. Pembatalan melepaskan dana itu, ditolak fi pembatalan lewat jika kurang 4 jam.'
 ]);

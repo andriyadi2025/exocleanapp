@@ -8,6 +8,9 @@
  *    GET  /api/pay/health            → cek koneksi (dipakai tombol "Uji koneksi")
  *    POST /api/pay/charge            → buat transaksi, balikan dinormalkan
  *    POST /api/pay/status            → tanya status satu transaksi
+ *    POST /api/pay/authorize         → tahan dana (pre-auth kartu kredit Midtrans)
+ *    POST /api/pay/capture           → tangkap dana yang ditahan setelah kunjungan selesai
+ *    POST /api/pay/cancel            → lepas dana yang ditahan (pesanan dibatalkan)
  *    POST /api/pay/webhook/midtrans  → notifikasi Midtrans (verifikasi signature)
  *    POST /api/pay/webhook/xendit    → callback Xendit (verifikasi callback token)
  *
@@ -237,6 +240,52 @@ async function statusMidtrans(orderId) {
   return { status: r.transaction_status, gatewayRef: r.transaction_id, mentah: r };
 }
 
+/* ---- penahanan dana (pre-authorization) ----------------------------------
+   Aplikasi EXOCLEAN menahan dana pesanan instan saat memesan dan baru
+   menagih (capture) setelah kunjungan dikonfirmasi selesai; pembatalan
+   melepas dana (cancel). Di Midtrans pre-auth hanya tersedia untuk kartu
+   kredit (type "authorize"); QRIS/VA/e-wallet ditagih saat selesai. */
+async function authorizeMidtrans({ orderId, amount, customer, keterangan, invoiceNo }) {
+  wajib(MT.serverKey, 'MIDTRANS_SERVER_KEY');
+  const pelanggan = {
+    first_name: (customer.nama || 'Pelanggan').slice(0, 60),
+    email: customer.email || undefined,
+    phone: customer.telp || undefined
+  };
+  const snap = await panggil(`${MT.snapBase}/snap/v1/transactions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: MT.auth },
+    body: JSON.stringify({
+      transaction_details: { order_id: orderId, gross_amount: amount },
+      customer_details: pelanggan,
+      item_details: [{ id: invoiceNo || orderId, price: amount, quantity: 1, name: (keterangan || 'Penahanan dana').slice(0, 50) }],
+      enabled_payments: ['credit_card'],
+      credit_card: { secure: true, type: 'authorize' },
+      callbacks: { finish: alamatPulang('selesai'), error: alamatPulang('gagal') }
+    })
+  });
+  return { gatewayRef: snap.token, redirectUrl: snap.redirect_url, jenis: 'tahan' };
+}
+async function captureMidtrans(orderId, amount) {
+  wajib(MT.serverKey, 'MIDTRANS_SERVER_KEY');
+  const st = await statusMidtrans(orderId);
+  if (st.status !== 'authorize') throw new Error(`Transaksi ${orderId} berstatus "${st.status}", bukan authorize — tidak bisa di-capture`);
+  const r = await panggil(`${MT.coreBase}/v2/capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: MT.auth },
+    body: JSON.stringify({ transaction_id: st.gatewayRef, gross_amount: amount })
+  });
+  return { status: r.transaction_status, gatewayRef: r.transaction_id, amount };
+}
+async function cancelMidtrans(orderId) {
+  wajib(MT.serverKey, 'MIDTRANS_SERVER_KEY');
+  const r = await panggil(`${MT.coreBase}/v2/${encodeURIComponent(orderId)}/cancel`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: MT.auth }
+  });
+  return { status: r.transaction_status, gatewayRef: r.transaction_id };
+}
+
 /** Verifikasi keaslian notifikasi Midtrans. */
 function signatureMidtransValid(n) {
   const hitung = crypto.createHash('sha512')
@@ -384,6 +433,50 @@ app.post('/api/pay/status', async (req, res) => {
   }
 });
 
+app.post('/api/pay/authorize', async (req, res) => {
+  const { gateway, orderId, channel, amount, customer = {}, keterangan, invoiceNo } = req.body || {};
+  try {
+    if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
+    if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+    if (gateway === 'xendit' || (channel && channel !== 'cc')) {
+      return res.status(400).json({ error: 'Penahanan dana hanya tersedia untuk kartu kredit Midtrans', unsupported: true });
+    }
+    const hasil = await authorizeMidtrans({ orderId, amount, customer, keterangan, invoiceNo });
+    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
+    res.json(hasil);
+  } catch (e) {
+    console.error('[authorize]', e.message, e.detail || '');
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/pay/capture', async (req, res) => {
+  const { orderId, amount } = req.body || {};
+  try {
+    if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
+    if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+    const hasil = await captureMidtrans(orderId, amount);
+    simpan(orderId, { status: 'paid', ditangkap: amount, capturedAt: new Date().toISOString() });
+    res.json(hasil);
+  } catch (e) {
+    console.error('[capture]', e.message, e.detail || '');
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/pay/cancel', async (req, res) => {
+  const { orderId } = req.body || {};
+  try {
+    if (!orderId) throw new Error('orderId wajib diisi');
+    const hasil = await cancelMidtrans(orderId);
+    simpan(orderId, { status: 'cancelled', cancelledAt: new Date().toISOString() });
+    res.json(hasil);
+  } catch (e) {
+    console.error('[cancel]', e.message, e.detail || '');
+    res.status(400).json({ error: e.message });
+  }
+});
+
 /* ---------------------------------------------------------------- webhook */
 app.post('/api/pay/webhook/midtrans', (req, res) => {
   const n = req.body || {};
@@ -393,6 +486,8 @@ app.post('/api/pay/webhook/midtrans', (req, res) => {
   }
   const s = n.transaction_status;
   const status = (s === 'capture' && n.fraud_status === 'accept') || s === 'settlement' ? 'paid'
+    : s === 'authorize' ? 'held'
+    : s === 'cancel' ? 'cancelled'
     : s === 'pending' ? 'pending'
     : s === 'expire' ? 'expired' : 'failed';
 

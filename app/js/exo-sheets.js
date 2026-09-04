@@ -195,6 +195,26 @@
     return kerangka('Complete payment', h, kaki);
   };
 
+  /* Pembatalan: biaya 4 jam, dana yang ditahan, dan — bila kunjungan ini
+     bagian dari paket — pilihan membatalkan paketnya sekalian dengan tarik
+     kembali diskon bila komitmen minimal belum terpenuhi. */
+  X.LEMBAR.batal = function () {
+    var sisa = X.menitKeMulai(), telat = sisa < 240, fee = telat ? 50000 * K.regu : 0, j = X.juruKini();
+    var h = '<div class="card elev-sm gap-6"><div class="f-head t-15">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.ringkasSlot()) + '</div><div class="t-115 o-65">' + esc(j.name) + ' · ' + esc(K.orderNo) + '</div></div>';
+    h += '<div class="card ' + (telat ? 'card-clay' : 'card-leaf') + ' t-125 lh-15">' + esc(tx(telat ? 'Less than 4 hours before the start — cancelling costs Rp50.000 per cleaner.' : 'More than 4 hours before the start — cancelling is free.')) + '</div>';
+    var hd = K.penahanan;
+    if (hd && hd.status === 'ditahan') h += '<div class="card elev-sm gap-4"><div class="kv"><span>' + esc(tx('Funds held')) + '</span><span>' + rp(X.totalTahanan()) + '</span></div>' + (fee ? '<div class="kv"><span>' + esc(tx('Late cancellation fee')) + '</span><span>− ' + rp(fee) + '</span></div>' : '') + '<div class="rule"></div><div class="kv f-head"><span>' + esc(tx('Released')) + '</span><span>' + rp(Math.max(0, X.totalTahanan() - fee)) + '</span></div><div class="t-115 o-65">' + esc(tx(X.namaBayar(hd.metode))) + '</div></div>';
+    var l = K.langganan;
+    if (l && l.status === 'aktif') {
+      var tarik = X.tarikDiskon();
+      h += '<div class="card card-leaf gap-8"><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx(X.cariFrekuensi(l.frekuensi).label)) + '</span><span class="t-115 o-7">' + esc(tx('Visits completed')) + ' ' + l.kunjunganSelesai + ' ' + esc(tx('of minimum')) + ' ' + l.minKunjungan + '</span></div>' +
+        '<div class="t-125 lh-15">' + esc(l.kunjunganSelesai < l.minKunjungan ? tx('Cancelling the plan now charges back the discount on completed visits:') + ' ' + rp(tarik) + '.' : tx('Commitment met — cancelling the plan is free.')) + '</div>' +
+        '<button class="' + kelas('row', K.batalPaket) + '"' + aksi('batalPaket') + ' aria-pressed="' + K.batalPaket + '"><span class="row-main"><b>' + esc(tx(K.batalPaket ? 'Also cancel the plan' : 'Keep the plan — only this visit')) + '</b></span><span class="' + kelas('box', K.batalPaket) + '">✓</span></button></div>';
+    }
+    var kaki = '<button class="btn btn-primary btn-block btn-tall"' + aksi('batalSimpan') + '>' + esc(tx('Cancel booking')) + (fee ? ' · ' + rp(fee) : '') + '</button>';
+    return kerangka(esc(tx('Cancel booking')), h, kaki);
+  };
+
   /* ================================================================= AKSI */
   var A = X.AKSI;
   A.ke = function (v) { K.layar = v; };
@@ -224,7 +244,8 @@
   A.batalPin = function () { K.payPinOpen = false; K.payPin = ''; };
   A.payPinTekan = function (k) { K.payPin = k === '⌫' ? K.payPin.slice(0, -1) : (K.payPin + k).slice(0, 6); };
   function selesaiBayar() {
-    K.layar = 'success'; K.tahap = 1; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false;
+    K.layar = 'success'; K.tahap = 1; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false; K.dibatalkan = false; K.batalPaket = false;
+    X.buatLangganan();   /* paket berkala bila pelanggan memilih frekuensi berulang */
     /* Tulis ke tabel orders basis data EXOCLEAN bila ada — pesanan ini lalu
        tampil di index.html dan di Orders konsol admin. */
     var o = X.tulisOrderDB();
@@ -234,51 +255,133 @@
      dibuat, tahap mulai dari nol, pembayaran menyusul saat pelanggan
      menyetujui penawaran / hasil timbang / tagihan bulanan. */
   function selesaiTanpaBayar() {
-    K.layar = 'success'; K.tahap = 0; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false;
+    K.layar = 'success'; K.tahap = 0; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false; K.dibatalkan = false; K.batalPaket = false; K.langganan = null; K.penahanan = null;
     K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = [];
     var o = X.tulisOrderDB();
     if (o) sekilas(tx('Order') + ' ' + o.no + ' · ' + tx(X.alurMeta().tahap[0].title) + '.');
   }
+  var PELANGGAN = { nama:'Dewi Anggraini', email:'dewi.anggraini@gmail.com', telp:'6281288904417' };
+  /* Pesanan instan: dana DITAHAN, bukan ditagih — dompet memindahkan jumlah
+     ke "tertahan", kartu lewat pre-auth gateway, kanal tanpa pre-auth
+     (QRIS/VA/e-wallet) dicatat tertunda dan ditagih saat selesai. Alur lain
+     yang menagih sekarang (titip: ongkos kurir) tetap dibayar langsung. */
   A.konfirmasi = function () {
     if (!X.tagihanSekarang()) { selesaiTanpaBayar(); return; }
-    if (!K.payPinOpen) { K.payPinOpen = true; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; return; }
+    if (!K.payPinOpen) { K.payPinOpen = true; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; K.penahanan = null; return; }
     if (K.payPin.length < 6) return;
-    var n = X.totalN();
+    var n = X.totalN(), tahan = X.ditahanDulu();
     if (K.bayar === 'wallet') {
-      if (n > K.saldo) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(n - K.saldo) + '. ' + tx('Top up or pick another method.'), 'err'); return; }
+      var tersedia = X.saldoTersedia();
+      if (n > tersedia) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(n - tersedia) + '. ' + tx('Top up or pick another method.'), 'err'); return; }
+      if (tahan) { X.tahanDana(n, 'wallet'); selesaiBayar(); return; }
       K.saldo -= n; K.mutasi.unshift({ label:I.svcName(K.jasa) + ' · ' + X.namaDepan(X.juruKini()), date:'today · EXO-4471', amount:-n });
       selesaiBayar(); return;
     }
     /* Kanal lain lewat gateway bila server pendamping hidup; kalau tidak,
        simulasi — dan dikatakan begitu di pesan sekilas. */
-    if (!window.EXO_SERVER) { selesaiBayar(); return; }
+    if (!window.EXO_SERVER) { if (tahan) X.tahanDana(n, K.bayar); selesaiBayar(); return; }
     K.gatewaySibuk = true;
     var orderId = 'EXO-' + Date.now().toString().slice(-6);
-    EXO_SERVER.bayar(K.bayar, orderId, n, { nama:'Dewi Anggraini', email:'dewi.anggraini@gmail.com', telp:'6281288904417' }).then(function (r) {
+    var janji = tahan ? EXO_SERVER.tahan(K.bayar, orderId, n, PELANGGAN) : EXO_SERVER.bayar(K.bayar, orderId, n, PELANGGAN);
+    janji.then(function (r) {
       K.gatewaySibuk = false;
-      if (r.offline) { sekilas(tx('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).'), 'err'); selesaiBayar(); X.gambar(); return; }
+      if (r.tunda) { X.tahanDana(n, K.bayar, { mode:'tunda', orderId:orderId }); sekilas(tx('No hold on this channel — you pay through the gateway once the visit is done.')); selesaiBayar(); X.gambar(); return; }
+      if (r.offline) { sekilas(tx('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).'), 'err'); if (tahan) X.tahanDana(n, K.bayar); selesaiBayar(); X.gambar(); return; }
       if (!r.ok) { sekilas('Gateway refused: ' + (r.error || 'unknown') + '. Nothing was charged.', 'err'); X.gambar(); return; }
-      K.gateway = Object.assign({ orderId:orderId, amount:n, status:'pending', mode:'sandbox' }, r.data);
+      K.gateway = Object.assign({ orderId:orderId, amount:n, status:'pending', mode:'sandbox', jenis: tahan ? 'tahan' : 'bayar' }, r.data);
       K.payPinOpen = false; K.payPin = ''; K.lembar = 'gateway';
       X.gambar();
     });
   };
+  /* Gateway selesai: pembayaran biasa → sukses; penahanan → catat hold
+     bermode gateway; penangkapan (kanal tertunda) → hold ditangkap. */
+  function gatewaySukses() {
+    var g = K.gateway; K.lembar = null; K.gateway = null;
+    if (g.jenis === 'tahan') { X.tahanDana(g.amount, K.bayar, { mode:'gateway', orderId:g.orderId, ref:g.gatewayRef || null }); selesaiBayar(); return; }
+    if (g.jenis === 'tangkap') {
+      var h = K.penahanan;
+      if (h && h.status === 'ditahan') { h.status = 'ditangkap'; h.ditangkap = g.amount; h.ditangkapAt = new Date().toISOString(); K.mutasi.unshift({ label:tx('Charged') + ' · ' + I.svcName(K.jasa) + ' · ' + tx(X.namaBayar(h.metode)), date:'today · ' + K.orderNo, amount:-g.amount }); }
+      X.simpanAlurDB(); sekilas(tx('Visit done — charged') + ' ' + rp(g.amount) + '.'); return;
+    }
+    selesaiBayar();
+  }
+  function statusGatewayBeres(st) { return st === 'paid' || st === 'settlement' || st === 'capture' || st === 'authorize' || st === 'held'; }
   A.gatewayCek = function () {
     var g = K.gateway; if (!g) return;
-    if (g.status === 'paid') { K.lembar = null; K.gateway = null; selesaiBayar(); return; }
+    if (statusGatewayBeres(g.status)) { gatewaySukses(); return; }
     EXO_SERVER.statusBayar(g.orderId).then(function (r) {
       if (r.ok && r.data && r.data.status) { g.status = r.data.status; if (g.gatewayRef == null) g.gatewayRef = r.data.gatewayRef; }
-      if (g.status === 'paid') { sekilas(tx('Payment confirmed by the gateway.')); K.lembar = null; K.gateway = null; selesaiBayar(); }
+      if (statusGatewayBeres(g.status)) { sekilas(tx(g.jenis === 'tahan' ? 'Funds held' : 'Payment confirmed by the gateway.')); gatewaySukses(); }
       else sekilas('Gateway says: ' + (g.status || 'pending') + '. Complete the payment, then check again.', 'err');
       X.gambar();
     });
+  };
+  /* Kunjungan dikonfirmasi selesai: dana yang ditahan ditangkap (termasuk
+     tambahan yang disetujui), kunjungan paket dihitung. Dipanggil dari
+     simulasi tahap pelanggan, tombol "selesai · nilai", dan "Selesaikan job"
+     di aplikasi mitra. Mengembalikan jumlah yang ditagih. */
+  function selesaikanKunjungan(diam) {
+    K.tahap = X.tahapAlur().length - 1;
+    var h = K.penahanan, total = X.totalTahanan(), l = K.langganan;
+    if (l && l.status === 'aktif') l.kunjunganSelesai++;
+    if (h && h.status === 'ditahan') {
+      if (h.mode === 'tunda' && window.EXO_SERVER) {
+        /* kanal tanpa pre-auth: tagihan dibuat sekarang lewat gateway */
+        K.gatewaySibuk = true;
+        EXO_SERVER.bayar(h.metode, h.orderId + '-C', total, PELANGGAN).then(function (r) {
+          K.gatewaySibuk = false;
+          if (!r.ok) { X.tangkapDana(); sekilas(tx('Visit done — charged') + ' ' + rp(total) + ' · ' + (r.offline ? 'simulated' : 'gateway: ' + (r.error || ''))); X.gambar(); return; }
+          K.gateway = Object.assign({ orderId:h.orderId + '-C', amount:total, status:'pending', mode:'sandbox', jenis:'tangkap' }, r.data); K.lembar = 'gateway'; X.gambar();
+        });
+        X.simpanAlurDB(); return total;
+      }
+      if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.tangkap(h.orderId, total).then(function (r) { if (!r.ok) sekilas('Gateway capture: ' + (r.error || 'failed'), 'err'); });
+      X.tangkapDana();
+      if (!diam) sekilas(tx('Visit done — charged') + ' ' + rp(total) + ' · ' + tx(X.namaBayar(h.metode)) + '.');
+    }
+    X.simpanAlurDB();
+    return total;
+  }
+  /* Paket berlanjut: jadwal bergeser ke kunjungan berikutnya, tahap kembali
+     ke "terkunci", dan dana kunjungan berikutnya ditahan lagi. */
+  function kunjunganBerikutnya() {
+    var l = K.langganan, h = K.penahanan;
+    K.hari += l.hari; K.tahap = 1; K.ekstra = []; K.ceklis = {};
+    var metode = h ? h.metode : K.bayar, jumlah = l.hargaKunjungan;
+    if (metode === 'wallet' && jumlah > X.saldoTersedia()) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(jumlah - X.saldoTersedia()) + '. ' + tx('Top up or pick another method.'), 'err'); K.penahanan = null; X.simpanAlurDB(); return; }
+    X.tahanDana(jumlah, metode, h && h.mode === 'tunda' ? { mode:'tunda', orderId:K.orderNo + '-' + (l.kunjunganSelesai + 1) } : null);
+    X.simpanAlurDB();
+    sekilas(tx('Visit done — the next one is scheduled') + ' · ' + X.ringkasSlot() + ' · ' + tx('Next visit held') + ' ' + rp(jumlah) + '.');
+  }
+  A.kunjunganSelesaiNilai = function () { if (X.ditahanDulu() && K.penahanan && K.penahanan.status === 'ditahan') selesaikanKunjungan(); K.layar = 'rate'; };
+  A.frekuensi = function (v) { K.frekuensi = v; };
+  A.batalPaket = function () { K.batalPaket = !K.batalPaket; };
+  A.bukaBatalPaket = function () { K.batalPaket = true; K.lembar = 'batal'; };
+  /* Pembatalan pesanan: lepas dana yang ditahan (dipotong biaya bila < 4 jam),
+     dan bila paketnya ikut dibatalkan sebelum komitmen minimal, diskon
+     kunjungan yang sudah selesai ditagih kembali. */
+  A.batalSimpan = function () {
+    var fee = X.menitKeMulai() < 240 ? 50000 * K.regu : 0, pesan = [];
+    var h = X.lepasDana(fee);
+    if (h) { pesan.push(tx('Released') + ' ' + rp(h.dilepas)); if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.lepas(h.orderId); }
+    else if (fee && !tagihDompet(fee, tx('Late cancellation fee') + ' · ' + K.orderNo)) return;
+    if (fee) pesan.push(tx('Late cancellation fee') + ' ' + rp(fee));
+    var l = K.langganan;
+    if (l && l.status === 'aktif' && K.batalPaket) {
+      var tarik = X.tarikDiskon();
+      if (tarik && !tagihDompet(tarik, tx('Discount charge-back') + ' · ' + l.kunjunganSelesai + ' ' + tx('visits'))) return;
+      l.status = 'dibatalkan'; l.dibatalkanAt = new Date().toISOString(); pesan.push(tx('Plan cancelled.') + (tarik ? ' ' + tx('Discount charge-back') + ' ' + rp(tarik) : ''));
+    }
+    K.dibatalkan = true; K.tahap = 0; K.lembar = null; K.batalPaket = false; X.simpanAlurDB();
+    K.layar = 'orders';
+    sekilas(tx('Booking cancelled.') + (pesan.length ? ' ' + pesan.join(' · ') + '.' : ''), 'err');
   };
   /* Menagih dompet untuk jumlah yang baru disetujui pelanggan (penawaran,
      timbangan, struk, tambahan). Metode selain dompet dianggap ditagih lewat
      gateway saat pelunasan — di sini dicatat saja. */
   function tagihDompet(jumlah, label) {
     if (K.bayar === 'wallet') {
-      if (jumlah > K.saldo) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(jumlah - K.saldo) + '. ' + tx('Top up or pick another method.'), 'err'); return false; }
+      if (jumlah > X.saldoTersedia()) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(jumlah - X.saldoTersedia()) + '. ' + tx('Top up or pick another method.'), 'err'); return false; }
       K.saldo -= jumlah;
     }
     K.mutasi.unshift({ label:label, date:'today · ' + (K.orderNo || 'EXO'), amount:-jumlah });
@@ -292,7 +395,12 @@
   }
   A.tahapMaju = function () {
     var a = X.alurKini(), n = X.tahapAlur().length, berikut = K.tahap + 1;
-    if (berikut >= n) { K.tahap = 0; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; X.simpanAlurDB(); return; }
+    if (berikut >= n) {
+      if (K.langganan && K.langganan.status === 'aktif' && !K.dibatalkan) { kunjunganBerikutnya(); return; }
+      K.tahap = 0; K.penawaran = null; K.timbangan = null; K.struk = null; K.ekstra = []; K.penahanan = null; K.dibatalkan = false; X.simpanAlurDB(); return;
+    }
+    /* tahap terakhir pesanan instan = kunjungan selesai → dana ditangkap */
+    if (berikut === n - 1 && X.ditahanDulu()) { selesaikanKunjungan(); return; }
     /* tahap keputusan: mitra mengirim, pelanggan menyetujui — simulasi membuat kirimannya bila belum ada */
     if (a === 'survei' && berikut === 2 && !K.penawaran) K.penawaran = penawaranContoh();
     if (a === 'timbang' && berikut === 2 && !K.timbangan) { var kg = Math.max(2, K.jam + 1.5); K.timbangan = { status:'menunggu', kg:kg, tarif:X.rateFor(X.juruKini()), total:Math.round(kg * X.rateFor(X.juruKini())), at:new Date().toISOString() }; }
@@ -327,7 +435,12 @@
   A.ekstraPutus = function (v) {
     var p = String(v).split(':'), id = p[0], ya = p[1] === 'ya';
     var e = (K.ekstra || []).filter(function (x) { return x.id === id; })[0]; if (!e) return;
-    if (ya) { if (!tagihDompet(e.harga, tx('Extra work') + ' · ' + e.nama)) return; e.status = 'diterima'; sekilas(tx('Extra approved') + ' · ' + esc(e.nama) + ' · ' + rp(e.harga)); }
+    if (ya) {
+      if (X.ditahanDulu() && K.penahanan && K.penahanan.status === 'ditahan') {
+        if (!X.tambahTahanan(e.harga)) { sekilas(tx('EXO Wallet is short by') + ' ' + rp(e.harga - X.saldoTersedia()) + '. ' + tx('Top up or pick another method.'), 'err'); return; }
+        e.status = 'diterima'; sekilas(tx('Extra approved') + ' · ' + esc(e.nama) + ' · ' + rp(e.harga) + ' · ' + tx('Extras added to the hold — charged only when the visit is done.'));
+      } else { if (!tagihDompet(e.harga, tx('Extra work') + ' · ' + e.nama)) return; e.status = 'diterima'; sekilas(tx('Extra approved') + ' · ' + esc(e.nama) + ' · ' + rp(e.harga)); }
+    }
     else { e.status = 'ditolak'; sekilas(tx('Extra declined — the cleaner sticks to the original scope.'), 'err'); }
     if (!X.keputusanMenunggu().length) K.lembar = null;
     X.simpanAlurDB();
@@ -574,7 +687,12 @@
     var m = null; for (var i = 0; i < D.PARTNER_ISSUES.length; i++) if (D.PARTNER_ISSUES[i].id === v) m = D.PARTNER_ISSUES[i];
     K.lembar = null; sekilas('Terkirim ke ops: “' + (m ? m.label : v) + '”. Dijawab dalam 60 detik.');
   };
-  A.selesaikanJob = function () { K.layar = 'pjobs'; K.saldoMitra += 231000; K.tertahan = Math.max(0, K.tertahan - 231000); sekilas('Job selesai. Rp 231.000 masuk — ' + rp(K.saldoMitra) + ' tersedia.'); };
+  A.selesaikanJob = function () {
+    K.layar = 'pjobs'; K.saldoMitra += 231000; K.tertahan = Math.max(0, K.tertahan - 231000);
+    var tagih = 0;
+    if (X.ditahanDulu() && K.penahanan && K.penahanan.status === 'ditahan') tagih = selesaikanKunjungan(true);
+    sekilas('Job selesai. Rp 231.000 masuk — ' + rp(K.saldoMitra) + ' tersedia.' + (tagih ? ' Dana pelanggan ' + rp(tagih) + ' ditangkap.' : ''));
+  };
   A.ubahBank = function () { K.bank = null; K.bankPick = ''; K.bankAcc = ''; };
   A.bankPick = function (v) { K.bankPick = v; };
   A.simpanBank = function () { K.bank = { bank:K.bankPick, acc:K.bankPick + ' ···' + K.bankAcc.slice(-4) }; sekilas('Rekening tersimpan · penarikan pertama tertunda 24 jam setelah OTP.'); };

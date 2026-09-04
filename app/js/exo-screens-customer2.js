@@ -38,9 +38,23 @@
       '<button class="' + kelas('pill', K.tabPesanan === 'past') + '"' + aksi('tabPesanan', 'past') + '>' + esc(t('past')) + '</button></div>';
     h += '<div class="stack gap-12" style="padding:16px 20px 0">';
     if (K.tabPesanan === 'up') {
-      h += '<div class="card elev-md gap-12"><div class="flex items-center gap-10"><span class="tag tag-accent-2">' + esc(tx('Today')) + '</span><span class="t-115 o-6">EXO-4471</span><span style="margin-inline-start:auto" class="t-115 c-leaf-800">' + esc(tx(X.tahapAlur()[Math.min(K.tahap, X.tahapAlur().length - 1)].title)) + '</span></div>' +
+      h += '<div class="card elev-md gap-12"><div class="flex items-center gap-10"><span class="tag tag-accent-2">' + esc(tx('Today')) + '</span><span class="t-115 o-6">EXO-4471</span><span style="margin-inline-start:auto" class="t-115 c-leaf-800">' + esc(K.dibatalkan ? tx('Cancelled') : tx(X.tahapAlur()[Math.min(K.tahap, X.tahapAlur().length - 1)].title)) + '</span></div>' +
         '<div class="flex items-center gap-11">' + X.avJuru(j, 44) + '<div class="grow"><div class="f-head t-15">' + esc(j.name) + '</div><div class="t-115 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.ringkasSlot()) + '</div></div></div>' +
-        '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'track') + '>' + esc(tx('Track')) + '</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'pindah') + '>' + esc(tx('Move time')) + '</button></div></div>';
+        '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'track') + '>' + esc(tx('Track')) + '</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'pindah') + '>' + esc(tx('Move time')) + '</button>' +
+        (K.dibatalkan ? '' : '<button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'batal') + '>' + esc(tx('Cancel')) + '</button>') + '</div></div>';
+      var lg = K.langganan;
+      if (lg) {
+        var fr = X.cariFrekuensi(lg.frekuensi), kb = X.kunjunganBerikut(4), aktif = lg.status === 'aktif' && !K.dibatalkan;
+        h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-9"><span class="av av-leaf" style="--s:26px">' + ikon(IKON.kalender, 14) + '</span>' +
+          '<div class="grow"><div class="f-head t-15">' + esc(tx(fr.label)) + ' · ' + esc(I.dowShort(X.hariKe(K.hari))) + ' ' + K.mulai + '</div><div class="t-115 o-65">' + esc(tx('Visits completed')) + ' ' + lg.kunjunganSelesai + ' ' + esc(tx('of minimum')) + ' ' + lg.minKunjungan + ' · −' + Math.round(lg.diskon * 100) + '% · ' + rp(lg.hargaKunjungan) + '</div></div><span class="tag ' + (aktif ? 'tag-accent' : 'tag-neutral') + '">' + esc(tx(aktif ? 'Active' : 'Cancelled')) + '</span></div>';
+        if (aktif) {
+          h += '<div class="flex gap-7 wrap">';
+          for (var d = 1; d < kb.length; d++) h += '<span class="tag tag-neutral">' + esc(I.dayMonth(kb[d])) + '</span>';
+          h += '</div><div class="t-115 o-7 lh-15">' + esc(lg.kunjunganSelesai < lg.minKunjungan ? tx('Cancelling the plan now charges back the discount on completed visits:') + ' ' + rp(X.tarikDiskon()) + '.' : tx('Commitment met — cancelling the plan is free.')) + ' ' + esc(tx('Price locked until')) + ' ' + esc(lg.terkunciSampai) + '. ' + esc(tx('Each visit is held at booking and charged when done.')) + '</div>' +
+            '<div class="flex gap-8"><button class="btn btn-secondary" style="flex:1"' + aksi('lewati') + '>' + esc(tx('Skip one')) + '</button><button class="btn btn-secondary" style="flex:1"' + aksi('bukaBatalPaket') + '>' + esc(tx('Cancel plan')) + '</button></div>';
+        }
+        h += '</div>';
+      } else
       h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-9"><span class="av av-leaf" style="--s:26px">' + ikon(IKON.kalender, 14) + '</span>' +
         '<div class="grow"><div class="f-head t-15">Every Saturday · 09:00</div><div class="t-115 o-65">Same cleaner held for you · 3h hourly</div></div><span class="tag tag-accent">' + esc(tx('Active')) + '</span></div>' +
         '<div class="flex gap-7 wrap"><span class="tag tag-neutral' + (K.lewati ? ' strike' : '') + '">30 Aug</span><span class="tag tag-neutral">6 Sep</span><span class="tag tag-neutral">13 Sep</span>' +
@@ -62,7 +76,8 @@
 
   /* ============================================================== WALLET */
   X.LAYAR.wallet = function () {
-    var h = '<div class="screen"><div class="hero"><h3 style="margin:0">' + esc(t('wallet')) + '</h3><div class="balance">' + rp(K.saldo) + '</div>' +
+    var h = '<div class="screen"><div class="hero"><h3 style="margin:0">' + esc(t('wallet')) + '</h3><div class="balance">' + rp(X.saldoTersedia()) + '</div>' +
+      (K.saldoTertahan ? '<div class="t-12 o-7" style="margin-top:4px">' + rp(K.saldoTertahan) + ' ' + esc(tx('held')) + ' · ' + rp(K.saldo) + ' ' + esc(tx('in total')) + ' · ' + esc(tx('charged when done')) + '</div>' : '') +
       '<div class="t-12 o-7" style="margin-top:4px">' + esc(tx('Includes Rp100.000 guarantee credit')) + '</div>' +
       '<div class="flex gap-8" style="margin-top:16px"><button class="btn btn-primary" style="flex:1"' + aksi('lembar', 'isi') + '>' + esc(t('topUp')) + '</button>' +
       '<button class="btn btn-secondary btn-plain" style="flex:1"' + aksi('lembar', 'riwayat') + '>' + esc(t('history')) + '</button></div></div>';
@@ -72,8 +87,8 @@
     h += '<div>' + X.labelBagian(esc(t('activity'))) + '<div class="card elev-sm gap-12">';
     for (var i = 0; i < K.mutasi.length; i++) {
       var m = K.mutasi[i], keluar = m.amount < 0;
-      h += '<div class="flex items-center gap-11"><span class="txn-ic' + (keluar ? ' out' : '') + '">' + (keluar ? '↓' : '↑') + '</span><div class="grow"><div class="t-13 bold">' + esc(m.label) + '</div><div class="t-11 o-6">' + esc(m.date) + '</div></div>' +
-        '<div class="txn-amt' + (keluar ? ' out' : '') + '">' + (keluar ? '− ' : '+ ') + rp(Math.abs(m.amount)) + '</div></div>';
+      h += '<div class="flex items-center gap-11"><span class="txn-ic' + (keluar && !m.tahan ? ' out' : '') + '">' + (m.tahan ? '◔' : m.lepas ? '↩' : keluar ? '↓' : '↑') + '</span><div class="grow"><div class="t-13 bold">' + esc(m.label) + '</div><div class="t-11 o-6">' + esc(m.date) + '</div></div>' +
+        '<div class="txn-amt' + (keluar && !m.tahan ? ' out' : '') + '">' + (m.tahan ? esc(tx('held')) + ' ' : keluar ? '− ' : '+ ') + rp(Math.abs(m.amount)) + '</div></div>';
     }
     h += '</div></div><div class="card card-leaf gap-8"><div class="f-head t-15">' + esc(tx('Why the balance can\'t disappear')) + '</div><div class="t-125 lh-15 o-85">' + esc(tx('Refunds land here within 3 working days, and every guarantee credit shows the order it came from. Balance never expires, and the refund tracker always carries a date.')) + '</div></div><div class="spacer-14"></div></div>';
     return h + '</div>';

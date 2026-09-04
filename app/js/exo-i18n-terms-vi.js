@@ -248,5 +248,8 @@ EXO_TERMS.pasang('vi', [
   'Đội chuyên trách, máy móc, hóa chất và PPE theo SOP',
   'Người quản lý khách hàng và họp đánh giá hằng tháng',
   'Chỗ lưu trữ, nước và điện, cùng giấy phép ra vào tòa nhà',
-  'Một đầu mối liên hệ để phối hợp hằng ngày'
+  'Một đầu mối liên hệ để phối hợp hằng ngày',
+  'Gói hàng tuần, hai tuần và hàng tháng được giảm 10%, 7% và 5% mỗi lượt; giá cố định 3 tháng và giữ nguyên nhân viên cho bạn.',
+  'Gói có cam kết tối thiểu 4 lượt (3 với gói hàng tháng). Hủy sớm sẽ thu lại phần giảm giá đã nhận trên các lượt đã xong; bỏ qua một lượt là miễn phí và không tính vào cam kết.',
+  'Với đặt lịch ngay, số tiền được tạm giữ trên Ví EXO hoặc thẻ của bạn khi đặt và chỉ thu khi lượt được xác nhận hoàn tất. Phần thêm bạn duyệt tại chỗ được cộng vào khoản tạm giữ. Hủy sẽ giải phóng khoản tạm giữ, trừ phí hủy muộn nếu trong vòng 4 giờ.'
 ]);

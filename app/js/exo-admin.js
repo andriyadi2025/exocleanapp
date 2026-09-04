@@ -202,8 +202,10 @@ var ADMIN = (function () {
       function zonaOrder(o) { if (!window.EXO_ZONA) return ''; if (o.zona && EXO_ZONA.sah(o.zona)) return o.zona; return o.wilayah ? (EXO_ZONA.dariWilayah(o.wilayah) || '') : ''; }
       var nyata = EXO_DB.all('orders').sort(function (a, b) { return (b.tgl || '').localeCompare(a.tgl || ''); }).map(function (o) {
         var st = STATUS_ORDER[o.status] || [o.status, 'flat'], tz = zonaOrder(o);
-        var tags = (o.tgl === (tz ? EXO_ZONA.hariIni(tz) : hariIni) ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (EXO_DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue' : '');
-        return [o.no || o.id, namaUser(o.clientId), o.judul || '', (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || '') + (tz ? ' ' + EXO_ZONA.singkat(tz) : ''), rp(o.nilai), st[0], st[1], tags];
+        var tags = (o.tgl === (tz ? EXO_ZONA.hariIni(tz) : hariIni) ? 'today ' : '') + (o.status === 'berjalan' ? 'progress ' : '') + (EXO_DB.where('complaints', function (c) { return c.orderId === o.id; }).length ? 'issue ' : '') + (o.exo && o.exo.langganan ? 'sub' : '');
+        var pn = o.exo && o.exo.penahanan, tahanLbl = pn ? ' · ' + ({ ditahan:'held', ditangkap:'charged', dilepas:'released' }[pn.status] || pn.status) : '';
+        var lgLbl = o.exo && o.exo.langganan ? ' · ' + o.exo.langganan.frekuensi + ' ' + o.exo.langganan.kunjunganSelesai + '/' + o.exo.langganan.minKunjungan : '';
+        return [o.no || o.id, namaUser(o.clientId), (o.judul || '') + lgLbl, (o.workerIds || []).map(namaUser).join(', ') || '—', tglPendek(o.tgl) + ' ' + (o.mulai || '') + (tz ? ' ' + EXO_ZONA.singkat(tz) : ''), rp(o.nilai) + tahanLbl, st[0], st[1], tags];
       }).filter(function (o) { return S.orderFilter === 'all' || o[8].indexOf(S.orderFilter) >= 0; });
       h += '</div><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Orders from the EXOCLEAN database</div><div class="t-115 o-6">' + nyata.length + ' shown · table orders on this origin · schedules locked to the customer · times labelled in the order\'s own zone (WIB/WITA/WIT)</div></div></div>' +
         tabel(['Order','Customer','Service','Cleaner','Schedule','Value','Status'], nyata.length ? nyata.map(function (o) { return ['<span class="id">' + esc(o[0]) + '</span>', esc(o[1]), esc(o[2]), esc(o[3]), esc(o[4]), o[5], chip(o[7], o[6])]; })

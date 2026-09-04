@@ -221,6 +221,14 @@
     for (var j = 0; j < D.TIMES.length; j++) h += '<button class="' + kelas('pill', K.mulai === D.TIMES[j]) + '"' + aksi('mulai', D.TIMES[j]) + '>' + D.TIMES[j] + '</button>';
     h += '</div><div class="t-115 o-6 lh-145" style="margin-top:8px">' + esc(tx('Times follow')) + ' ' + esc(K.addr.kabkota || K.addr.provinsi || K.addr.negara) + ' · ' + esc(X.labelZona()) +
       (X.zonaBeda() ? ' · ' + esc(tx('on your phone')) + ' ' + esc(X.jamPonsel(K.mulai)) + ' ' + esc(X.labelPerangkat()) : '') + '</div></div>';
+    if (X.bisaLangganan()) {
+      var fr = X.frekuensiKini(), pil = X.pilihanFrekuensi();
+      h += '<div>' + X.labelBagian(esc(tx('Repeat this visit'))) + '<div class="flex wrap gap-8">';
+      for (var f = 0; f < pil.length; f++) h += '<button class="' + kelas('pill', K.frekuensi === pil[f].id) + '"' + aksi('frekuensi', pil[f].id) + '>' + esc(tx(pil[f].label)) + (pil[f].diskon ? ' · −' + Math.round(pil[f].diskon * 100) + '%' : '') + '</button>';
+      h += '</div><div class="t-115 o-6 lh-145" style="margin-top:8px">' + (fr.diskon
+        ? Math.round(fr.diskon * 100) + '% ' + esc(tx('off every visit')) + ' · ' + esc(tx('Minimum')) + ' ' + fr.min + ' ' + esc(tx('visits')) + '. ' + esc(tx('Cancel earlier and the discount on completed visits is charged back. Skipping a visit is free.')) + ' ' + esc(tx('Price locked for 3 months, same cleaner held for you.'))
+        : esc(tx('Weekly saves 10% per visit with a 4-visit minimum.'))) + '</div></div>';
+    }
     var adds = X.addonsKini();
     if (adds.length) {
       h += '<div>' + X.labelBagian(esc(t('addonsLbl'))) + '<div class="stack gap-8">';
@@ -304,7 +312,7 @@
     for (var p = 0; p < D.PAYMENTS.length; p++) {
       var b = D.PAYMENTS[p], on = K.bayar === b.id;
       h += '<button class="' + kelas('row', on) + '"' + aksi('bayar', b.id) + ' aria-pressed="' + on + '"><span class="paymark">' + b.mark + '</span>' +
-        '<span class="row-main"><b>' + esc(tx(b.name)) + '</b><span>' + esc(b.note ? tx(b.note) : rp(K.saldo) + ' · ' + tx('instant refunds here')) + '</span></span><span class="' + kelas('dot', on) + '"></span></button>';
+        '<span class="row-main"><b>' + esc(tx(b.name)) + '</b><span>' + esc(b.note ? tx(b.note) : rp(X.saldoTersedia()) + ' · ' + tx('instant refunds here')) + '</span></span><span class="' + kelas('dot', on) + '"></span></button>';
     }
     h += '</div></div>';
     var lines = [
@@ -315,11 +323,14 @@
       [tx('Transport · 12 km from Kemang hub'), tx('Free')],
       [v.code, app ? '− ' + rp(v.amount) : tx('not applied')]
     ];
+    if (X.bisaLangganan()) lines.splice(4, 0, [tx('Plan discount') + ' · ' + tx(X.frekuensiKini().label), X.diskonLangganan() ? '− ' + rp(X.diskonLangganan()) : tx('not applied')]);
     h += '<div class="card elev-sm gap-8">';
     for (var l = 0; l < lines.length; l++) h += '<div class="kv"><span>' + esc(lines[l][0]) + '</span><span>' + esc(lines[l][1]) + '</span></div>';
     h += '<div class="rule"></div><div class="flex items-baseline between"><span class="f-head t-15">' + esc(t('totalLbl')) + '</span><span class="f-head t-22">' + rp(X.totalN()) + '</span></div></div>';
     var am = X.alurMeta();
-    h += '<div class="card card-leaf gap-6"><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx(am.label)) + '</span><span class="t-115 o-75">' + esc(tx('How this service is settled')) + '</span></div><div class="t-125 lh-15">' + esc(tx(am.bayarKapan)) + '</div></div>';
+    h += '<div class="card card-leaf gap-6"><div class="flex items-center gap-8"><span class="tag tag-accent">' + esc(tx(am.label)) + '</span><span class="t-115 o-75">' + esc(tx('How this service is settled')) + '</span></div><div class="t-125 lh-15">' + esc(tx(am.bayarKapan)) + '</div>' +
+      (X.ditahanDulu() ? '<div class="t-115 o-7 lh-145">' + esc(tx('Held now, charged when done')) + ' · ' + rp(X.totalN()) + ' · ' + esc(tx(X.namaBayar(K.bayar))) + '. ' + esc(tx('Extras you approve on site are added to the hold.')) + '</div>' : '') +
+      (X.frekuensiKini().diskon ? '<div class="t-115 o-7 lh-145">' + esc(tx('Visit')) + ' 1 ' + esc(tx('of minimum')) + ' ' + X.frekuensiKini().min + ' · ' + esc(tx('Each visit is held at booking and charged when done.')) + '</div>' : '') + '</div>';
     h += '<div class="note-i"><i>i</i><span>' + esc(tx('Cancelling or rescheduling within 4 hours costs Rp50.000 per cleaner. Refunds go to your EXO Wallet within 3 working days.')) + '</span></div><div class="spacer-12"></div></div>';
     h += '<div class="actionbar actionbar--col">';
     if (K.payPinOpen) {
@@ -328,7 +339,7 @@
         X.pinDots(K.payPin, true) + X.keypad('payPinTekan', true) + '<div class="center t-11 o-6">Or use Face ID · PIN is never shared with support</div></div>';
     }
     var tagih = X.tagihanSekarang();
-    var lbl = K.gatewaySibuk ? 'Contacting payment gateway…' : !K.payPinOpen ? tx(am.cta) + (tagih ? ' · ' + rp(tagih) : '') : K.payPin.length < 6 ? tx('Enter PIN to pay') : tx('Confirm payment') + ' · ' + rp(X.totalN());
+    var lbl = K.gatewaySibuk ? 'Contacting payment gateway…' : !K.payPinOpen ? tx(am.cta) + (tagih ? ' · ' + rp(tagih) : '') : K.payPin.length < 6 ? tx(X.ditahanDulu() ? 'Enter PIN to hold' : 'Enter PIN to pay') : tx(X.ditahanDulu() ? 'Confirm hold' : 'Confirm payment') + ' · ' + rp(X.totalN());
     h += '<button class="btn btn-primary btn-block" style="height:50px;font-size:15px;margin:0"' + (K.gatewaySibuk ? ' disabled' : aksi('konfirmasi')) + '>' + esc(lbl) + '</button></div>';
     return h + '</div>';
   };
@@ -347,8 +358,10 @@
       '<p style="margin:10px 0 0;max-width:280px" class="t-135 lh-16 o-8">' + teksSukses + '</p>';
     h += '<div class="card elev-sm gap-9" style="margin-top:22px;width:100%;text-align:start">' +
       '<div class="kv"><span>' + esc(tx('Order')) + '</span><span class="f-head">' + esc(K.orderNo) + '</span></div>' +
-      '<div class="kv"><span>' + esc(tx(X.tagihanSekarang() ? 'Paid with' : 'Pay later with')) + '</span><span>' + esc(tx(b.name)) + '</span></div>' +
-      '<div class="kv"><span>' + esc(X.tagihanSekarang() ? t('totalLbl') : tx('Estimate')) + '</span><span>' + rp(X.totalN()) + (X.tagihanSekarang() ? '' : ' · ' + esc(tx('not charged yet'))) + '</span></div>' +
+      '<div class="kv"><span>' + esc(tx(K.penahanan ? 'Held on' : X.tagihanSekarang() ? 'Paid with' : 'Pay later with')) + '</span><span>' + esc(tx(b.name)) + '</span></div>' +
+      '<div class="kv"><span>' + esc(K.penahanan ? tx('Held') : X.tagihanSekarang() ? t('totalLbl') : tx('Estimate')) + '</span><span>' + rp(X.totalN()) + (K.penahanan ? ' · ' + esc(tx('charged when done')) : X.tagihanSekarang() ? '' : ' · ' + esc(tx('not charged yet'))) + '</span></div>' +
+      (K.langganan ? '<div class="kv"><span>' + esc(tx('Plan')) + '</span><span>' + esc(tx(X.cariFrekuensi(K.langganan.frekuensi).label)) + ' · ' + esc(tx('Minimum')) + ' ' + K.langganan.minKunjungan + ' ' + esc(tx('visits')) + '</span></div>' +
+        '<div class="kv"><span>' + esc(tx('Next visit')) + '</span><span>' + esc(I.dowShort(X.kunjunganBerikut(2)[1]) + ' ' + I.dayMonth(X.kunjunganBerikut(2)[1])) + ' · ' + K.mulai + '</span></div>' : '') +
       '<div class="kv"><span>' + esc(tx('Warranty')) + '</span><span>' + esc(I.warrantyText(s.warranty)) + '</span></div></div>';
     h += '<div class="mt-auto stack gap-9" style="width:100%">' +
       '<button class="btn btn-primary btn-block btn-tall"' + aksi('ke', 'track') + '>' + esc(t('trackVisit')) + '</button>' +
@@ -396,13 +409,26 @@
         '<div class="stage-body"><b>' + esc(tx(tahapan[i].title)) + '</b><span>' + esc(tx(tahapan[i].note)) + '</span></div></div>';
     }
     h += '</div></div>';
+    var hd = K.penahanan;
+    if (hd) {
+      var st = hd.status, jml = st === 'ditangkap' ? hd.ditangkap : st === 'dilepas' ? hd.dilepas : hd.jumlah + hd.ekstra;
+      h += '<div class="card ' + (st === 'ditahan' ? 'card-leaf' : 'elev-sm') + ' gap-6"><div class="flex items-center gap-8"><span class="tag ' + (st === 'ditahan' ? 'tag-accent' : 'tag-neutral') + '">' + esc(tx(st === 'ditahan' ? 'Funds held' : st === 'ditangkap' ? 'Charged' : 'Released')) + '</span><span class="t-115 o-6">' + esc(hd.id) + '</span><span class="f-head t-16" style="margin-inline-start:auto">' + rp(jml) + '</span></div>' +
+        '<div class="t-115 o-7 lh-145">' + (st === 'ditahan' ? esc(tx(X.namaBayar(hd.metode))) + ' · ' + esc(tx(hd.mode === 'tunda' ? 'paid through the gateway when done' : 'charged when done')) + (hd.ekstra ? ' · ' + esc(tx('incl. extras')) + ' ' + rp(hd.ekstra) : '')
+          : st === 'ditangkap' ? esc(tx('Visit done — charged')) + ' · ' + esc(tx(X.namaBayar(hd.metode))) : esc(tx('Hold released to your EXO Wallet.'))) + '</div></div>';
+    }
+    var lg = K.langganan;
+    if (lg) {
+      var kb = X.kunjunganBerikut(2)[1];
+      h += '<div class="card elev-sm gap-6"><div class="flex items-center gap-8"><span class="tag tag-accent-2">' + esc(tx(X.cariFrekuensi(lg.frekuensi).label)) + '</span><span class="t-115 o-6">' + esc(tx(lg.status === 'aktif' ? 'Active' : 'Cancelled')) + '</span></div>' +
+        '<div class="t-125 lh-15">' + esc(tx('Visit')) + ' ' + Math.min(lg.kunjunganSelesai + 1, Math.max(lg.kunjunganSelesai, 1)) + ' · ' + esc(tx('Visits completed')) + ' ' + lg.kunjunganSelesai + ' ' + esc(tx('of minimum')) + ' ' + lg.minKunjungan + (lg.status === 'aktif' ? ' · ' + esc(tx('Next visit')) + ' ' + esc(I.dowShort(kb) + ' ' + I.dayMonth(kb)) : '') + '</div></div>';
+    }
     h += '</div><button class="btn btn-secondary btn-block" style="margin:0"' + aksi('tahapMaju') + '>' + esc(tx('Simulate next status')) + '</button></div>';
     h += '<div class="card card-leaf gap-10"><div class="f-head t-15">' + esc(t('liveCheck')) + '</div>' + X.barisCeklis(false) + '</div>';
     h += '<div class="card elev-sm gap-9"><div class="flex items-center gap-9">' + av('RA', 30, 'soft') + '<div class="grow"><div class="t-13 bold">' + esc(tx('Rahma from support')) + '</div><div class="t-11 o-6">' + esc(tx('Human, replies in ~40s · not a bot')) + '</div></div>' +
       '<button class="btn btn-ghost t-125"' + aksi('lembar', 'obrol') + '>' + esc(tx('Chat')) + '</button></div></div><div class="spacer-14"></div></div>';
     h += '<div class="actionbar actionbar--tight"><button class="btn btn-secondary" style="flex:1"' + aksi('ke', 'issue') + '>' + esc(t('reportIss')) + '</button>' +
       '<button class="btn btn-secondary" style="flex:1"' + aksi('ke', 'report') + '>' + esc(t('reportShort')) + '</button>' +
-      '<button class="btn btn-primary" style="flex:1"' + aksi('ke', 'rate') + '>' + esc(tx('Visit done · rate')) + '</button></div>';
+      '<button class="btn btn-primary" style="flex:1"' + aksi('kunjunganSelesaiNilai') + '>' + esc(tx('Visit done · rate')) + '</button></div>';
     return h + '</div>';
   };
 })(ExoApp);

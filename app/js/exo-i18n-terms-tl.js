@@ -248,5 +248,8 @@ EXO_TERMS.pasang('tl', [
   'Nakatalagang team, makina, kemikal at PPE ayon sa SOP',
   'Account manager at buwanang review meeting',
   'Espasyong imbakan, tubig at kuryente, at permit sa pagpasok sa gusali',
-  'Isang contact person para sa araw-araw na koordinasyon'
+  'Isang contact person para sa araw-araw na koordinasyon',
+  'Ang lingguhan, tuwing 2 linggo at buwanang plano ay may 10%, 7% at 5% diskwento bawat bisita; naka-lock ang presyo sa 3 buwan at parehong tagalinis ang nakalaan sa iyo.',
+  'May minimum na 4 na bisita ang mga plano (3 para sa buwanan). Kapag kinansela nang maaga, sisingilin muli ang diskwentong natanggap sa mga natapos na bisita; libre ang paglaktaw ng isang bisita at hindi ito binibilang laban sa minimum.',
+  'Sa instant booking, ang halaga ay naka-hold sa iyong EXO Wallet o card sa pag-book at sisingilin lamang kapag nakumpirmang tapos ang bisita. Ang mga extra na aprubado mo sa lugar ay idaragdag sa hold. Ang pagkansela ay maglalabas ng hold, bawas ang bayad sa huling kanselasyon kung wala pang 4 na oras.'
 ]);
