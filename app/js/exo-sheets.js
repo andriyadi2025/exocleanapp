@@ -297,7 +297,7 @@
      bermode gateway; penangkapan (kanal tertunda) → hold ditangkap. */
   function gatewaySukses() {
     var g = K.gateway; K.lembar = null; K.gateway = null;
-    if (g.jenis === 'tahan') { X.tahanDana(g.amount, K.bayar, { mode:'gateway', orderId:g.orderId, ref:g.gatewayRef || null }); selesaiBayar(); return; }
+    if (g.jenis === 'tahan') { X.tahanDana(g.amount, K.bayar, { mode:'gateway', orderId:g.orderId, ref:g.gatewayRef || null, token:g.token || null }); selesaiBayar(); return; }
     if (g.jenis === 'tangkap') {
       var h = K.penahanan;
       if (h && h.status === 'ditahan') { h.status = 'ditangkap'; h.ditangkap = g.amount; h.ditangkapAt = new Date().toISOString(); K.mutasi.unshift({ label:tx('Charged') + ' · ' + I.svcName(K.jasa) + ' · ' + tx(X.namaBayar(h.metode)), date:'today · ' + K.orderNo, amount:-g.amount }); }
@@ -309,7 +309,7 @@
   A.gatewayCek = function () {
     var g = K.gateway; if (!g) return;
     if (statusGatewayBeres(g.status)) { gatewaySukses(); return; }
-    EXO_SERVER.statusBayar(g.orderId).then(function (r) {
+    EXO_SERVER.statusBayar(g.orderId, g.token).then(function (r) {
       if (r.ok && r.data && r.data.status) { g.status = r.data.status; if (g.gatewayRef == null) g.gatewayRef = r.data.gatewayRef; }
       if (statusGatewayBeres(g.status)) { sekilas(tx(g.jenis === 'tahan' ? 'Funds held' : 'Payment confirmed by the gateway.')); gatewaySukses(); }
       else sekilas('Gateway says: ' + (g.status || 'pending') + '. Complete the payment, then check again.', 'err');
@@ -335,7 +335,7 @@
         });
         X.simpanAlurDB(); return total;
       }
-      if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.tangkap(h.orderId, total).then(function (r) { if (!r.ok) sekilas('Gateway capture: ' + (r.error || 'failed'), 'err'); });
+      if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.tangkap(h.orderId, total, h.token).then(function (r) { if (!r.ok) sekilas('Gateway capture: ' + (r.error || 'failed'), 'err'); });
       X.tangkapDana();
       if (!diam) sekilas(tx('Visit done — charged') + ' ' + rp(total) + ' · ' + tx(X.namaBayar(h.metode)) + '.');
     }
@@ -363,7 +363,7 @@
   A.batalSimpan = function () {
     var fee = X.menitKeMulai() < 240 ? 50000 * K.regu : 0, pesan = [];
     var h = X.lepasDana(fee);
-    if (h) { pesan.push(tx('Released') + ' ' + rp(h.dilepas)); if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.lepas(h.orderId); }
+    if (h) { pesan.push(tx('Released') + ' ' + rp(h.dilepas)); if (h.mode === 'gateway' && window.EXO_SERVER) EXO_SERVER.lepas(h.orderId, h.token); }
     else if (fee && !tagihDompet(fee, tx('Late cancellation fee') + ' · ' + K.orderNo)) return;
     if (fee) pesan.push(tx('Late cancellation fee') + ' ' + rp(fee));
     var l = K.langganan;
@@ -590,7 +590,7 @@
     K.otp = ''; K.authStep = 'otp';
     if (!window.EXO_SERVER) { K.otpServer = 'simulasi'; return; }
     K.otpSibuk = true;
-    EXO_SERVER.otpKirim(K.otpTujuan).then(function (r) {
+    EXO_SERVER.otpKirim(K.otpTujuan, K.captchaToken).then(function (r) {
       K.otpSibuk = false;
       if (r.ok) { K.otpServer = 'terkirim'; sekilas('Code sent by the auth server · valid ' + Math.round((r.data.berlakuDetik || 300) / 60) + ' min.'); }
       else if (r.offline) { K.otpServer = 'simulasi'; sekilas(tx('Auth server offline — OTP simulated. Start app/server/auth-server.js for the real flow.'), 'err'); }
@@ -618,6 +618,7 @@
         K.posisi = { lat:r.lat, lng:r.lng, akurasi:r.akurasi, at:Date.now() }; X.simpanPosisi(K.posisi);
         /* Ke posisi-server supaya ponsel pelanggan (perangkat lain) ikut melihat. */
         if (window.EXO_SERVER) EXO_SERVER.posisiKirim(K.orderNo, K.posisi).then(function (h) {
+          if (h && h.tokenBaca && X.pakaiDB && X.pakaiDB() && K.orderDbId) { try { var o = EXO_DB.find('orders', K.orderDbId); EXO_DB.update('orders', K.orderDbId, { exo: Object.assign({}, o && o.exo || {}, { posisiBaca:h.tokenBaca }) }); } catch (e) { /* abaikan */ } }
           K.posisiServerAda = h.ok ? true : h.offline ? false : K.posisiServerAda;
           if (h.ok) sekilas('Posisi dikirim ke server — pelanggan melihatnya di perangkat mana pun.');
           X.gambar();
@@ -634,7 +635,8 @@
   var lacakTimer = null;
   function lacakTarik() {
     if (!window.EXO_SERVER) return;
-    EXO_SERVER.posisiAmbil(K.orderNo).then(function (r) {
+    var bacaTok = null; try { if (X.pakaiDB && X.pakaiDB() && K.orderDbId) { var od = EXO_DB.find('orders', K.orderDbId); bacaTok = od && od.exo && od.exo.posisiBaca || null; } } catch (e) { bacaTok = null; }
+    EXO_SERVER.posisiAmbil(K.orderNo, bacaTok).then(function (r) {
       var sebelum = K.posisiServerAda;
       K.posisiServerAda = r.offline ? false : true;
       if (r.ok && r.data) { var d = r.data; K.posisiServer = { lat:d.lat, lng:d.lng, akurasi:d.akurasi, at:d.at || Date.now() }; }

@@ -1,0 +1,50 @@
+# systemd unit — server pembayaran EXOCLEAN dengan hak akses seminimal mungkin.
+# Salin ke /etc/systemd/system/exoclean-pay.service, lalu buat salinan untuk
+# auth (auth-server.js, port 4100) dan posisi (posisi-server.js, port 4200).
+#
+#   sudo useradd --system --home /var/www/exoclean --shell /usr/sbin/nologin exoclean
+#   sudo chown -R exoclean:exoclean /var/www/exoclean/app/server
+#   sudo chmod 600 /var/www/exoclean/app/server/.env
+#   sudo systemctl daemon-reload && sudo systemctl enable --now exoclean-pay
+#
+[Unit]
+Description=EXOCLEAN payment server (Midtrans/Xendit)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=exoclean
+Group=exoclean
+WorkingDirectory=/var/www/exoclean/app/server
+EnvironmentFile=/var/www/exoclean/app/server/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node payment-server.js
+Restart=always
+RestartSec=5
+
+# --- pengerasan proses ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+# hanya folder ini yang boleh ditulis (transactions.json / data/)
+ReadWritePaths=/var/www/exoclean/app/server
+# batas sumber daya supaya satu proses bermasalah tidak menjatuhkan mesin
+LimitNOFILE=4096
+MemoryMax=512M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

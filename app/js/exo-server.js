@@ -22,9 +22,19 @@ var EXO_SERVER = (function () {
   'use strict';
 
   var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200' };
+  /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
+     localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
+     localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
+  function alamatSah(u) {
+    try { var x = new URL(String(u)); if (x.protocol === 'https:') return true; if (x.protocol !== 'http:') return false;
+      return /^(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(x.hostname); } catch (e) { return false; }
+  }
   function alamat() {
-    try { return Object.assign({}, BAWAAN, JSON.parse(localStorage.getItem('exoclean_server') || '{}')); }
-    catch (e) { return Object.assign({}, BAWAAN); }
+    var timpa = {};
+    try { timpa = JSON.parse(localStorage.getItem('exoclean_server') || '{}') || {}; } catch (e) { timpa = {}; }
+    var out = Object.assign({}, BAWAAN);
+    Object.keys(timpa).forEach(function (k) { if (BAWAAN[k] && alamatSah(timpa[k])) out[k] = String(timpa[k]).replace(/\/+$/, ''); });
+    return out;
   }
 
   var sehat = {};   /* nama → { ok, at } */
@@ -39,9 +49,10 @@ var EXO_SERVER = (function () {
       .then(function (ok) { if (timer) clearTimeout(timer); sehat[nama] = { ok:ok, at:Date.now() }; return ok; });
   }
 
-  function kirim(nama, jalur, body) {
+  function kirim(nama, jalur, body, token) {
+    var kepala = { 'Content-Type': 'application/json' }; if (token) kepala['X-Exo-Token'] = token;
     return fetch(alamat()[nama] + jalur, {
-      method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body || {})
+      method:'POST', headers:kepala, body:JSON.stringify(body || {})
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) return { ok:false, error: j.error || ('HTTP ' + r.status), data:j };
@@ -61,7 +72,9 @@ var EXO_SERVER = (function () {
       return kirim('pay', '/api/pay/charge', { gateway:'midtrans', orderId:orderId, channel:channel, amount:amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId, invoiceNo:orderId });
     });
   }
-  function statusBayar(orderId) { return kirim('pay', '/api/pay/status', { gateway:'midtrans', orderId:orderId }); }
+  /* Token transaksi (dikembalikan sekali saat charge/authorize) wajib untuk
+     status, capture, dan cancel — dibawa di header X-Exo-Token. */
+  function statusBayar(orderId, token) { return kirim('pay', '/api/pay/status', { gateway:'midtrans', orderId:orderId }, token); }
   /* Penahanan dana (pre-authorization): di Midtrans hanya kartu kredit.
      Kanal lain dibalas { tunda:true } supaya aplikasi mencatat tagihan
      tertunda dan menagihnya lewat gateway setelah kunjungan selesai. */
@@ -72,14 +85,14 @@ var EXO_SERVER = (function () {
       return kirim('pay', '/api/pay/authorize', { gateway:'midtrans', orderId:orderId, channel:'cc', amount:amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId + ' (hold)', invoiceNo:orderId });
     });
   }
-  function tangkap(orderId, amount) { return kirim('pay', '/api/pay/capture', { gateway:'midtrans', orderId:orderId, amount:amount }); }
-  function lepas(orderId) { return kirim('pay', '/api/pay/cancel', { gateway:'midtrans', orderId:orderId }); }
+  function tangkap(orderId, amount, token) { return kirim('pay', '/api/pay/capture', { gateway:'midtrans', orderId:orderId, amount:amount }, token); }
+  function lepas(orderId, token) { return kirim('pay', '/api/pay/cancel', { gateway:'midtrans', orderId:orderId }, token); }
 
   /* -------------------------------------------------------------- OTP */
-  function otpKirim(telp) {
+  function otpKirim(telp, captcha) {
     return cekSehat('auth', '/api/auth/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
-      return kirim('auth', '/api/auth/otp/kirim', { jenis:'telp', tujuan:telp });
+      return kirim('auth', '/api/auth/otp/kirim', { jenis:'telp', tujuan:telp, captcha:captcha || undefined });
     });
   }
   function otpPeriksa(telp, kode) { return kirim('auth', '/api/auth/otp/periksa', { jenis:'telp', tujuan:telp, kode:kode }); }
@@ -96,16 +109,27 @@ var EXO_SERVER = (function () {
      ia dijadikan kunci aman. Kedua sisi memakai fungsi yang sama, jadi
      kuncinya pasti cocok. */
   function kunciPosisi(orderId) { return String(orderId || '').replace(/[^A-Za-z0-9_\-]/g, '-').slice(0, 40); }
+  /* Token posisi per pesanan: kiriman pertama menerima { tulis, baca } dari
+     server; keduanya disimpan di perangkat ini. Sisi pelanggan membaca dengan
+     token baca — di perangkat lain, token baca dibawa lewat catatan pesanan
+     (exo.posisiBaca) yang ditulis sisi mitra saat kiriman pertama. */
+  function tokenPosisi(orderId) { try { return JSON.parse(localStorage.getItem('exoclean_posisi_token:' + kunciPosisi(orderId)) || 'null'); } catch (e) { return null; } }
+  function simpanTokenPosisi(orderId, t) { try { localStorage.setItem('exoclean_posisi_token:' + kunciPosisi(orderId), JSON.stringify(t)); } catch (e) { /* abaikan */ } }
   function posisiKirim(orderId, p) {
     return cekSehat('posisi', '/api/posisi/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
-      return kirim('posisi', '/api/posisi/' + kunciPosisi(orderId), { lat:p.lat, lng:p.lng, akurasi:p.akurasi });
+      var t = tokenPosisi(orderId) || {};
+      return kirim('posisi', '/api/posisi/' + kunciPosisi(orderId), { lat:p.lat, lng:p.lng, akurasi:p.akurasi }, t.tulis).then(function (r) {
+        if (r.ok && r.data && r.data.tulis) { simpanTokenPosisi(orderId, { tulis:r.data.tulis, baca:r.data.baca }); r.tokenBaca = r.data.baca; }
+        return r;
+      });
     });
   }
-  function posisiAmbil(orderId) {
+  function posisiAmbil(orderId, tokenBaca) {
     return cekSehat('posisi', '/api/posisi/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
-      return fetch(alamat().posisi + '/api/posisi/' + kunciPosisi(orderId))
+      var t = tokenPosisi(orderId) || {}, tk = tokenBaca || t.baca || t.tulis || '';
+      return fetch(alamat().posisi + '/api/posisi/' + kunciPosisi(orderId), { headers: tk ? { 'X-Exo-Token': tk } : {} })
         .then(function (r) { return r.ok ? r.json().then(function (j) { return { ok:true, data:j }; }) : { ok:false, kosong:true }; })
         .catch(function () { return { ok:false, offline:true }; });
     });
@@ -124,5 +148,5 @@ var EXO_SERVER = (function () {
   }
 
   return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
-    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, muatSkrip:muatSkrip, KANAL:KANAL };
+    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

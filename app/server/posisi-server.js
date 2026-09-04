@@ -1,95 +1,84 @@
 /* ==========================================================================
    posisi-server.js — posisi mitra langsung untuk EXOCLEAN App
    --------------------------------------------------------------------------
-   KENAPA BERKAS TERPISAH, BUKAN DI data-server.js
+   Menyimpan hanya POSISI TERAKHIR per pesanan di memori, masa hidup 10 menit.
+   Ponsel mitra mengirim, ponsel pelanggan membaca. Tidak ada riwayat —
+   riwayat lokasi untuk pembuktian klaim (30 hari) adalah pekerjaan lain dan
+   butuh penyimpanan sungguhan.
 
-   data-server.js menyimpan DATA: setiap tulisan masuk oplog dan SQLite,
-   dengan token per perangkat. Posisi petugas bukan data — ia denyut yang
-   berubah tiap beberapa detik dan basi dalam sepuluh menit. Memasukkannya ke
-   oplog berarti ribuan baris sehari yang tidak pernah dibaca lagi.
-
-   Server ini hanya menyimpan POSISI TERAKHIR per pesanan di memori, dengan
-   masa hidup 10 menit. Ponsel mitra mengirim, ponsel pelanggan membaca.
-   Tidak ada riwayat — riwayat lokasi untuk pembuktian klaim (30 hari)
-   adalah pekerjaan lain dan butuh penyimpanan sungguhan.
-
-   YANG TIDAK DILAKUKAN, DAN HARUS DIKATAKAN
-     · Tidak ada autentikasi. Siapa pun yang tahu nomor pesanan bisa
-       membaca posisinya. Cukup untuk uji coba di jaringan lokal; untuk
-       produksi, pasang token per pesanan yang diterbitkan saat checkout.
-     · Tidak ada TLS. Sama seperti server pendamping lain di folder ini,
-       pasang di belakang reverse proxy ber-HTTPS.
+   KEAMANAN (diperketat 4 Sep 2026)
+     · Token per pesanan. Kiriman PERTAMA untuk sebuah pesanan menerbitkan
+       dua token acak: `tulis` (dipegang ponsel mitra) dan `baca` (diberikan
+       ke pelanggan lewat catatan pesanan). Kiriman berikutnya wajib membawa
+       header X-Exo-Token = tulis; pembacaan wajib membawa X-Exo-Token = baca
+       (atau ?t=). Tanpa token, nomor pesanan yang mudah ditebak tidak lagi
+       cukup untuk mengintip posisi petugas.
+     · Header pengaman, CORS ketat, pembatas laju, log tanpa PII (keamanan.js).
+     · HTTP-atau-HTTPS diputuskan tls.js: tanpa sertifikat hanya mendengar di
+       127.0.0.1; dengan sertifikat HTTPS di seluruh antarmuka.
 
    Endpoint:
-     POST /api/posisi/<orderId>   { lat, lng, akurasi }   → { ok:true }
-     GET  /api/posisi/<orderId>                            → { lat, lng, akurasi, at } | 404
+     POST /api/posisi/<orderId>   { lat, lng, akurasi }  → { ok, tulis?, baca? }
+     GET  /api/posisi/<orderId>   X-Exo-Token: <baca>     → { lat, lng, akurasi, at } | 404
      GET  /api/posisi/health
-
-   Menjalankan:  node app/server/posisi-server.js     (npm run start:posisi)
-   Port: POSISI_PORT di .env, bawaan 4200. CORS mengikuti ALLOWED_ORIGINS.
+   Menjalankan:  npm run start:posisi   (POSISI_PORT, bawaan 4200)
    ========================================================================== */
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+'use strict';
+const express = require('express');
+require('dotenv').config();
+const KEAMANAN = require('./keamanan');
+const TLS = require('./tls');
 
-function bacaEnv() {
-  const p = path.join(__dirname, '.env');
-  if (!fs.existsSync(p)) return {};
-  const out = {};
-  fs.readFileSync(p, 'utf8').split(/\r?\n/).forEach((b) => {
-    const m = b.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
-    if (m) out[m[1]] = m[2].replace(/^["']|["']$/g, '').trim();
-  });
-  return out;
-}
-const ENV = Object.assign(bacaEnv(), process.env);
-const PORT = Number(ENV.POSISI_PORT || 4200);
-const ASAL = String(ENV.ALLOWED_ORIGINS || 'http://localhost:8080').split(',').map((s) => s.trim()).filter(Boolean);
+const app = express();
+const PORT = Number(process.env.POSISI_PORT || 4200);
 const TTL = 10 * 60 * 1000;
+const posisi = new Map();   /* orderId → { lat, lng, akurasi, at, tulisHash, bacaHash } */
 
-const posisi = new Map();   /* orderId → { lat, lng, akurasi, at } */
+app.use(express.json({ limit: '2kb' }));
+const ASAL = KEAMANAN.pasangDasar(app, process.env, 'posisi');
+const lajuTulis = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_POSISI_PER_MENIT || 60) });
+
 setInterval(() => { const now = Date.now(); for (const [k, v] of posisi) if (now - v.at > TTL) posisi.delete(k); }, 60000).unref();
 
-function kirim(res, kode, obj) {
-  res.writeHead(kode, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(obj));
-}
+function tokenDari(req) { return String(req.headers['x-exo-token'] || req.query.t || (req.body && req.body.token) || ''); }
+function idSah(id) { return /^[A-Za-z0-9_\-]{1,40}$/.test(id); }
+function cocok(token, hash) { return KEAMANAN.samaAman(KEAMANAN.hashToken(token), hash); }
 
-http.createServer((req, res) => {
-  const origin = req.headers.origin;
-  if (origin && (ASAL.indexOf(origin) >= 0 || ASAL.indexOf('*') >= 0)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+app.get('/api/posisi/health', (req, res) => res.json({ ok: true, layanan: 'EXOCLEAN posisi server', aktif: posisi.size, token: true }));
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const m = url.pathname.match(/^\/api\/posisi\/([A-Za-z0-9_\-]{1,40})$/);
-  if (url.pathname === '/api/posisi/health') return kirim(res, 200, { ok: true, layanan: 'EXOCLEAN posisi server', aktif: posisi.size });
-  if (!m) return kirim(res, 404, { error: 'Tidak ada' });
-  const id = m[1];
+app.get('/api/posisi/:id', (req, res) => {
+  const id = req.params.id; if (!idSah(id)) return res.status(404).json({ error: 'Tidak ada' });
+  const p = posisi.get(id);
+  if (!p || Date.now() - p.at > TTL) return res.status(404).json({ error: 'Belum ada posisi untuk pesanan ini' });
+  const t = tokenDari(req);
+  if (!cocok(t, p.bacaHash) && !cocok(t, p.tulisHash)) return res.status(403).json({ error: 'Token baca tidak cocok' });
+  res.json({ lat: p.lat, lng: p.lng, akurasi: p.akurasi, at: p.at });
+});
 
-  if (req.method === 'GET') {
-    const p = posisi.get(id);
-    if (!p || Date.now() - p.at > TTL) return kirim(res, 404, { error: 'Belum ada posisi untuk pesanan ini' });
-    return kirim(res, 200, p);
+app.post('/api/posisi/:id', lajuTulis, (req, res) => {
+  const id = req.params.id; if (!idSah(id)) return res.status(404).json({ error: 'Tidak ada' });
+  const b = req.body || {};
+  const lat = Number(b.lat), lng = Number(b.lng);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return res.status(400).json({ error: 'lat/lng tidak valid' });
+  const akurasi = isFinite(Number(b.akurasi)) ? Math.max(0, Math.min(100000, Number(b.akurasi))) : null;
+  const ada = posisi.get(id);
+  if (ada && Date.now() - ada.at <= TTL) {
+    if (!cocok(tokenDari(req), ada.tulisHash)) return res.status(403).json({ error: 'Token tulis tidak cocok — pesanan ini sudah dipegang perangkat lain' });
+    Object.assign(ada, { lat, lng, akurasi, at: Date.now() });
+    return res.json({ ok: true });
   }
-  if (req.method === 'POST') {
-    let badan = '';
-    req.on('data', (c) => { badan += c; if (badan.length > 2048) req.destroy(); });
-    req.on('end', () => {
-      let b; try { b = JSON.parse(badan || '{}'); } catch (e) { return kirim(res, 400, { error: 'JSON tidak valid' }); }
-      const lat = Number(b.lat), lng = Number(b.lng);
-      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return kirim(res, 400, { error: 'lat/lng tidak valid' });
-      posisi.set(id, { lat, lng, akurasi: Number(b.akurasi) || null, at: Date.now() });
-      kirim(res, 200, { ok: true });
-    });
-    return;
-  }
-  kirim(res, 405, { error: 'Metode tidak didukung' });
-}).listen(PORT, () => {
-  console.log(`EXOCLEAN posisi server: http://localhost:${PORT}/api/posisi/health`);
+  /* kiriman pertama: terbitkan pasangan token; hanya hash-nya yang disimpan */
+  const tulis = KEAMANAN.tokenAcak(24), baca = KEAMANAN.tokenAcak(18);
+  posisi.set(id, { lat, lng, akurasi, at: Date.now(), tulisHash: KEAMANAN.hashToken(tulis), bacaHash: KEAMANAN.hashToken(baca) });
+  res.json({ ok: true, tulis, baca });
+});
+
+app.use((req, res) => res.status(404).json({ error: 'Endpoint tidak dikenal' }));
+
+const jadi = TLS.bikinServer(null, app);
+const ALAMAT = TLS.alamat(null, jadi.tls);
+TLS.dengar(jadi, PORT, ALAMAT, () => {
+  console.log(TLS.keterangan('EXOCLEAN posisi-server', PORT, ALAMAT));
   console.log('  Asal yang diizinkan: ' + ASAL.join(', '));
 });
+module.exports = app;

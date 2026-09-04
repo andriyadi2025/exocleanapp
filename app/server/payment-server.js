@@ -33,31 +33,46 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const KEAMANAN = require('./keamanan');
 const app = express();
 const PORT = process.env.PORT || 4000;
+const PAY_MAKS = Number(process.env.PAY_MAKS_RUPIAH || 50000000);
 
 /* Midtrans mengirim notifikasi sebagai JSON biasa; kita butuh raw body-nya
    TIDAK untuk Midtrans (signature dihitung dari field, bukan body), tapi
    Xendit cukup memakai header token. Jadi JSON parser biasa sudah memadai. */
 app.use(express.json({ limit: '1mb' }));
 
-/* ---------------------------------------------------------------- CORS */
-/* Hanya izinkan asal (origin) aplikasi EXOCLEAN Anda. Jangan pakai '*' di
-   produksi bila endpoint ini nanti menerima data sensitif. */
-const ALLOWED = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080')
-  .split(',').map(s => s.trim()).filter(Boolean);
+/* ---------------------------------------------------------------- KEAMANAN
+   Header pengaman, CORS ketat (tanpa '*'), pembatas laju per IP, POST wajib
+   JSON, log tanpa PII — semuanya dari keamanan.js supaya sama di tiap server. */
+const ALLOWED = KEAMANAN.pasangDasar(app, process.env, 'pay');
+const lajuBuat = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_BAYAR_10MENIT || 20), pesan: 'Terlalu banyak transaksi dibuat dari alamat ini. Coba lagi beberapa menit lagi.' });
+const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_STATUS_PER_MENIT || 60) });
+const lajuWebhook = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: 600 });
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && (ALLOWED.includes(origin) || ALLOWED.includes('*'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
+/* Token per transaksi. Dibuat saat charge/authorize dan dikembalikan SEKALI ke
+   klien yang membuatnya; server hanya menyimpan hash-nya. Status, capture, dan
+   cancel wajib membawa token itu (header X-Exo-Token) — nomor pesanan yang
+   berurutan tidak lagi cukup untuk membatalkan atau menagih pesanan orang lain. */
+function terbitkanToken() { const t = KEAMANAN.tokenAcak(24); return { token: t, tokenHash: KEAMANAN.hashToken(t) }; }
+function jagaToken(req, res, orderId) {
+  const rec = ambil(orderId);
+  if (!rec) { res.status(404).json({ error: 'Transaksi tidak dikenal' }); return null; }
+  const t = String(req.headers['x-exo-token'] || (req.body && req.body.token) || '');
+  if (!rec.tokenHash || !KEAMANAN.samaAman(KEAMANAN.hashToken(t), rec.tokenHash)) { res.status(403).json({ error: 'Token transaksi tidak cocok' }); return null; }
+  return rec;
+}
+/* Validasi masukan dari klien: id pesanan, nominal, dan data pelanggan. */
+function periksaMasukan(orderId, amount, customer) {
+  if (!KEAMANAN.orderIdSah(orderId)) throw new Error('orderId tidak valid (4–60 karakter huruf, angka, . _ - /)');
+  if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+  if (amount > PAY_MAKS) throw new Error('amount melebihi batas ' + PAY_MAKS.toLocaleString('id-ID') + ' (PAY_MAKS_RUPIAH)');
+  const c = customer || {};
+  const email = KEAMANAN.batasiTeks(c.email, 120), telp = String(c.telp || '').replace(/\D/g, '').slice(0, 15);
+  if (email && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) throw new Error('email pelanggan tidak valid');
+  return { nama: KEAMANAN.batasiTeks(c.nama, 60), email: email || undefined, telp: telp || undefined };
+}
 
 /* ================================================================ PENYIMPANAN */
 const DB_FILE = path.join(__dirname, 'transactions.json');
@@ -291,7 +306,7 @@ function signatureMidtransValid(n) {
   const hitung = crypto.createHash('sha512')
     .update(`${n.order_id}${n.status_code}${n.gross_amount}${MT.serverKey}`)
     .digest('hex');
-  return hitung === n.signature_key;
+  return KEAMANAN.samaAman(hitung, n.signature_key);
 }
 
 /* ================================================================ XENDIT */
@@ -400,31 +415,35 @@ app.get('/api/pay/health', (req, res) => {
   });
 });
 
-app.post('/api/pay/charge', async (req, res) => {
-  const { gateway, orderId, channel, amount, customer = {}, keterangan, invoiceNo } = req.body || {};
+app.post('/api/pay/charge', lajuBuat, async (req, res) => {
+  const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !channel || !amount) throw new Error('orderId, channel, dan amount wajib diisi');
-    if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+    const customer = periksaMasukan(orderId, amount, req.body.customer);
+    if (!CHANNEL[channel]) throw new Error('channel tidak dikenal');
+    if (ambil(orderId)) throw new Error('orderId sudah pernah dipakai');
+    const tk = terbitkanToken();
 
     const hasil = gateway === 'xendit'
       ? await chargeXendit({ orderId, channel, amount, customer, keterangan, invoiceNo })
       : await chargeMidtrans({ orderId, channel, amount, customer, keterangan, invoiceNo });
 
     simpan(orderId, {
-      orderId, gateway, channel, amount, status: 'pending',
+      orderId, gateway, channel, amount, status: 'pending', tokenHash: tk.tokenHash,
       gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString()
     });
-    res.json(hasil);
+    res.json(Object.assign({ token: tk.token }, hasil));
   } catch (e) {
     console.error('[charge]', e.message, e.detail || '');
     res.status(400).json({ error: e.message });
   }
 });
 
-app.post('/api/pay/status', async (req, res) => {
+app.post('/api/pay/status', lajuBaca, async (req, res) => {
   const { gateway, orderId } = req.body || {};
   try {
     if (!orderId) throw new Error('orderId wajib diisi');
+    if (!jagaToken(req, res, orderId)) return;
     const hasil = gateway === 'xendit' ? await statusXendit(orderId) : await statusMidtrans(orderId);
     simpan(orderId, { status: hasil.status });
     res.json(hasil);
@@ -433,28 +452,33 @@ app.post('/api/pay/status', async (req, res) => {
   }
 });
 
-app.post('/api/pay/authorize', async (req, res) => {
-  const { gateway, orderId, channel, amount, customer = {}, keterangan, invoiceNo } = req.body || {};
+app.post('/api/pay/authorize', lajuBuat, async (req, res) => {
+  const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
-    if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+    const customer = periksaMasukan(orderId, amount, req.body.customer);
+    if (ambil(orderId)) throw new Error('orderId sudah pernah dipakai');
     if (gateway === 'xendit' || (channel && channel !== 'cc')) {
       return res.status(400).json({ error: 'Penahanan dana hanya tersedia untuk kartu kredit Midtrans', unsupported: true });
     }
+    const tk = terbitkanToken();
     const hasil = await authorizeMidtrans({ orderId, amount, customer, keterangan, invoiceNo });
-    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
-    res.json(hasil);
+    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', tokenHash: tk.tokenHash, gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
+    res.json(Object.assign({ token: tk.token }, hasil));
   } catch (e) {
     console.error('[authorize]', e.message, e.detail || '');
     res.status(400).json({ error: e.message });
   }
 });
 
-app.post('/api/pay/capture', async (req, res) => {
+app.post('/api/pay/capture', lajuBaca, async (req, res) => {
   const { orderId, amount } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
     if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
+    const rec = jagaToken(req, res, orderId); if (!rec) return;
+    if (rec.jenis !== 'tahan') throw new Error('Transaksi ini bukan penahanan dana');
+    if (amount > rec.amount) throw new Error('amount melebihi dana yang ditahan (' + rec.amount + ')');
     const hasil = await captureMidtrans(orderId, amount);
     simpan(orderId, { status: 'paid', ditangkap: amount, capturedAt: new Date().toISOString() });
     res.json(hasil);
@@ -464,10 +488,11 @@ app.post('/api/pay/capture', async (req, res) => {
   }
 });
 
-app.post('/api/pay/cancel', async (req, res) => {
+app.post('/api/pay/cancel', lajuBaca, async (req, res) => {
   const { orderId } = req.body || {};
   try {
     if (!orderId) throw new Error('orderId wajib diisi');
+    if (!jagaToken(req, res, orderId)) return;
     const hasil = await cancelMidtrans(orderId);
     simpan(orderId, { status: 'cancelled', cancelledAt: new Date().toISOString() });
     res.json(hasil);
@@ -478,7 +503,7 @@ app.post('/api/pay/cancel', async (req, res) => {
 });
 
 /* ---------------------------------------------------------------- webhook */
-app.post('/api/pay/webhook/midtrans', (req, res) => {
+app.post('/api/pay/webhook/midtrans', lajuWebhook, (req, res) => {
   const n = req.body || {};
   if (!signatureMidtransValid(n)) {
     console.warn('[webhook midtrans] signature tidak cocok untuk', n.order_id);
@@ -500,9 +525,9 @@ app.post('/api/pay/webhook/midtrans', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/pay/webhook/xendit', (req, res) => {
+app.post('/api/pay/webhook/xendit', lajuWebhook, (req, res) => {
   const token = req.headers['x-callback-token'];
-  if (!XD.callbackToken || token !== XD.callbackToken) {
+  if (!XD.callbackToken || !KEAMANAN.samaAman(token, XD.callbackToken)) {
     console.warn('[webhook xendit] callback token tidak cocok');
     return res.status(403).json({ error: 'Callback token tidak valid' });
   }

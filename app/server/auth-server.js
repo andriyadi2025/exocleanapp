@@ -37,28 +37,22 @@ const express = require('express');
 const crypto = require('crypto');
 require('dotenv').config();
 
+const KEAMANAN = require('./keamanan');
 const app = express();
 const PORT = process.env.AUTH_PORT || 4100;
 
 app.use(express.json({ limit: '256kb' }));
 
-/* ---------------------------------------------------------------- CORS */
-/* Hanya izinkan asal (origin) aplikasi EXOCLEAN Anda. Jangan pakai '*' —
-   endpoint ini membuat sesi, jadi asal yang boleh memanggilnya harus jelas. */
-const ALLOWED = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080')
-  .split(',').map((s) => s.trim()).filter(Boolean);
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && ALLOWED.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
+/* ---------------------------------------------------------------- KEAMANAN
+   Header pengaman, CORS ketat, POST wajib JSON, log tanpa PII (keamanan.js).
+   Pembatas laju PER ALAMAT IP melengkapi batas per nomor tujuan yang sudah ada:
+   tanpa ini satu penyerang bisa memakai satu IP untuk membanjiri ribuan nomor
+   berbeda (SMS pumping) tanpa pernah menyentuh batas per nomor. */
+const ALLOWED = KEAMANAN.pasangDasar(app, process.env, 'auth');
+const lajuKirimIp = KEAMANAN.batasLaju({ jendelaDetik: 3600, maks: Number(process.env.LAJU_OTP_KIRIM_PER_JAM_IP || 10), pesan: 'Batas permintaan kode dari alamat ini tercapai. Coba lagi nanti.' });
+const lajuPeriksaIp = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_OTP_PERIKSA_10MENIT_IP || 30) });
+const lajuSosial = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: 30 });
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY || '';
 
 /* ================================================================ KONFIGURASI */
 const CFG = {
@@ -331,7 +325,7 @@ app.get('/api/auth/health', (req, res) => {
   });
 });
 
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/google', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiGoogle(req.body && req.body.token);
     res.json(profil);
@@ -341,7 +335,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-app.post('/api/auth/facebook', async (req, res) => {
+app.post('/api/auth/facebook', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiFacebook(req.body && req.body.token);
     res.json(profil);
@@ -351,11 +345,16 @@ app.post('/api/auth/facebook', async (req, res) => {
   }
 });
 
-app.post('/api/auth/otp/kirim', async (req, res) => {
+app.post('/api/auth/otp/kirim', lajuKirimIp, async (req, res) => {
   try {
     const jenis = req.body && req.body.jenis;
     if (jenis !== 'email' && jenis !== 'telp') {
       return res.status(400).json({ error: 'jenis harus "email" atau "telp"' });
+    }
+    /* Captcha diverifikasi DI SERVER bila TURNSTILE_SECRET_KEY diisi — token
+       yang hanya dicek keberadaannya di klien tidak membuktikan apa pun. */
+    if (TURNSTILE_SECRET && !(await KEAMANAN.verifikasiTurnstile(TURNSTILE_SECRET, req.body.captcha, KEAMANAN.ipKlien(req)))) {
+      return res.status(403).json({ error: 'Verifikasi captcha gagal. Muat ulang halaman lalu coba lagi.' });
     }
     const tujuan = jenis === 'email' ? bakuEmail(req.body.tujuan) : bakuTelp(req.body.tujuan);
     if (jenis === 'email' && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(tujuan)) {
@@ -405,12 +404,14 @@ app.post('/api/auth/otp/kirim', async (req, res) => {
     res.json({ ok: true, berlakuDetik: CFG.otpTtlDetik, jedaDetik: CFG.otpJedaDetik,
                via: hasil.via });
   } catch (e) {
+    /* Pesan penyedia (SendGrid/Twilio) dicatat di server saja — ke klien cukup
+       pesan umum supaya nama penyedia dan detail konfigurasi tidak bocor. */
     console.error('[otp/kirim]', e.message);
-    res.status(500).json({ error: 'Gagal mengirim kode: ' + e.message });
+    res.status(500).json({ error: 'Gagal mengirim kode. Coba lagi beberapa saat lagi.' });
   }
 });
 
-app.post('/api/auth/otp/periksa', (req, res) => {
+app.post('/api/auth/otp/periksa', lajuPeriksaIp, (req, res) => {
   const jenis = req.body && req.body.jenis;
   const tujuan = jenis === 'email' ? bakuEmail(req.body.tujuan) : bakuTelp(req.body.tujuan);
   const kode = String((req.body && req.body.kode) || '').replace(/\D/g, '');
