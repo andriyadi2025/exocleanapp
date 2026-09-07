@@ -212,3 +212,7 @@ Pola Coursera: **kursus → modul → materi (video/bacaan/tautan) + kuis per mo
 ## Kelompok menu Mitra (7 Sep 2026)
 
 Menu yang berkaitan dengan mitra dipisah dari HRD ke kelompok **Mitra**: Cleaners & rekrutmen, Absensi & timesheet, Jadwal & cuti, Kinerja & sanksi, Pelatihan & sertifikasi, Pembelajaran (LMS), **Payout mitra** (tampilan yang sama dengan tab payout di Accounting & Finance), dan Komunikasi tim. HRD kini berisi Penggajian karyawan dan Belajar saya. Unit kerja baru `mitra` ikut dalam hak menu; akun yang sudah memegang unit HRD otomatis mendapat unit Mitra sekali saat migrasi.
+
+## Dasbor admin diperkaya (7 Sep 2026)
+
+`js/exo-admin-dash.js` menambah panel analitik 30 hari di bawah KPI bawaan, semuanya SVG inline tanpa pustaka (sesuai CSP): tren GMV vs pendapatan platform, bauran layanan (donat), sales per daerah (kabupaten/kota dari alamat pesanan), top mitra (job, GMV, upah bersih, rating), kanal pembayaran, corong dana ditahan → ditangkap → dilepas, peta panas jam booking (hari × jam), dan log aktivitas terbaru (audit berantai + aktivitas aplikasi). Sumber: `EXO_KEUANGAN.peristiwa()`; peristiwa kini membawa `kota` dan `jam`. Data contoh selalu berlabel.

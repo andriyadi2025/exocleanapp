@@ -73,10 +73,10 @@ var EXO_KEUANGAN = (function () {
     var out = [];
     d.all('orders').forEach(function (o) {
       var x = o.exo || {}, p = x.penahanan, mitra = (o.workerIds || [])[0], tgl = (o.tgl || (o.createdAt || '').slice(0, 10));
-      if (p && p.status === 'ditangkap') out.push({ id:'ev_' + o.id + '_c', tgl:(p.ditangkapAt || o.updatedAt || '').slice(0, 10) || tgl, jenis:'tangkap', nilai:p.ditangkap || o.nilai, metode:p.metode || x.bayar, orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, langganan:!!x.langganan, contoh:false });
+      if (p && p.status === 'ditangkap') out.push({ id:'ev_' + o.id + '_c', tgl:(p.ditangkapAt || o.updatedAt || '').slice(0, 10) || tgl, jenis:'tangkap', nilai:p.ditangkap || o.nilai, metode:p.metode || x.bayar, kota:(o.wilayah && (o.wilayah.l2 || o.wilayah.l1)) || '—', jam:Number(String(o.mulai || '09:00').slice(0, 2)), orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, langganan:!!x.langganan, contoh:false });
       else if (p && p.status === 'ditahan') out.push({ id:'ev_' + o.id + '_h', tgl:(p.at || '').slice(0, 10) || tgl, jenis:'tahan', nilai:(p.jumlah || 0) + (p.ekstra || 0), metode:p.metode, orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, at:p.at, contoh:false });
       else if (p && p.status === 'dilepas') out.push({ id:'ev_' + o.id + '_r', tgl:(p.dilepasAt || '').slice(0, 10) || tgl, jenis:'lepas', nilai:p.dilepas || 0, potongan:p.potongan || 0, metode:p.metode, orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, contoh:false });
-      else if (o.status === 'selesai' || o.status === 'lunas') out.push({ id:'ev_' + o.id + '_s', tgl:tgl, jenis:'tangkap', nilai:o.nilai || 0, metode:x.bayar || 'wallet', orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, contoh:false });
+      else if (o.status === 'selesai' || o.status === 'lunas') out.push({ id:'ev_' + o.id + '_s', tgl:tgl, jenis:'tangkap', nilai:o.nilai || 0, metode:x.bayar || 'wallet', kota:(o.wilayah && (o.wilayah.l2 || o.wilayah.l1)) || '—', jam:Number(String(o.mulai || '09:00').slice(0, 2)), orderNo:o.no, orderId:o.id, mitraId:mitra, mitra:namaUser(mitra), klien:namaUser(o.clientId), jasa:x.jasa, contoh:false });
       if (x.alur === 'kontrak' && (o.status === 'dijadwalkan' || o.status === 'proposal' || o.status === 'ditagih')) out.push({ id:'ev_' + o.id + '_k', tgl:tgl, jenis:'kontrak', nilai:o.nilai || 0, orderNo:o.no, orderId:o.id, klien:namaUser(o.clientId), jasa:x.jasa, status:o.status, contoh:false });
     });
     return out;
@@ -86,10 +86,11 @@ var EXO_KEUANGAN = (function () {
     if (CONTOH_CACHE) return CONTOH_CACHE;
     var jasa = ['hourly','deep','ac','sofa','laundry','iron','car','pool','hydro','pest'], mitra = ['Sari Wulandari','Ayu Indriani','Nurul Fadhilah','Dian Saputri','Rizky A.','Teguh Wibowo'], klien = ['Dewi A.','Rangga P.','Maya S.','Bagus H.','Intan K.','Farah N.','Hendra W.'];
     var metode = ['wallet','wallet','qris','va','card','ewallet'], bulan = bulanIni(), out = [];
+    var KOTA = ['Jakarta Selatan','Jakarta Selatan','Kota Tangerang Selatan','Jakarta Barat','Depok','Bekasi','Jakarta Timur','Bogor','Kota Tangerang','Denpasar'];
     for (var i = 0; i < 64; i++) {
       var hari = 1 + Math.floor(acakDet(i + 1) * 27), nilai = 150000 + Math.round(acakDet(i + 7) * 900000 / 1000) * 1000;
       var jenis = acakDet(i + 13) < 0.86 ? 'tangkap' : acakDet(i + 13) < 0.93 ? 'tahan' : 'lepas';
-      out.push({ id:'contoh_' + i, tgl:bulan + '-' + ('0' + hari).slice(-2), jenis:jenis, nilai:nilai, metode:metode[i % metode.length], orderNo:'EXO-C' + (4400 + i), mitraId:'contoh_m' + (i % 6), mitra:mitra[i % 6], klien:klien[i % 7], jasa:jasa[i % 10], langganan:i % 5 === 0, potongan:jenis === 'lepas' && i % 2 ? 50000 : 0, contoh:true, at:new Date(Date.now() - (i % 3) * 20 * 3600000).toISOString() });
+      out.push({ id:'contoh_' + i, tgl:bulan + '-' + ('0' + hari).slice(-2), jenis:jenis, nilai:nilai, metode:metode[i % metode.length], kota:KOTA[Math.floor(acakDet(i + 31) * KOTA.length)], jam:7 + Math.floor(acakDet(i + 37) * 11), orderNo:'EXO-C' + (4400 + i), mitraId:'contoh_m' + (i % 6), mitra:mitra[i % 6], klien:klien[i % 7], jasa:jasa[i % 10], langganan:i % 5 === 0, potongan:jenis === 'lepas' && i % 2 ? 50000 : 0, contoh:true, at:new Date(Date.now() - (i % 3) * 20 * 3600000).toISOString() });
     }
     for (var k = 0; k < 3; k++) out.push({ id:'contoh_k' + k, tgl:bulan + '-01', jenis:'kontrak', nilai:[2280000, 5600000, 3900000][k], orderNo:'EXO-K' + (4451 + k), klien:['PT Karya Mitra','Grand Kemang Apartment','Sekolah Cendekia'][k], jasa:['office','building','office'][k], status:['ditagih','dijadwalkan','lunas'][k], contoh:true });
     CONTOH_CACHE = out; return out;
