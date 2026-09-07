@@ -196,3 +196,7 @@ Bilah samping dikelompokkan mengikuti pola aplikasi sejenis (Jobber/Housecall Pr
 | **IT** | Persetujuan & audit, **Keamanan** (baru), Roles & permissions, Admins & akun, **Integrasi & kunci** (baru), **Cadangan & data** (baru), Appearance |
 
 Modul baru ada di `js/exo-admin-modul.js`; semua tindakan berdampak (cuti, sanksi, PO, pengumuman, payroll, impor/reset data) lewat Persetujuan. Pengumuman yang disetujui tampil di beranda job aplikasi mitra.
+
+## Menu sesuai peran & unit (7 Sep 2026)
+
+Bilah samping hanya menggambar menu yang berhak: **super admin** semua menu; **supervisor** menu unit yang ditugaskan (bawaan Operasional, Accounting & Finance, HRD) + Persetujuan; **staf** menu unit yang ditugaskan (bawaan Operasional) + Persetujuan, tanpa menu IT. Roles, Admins, Integrasi, Cadangan & data, dan Appearance hanya untuk super admin. Navigasi lewat hash atau tombol ke menu yang tidak berhak ditolak dan dialihkan ke menu pertama yang boleh. Unit per akun ditugaskan super admin di Admins & akun (usulan tingkat tinggi) atau saat membuat akun baru; kartu profil menampilkan peran dan unit pengguna yang masuk.

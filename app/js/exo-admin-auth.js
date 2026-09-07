@@ -115,6 +115,7 @@
     pengguna = u; buatSesi(u); hapusGagal(); pesan = '';
     if (wadah) { wadah.remove(); wadah = null; }
     buka(); tombolKeluar();
+    if (window.ADMIN && ADMIN.gambar) { try { ADMIN.gambar(); } catch (e) { /* abaikan */ } }
     if (window.ADMIN && ADMIN.sekilas) { try { ADMIN.sekilas('Masuk sebagai ' + u.nama + ' · sesi ' + SESI_MENIT + ' menit'); } catch (e) { /* abaikan */ } }
   }
   function kirim(ev) {
@@ -165,7 +166,7 @@
   function mulai() {
     gaya();
     var s = sesi();
-    if (s) { var u = admins().filter(function (x) { return x.id === s.id; })[0]; if (u) { pengguna = u; buka(); tombolKeluar(); jagaSesi(); return; } hapusSesi(); }
+    if (s) { var u = admins().filter(function (x) { return x.id === s.id; })[0]; if (u) { pengguna = u; buka(); tombolKeluar(); jagaSesi(); if (window.ADMIN && ADMIN.gambar) { try { ADMIN.gambar(); } catch (e) { /* abaikan */ } } return; } hapusSesi(); }
     kunci();
     migrasi().then(function () { mode = admins().length ? 'masuk' : 'bootstrap'; gambar(); jagaSesi(); });
   }

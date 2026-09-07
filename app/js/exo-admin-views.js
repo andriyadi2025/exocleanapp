@@ -130,7 +130,7 @@
     });
     EXO_PERSETUJUAN.daftarkanPenerap('sop-pulihkan', function (u, oleh) { var m = u.muatan; return EXO_SOP.pulihkan(m.jasa, m.rev, { id:oleh.id, nama:oleh.nama }); });
     EXO_PERSETUJUAN.daftarkanPenerap('sop-tarik', function (u, oleh) { var m = u.muatan; return EXO_SOP.tarik(m.jasa, { id:oleh.id, nama:oleh.nama }); });
-    EXO_PERSETUJUAN.daftarkanPenerap('peran', function (u, oleh) { var m = u.muatan; EXO_DB.update('users', m.id, { peran:m.peran }); return true; });
+    EXO_PERSETUJUAN.daftarkanPenerap('peran', function (u, oleh) { var m = u.muatan, patch = {}; if (m.peran) patch.peran = m.peran; if (m.unit) patch.unit = m.unit; EXO_DB.update('users', m.id, patch); return true; });
   }
   function ringkasSop(x) { return { kode:x.code, judul:x.title, apd:x.ppe.slice(), alat:x.alat.map(function (a) { return a.join(' · '); }), chemical:x.chem.map(function (a) { return a.join(' · '); }), langkah:x.steps.map(function (a) { return a[0] + (a[1] ? ' — ' + a[1] : '') + (a[2] ? ' 📷' : ''); }) }; }
   function laporUsulan(hasil, judul) {
@@ -292,9 +292,10 @@
     var akun = EXO_DB.where('users', function (u) { return u.role === 'admin'; });
     var h = '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Akun admin di basis data ini</div><div class="t-115 o-6">Peran menentukan siapa boleh menyetujui: staf mengajukan, supervisor & super admin menyetujui. Mengubah peran = usulan tingkat tinggi (2 penyetuju, tunda 30 menit).</div></div>' +
       (saya && P.peranDari(saya) === 'superadmin' ? '<button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('akunTambah') + '>+ Akun admin</button>' : '') + '</div>' +
-      tabel(['Nama','Email','Peran','PIN','Passkey','Status',''], akun.map(function (u) {
-        var pr = P.peranDari(u), me = saya && saya.id === u.id;
-        return ['<span class="t-125"><b>' + esc(u.nama) + '</b>' + (me ? ' <span class="o-6">(Anda)</span>' : '') + '</span>', '<span class="t-12">' + esc(u.email || '—') + '</span>', chip(pr === 'superadmin' ? 'accent' : pr === 'supervisor' ? 'green' : 'flat', namaPeran(pr)),
+      tabel(['Nama','Email','Peran','Unit (menu yang tampil)','PIN','Passkey','Status',''], akun.map(function (u) {
+        var pr = P.peranDari(u), me = saya && saya.id === u.id, unitU = A.unitKini(u), bolehUnit = saya && P.peranDari(saya) === 'superadmin' && pr !== 'superadmin';
+        var selUnit = pr === 'superadmin' ? '<span class="t-12 o-7">semua</span>' : ['ops','keuangan','hrd','it'].map(function (k) { var on = unitU.indexOf(k) >= 0; return '<button class="pill pill-sm' + (on ? ' on' : '') + '" style="font-size:11px"' + (bolehUnit ? aksi('unitUsul', u.id + ':' + k) : ' disabled') + ' title="' + esc(A.UNIT_NAMA[k]) + '">' + esc(A.UNIT_NAMA[k]) + '</button>'; }).join(' ');
+        return ['<span class="t-125"><b>' + esc(u.nama) + '</b>' + (me ? ' <span class="o-6">(Anda)</span>' : '') + '</span>', '<span class="t-12">' + esc(u.email || '—') + '</span>', chip(pr === 'superadmin' ? 'accent' : pr === 'supervisor' ? 'green' : 'flat', namaPeran(pr)), '<div class="flex wrap gap-4">' + selUnit + '</div>',
           u.pinHash ? chip('green', 'ada') : chip('flat', 'belum'), u.passkey ? chip('green', 'terdaftar') : chip('flat', '—'), chip(u.aktif === false ? 'flat' : 'green', u.aktif === false ? 'nonaktif' : 'aktif'),
           (me ? '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi(u.passkey ? 'passkeyHapus' : 'passkeyDaftar') + '>' + (u.passkey ? 'Hapus passkey' : 'Daftarkan passkey') + '</button> ' : '') +
           (saya && P.peranDari(saya) === 'superadmin' && !me ? ['staf','supervisor','superadmin'].filter(function (x) { return x !== pr; }).map(function (x) { return '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('peranUsul', u.id + ':' + x) + '>→ ' + namaPeran(x) + '</button>'; }).join(' ') : '')];
@@ -309,11 +310,13 @@
       '<div class="field"><label>Nama</label><input class="input" value="' + esc(f.nama) + '" data-ubah="akunUbah" data-arg="nama" maxlength="80"></div>' +
       '<div class="field"><label>Email (untuk masuk)</label><input class="input" type="email" value="' + esc(f.email) + '" data-ubah="akunUbah" data-arg="email" maxlength="120"></div>' +
       '<div class="field"><label>Peran</label><select class="input" style="height:40px" data-ubah="akunUbah" data-arg="peran">' + ['staf','supervisor','superadmin'].map(function (x) { return '<option value="' + x + '"' + (f.peran === x ? ' selected' : '') + '>' + namaPeran(x) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label>Unit kerja (menu yang tampil)</label><div class="flex wrap gap-6" style="padding-top:6px">' + ['ops','keuangan','hrd','it'].map(function (k) { var on = (f.unit || []).indexOf(k) >= 0; return '<button type="button" class="pill pill-sm' + (on ? ' on' : '') + '"' + aksi('akunUnit', k) + '>' + esc(A.UNIT_NAMA[k]) + '</button>'; }).join('') + '</div></div>' +
       '<div class="field"><label>Sandi awal (min. 10 karakter, wajib diganti saat masuk pertama)</label><input class="input" type="password" autocomplete="new-password" value="' + esc(f.sandi) + '" data-ubah="akunUbah" data-arg="sandi"></div></div>' +
       (f.pesan ? '<div class="t-12" style="background:#fdecec;color:#9b1c1c;border-radius:12px;padding:10px 12px">' + esc(f.pesan) + '</div>' : '') +
       '<div class="flex gap-8"><button class="btn btn-primary" style="height:36px"' + aksi('akunSimpan') + '>Buat akun · PIN</button><button class="btn btn-secondary" style="height:36px"' + aksi('akunBatal') + '>Batal</button></div></div>';
   }
-  AKSI.akunTambah = function () { S.akunForm = { nama:'', email:'', peran:'staf', sandi:'', pesan:'' }; };
+  AKSI.akunTambah = function () { S.akunForm = { nama:'', email:'', peran:'staf', unit:['ops'], sandi:'', pesan:'' }; };
+  AKSI.akunUnit = function (k) { var f = S.akunForm; if (!f) return; f.unit = f.unit || []; var i = f.unit.indexOf(k); if (i >= 0) f.unit.splice(i, 1); else f.unit.push(k); };
   AKSI.akunBatal = function () { S.akunForm = null; };
   AKSI.akunUbah = function (arg, v) { if (S.akunForm) S.akunForm[arg] = v; };
   AKSI.akunSimpan = function () {
@@ -322,10 +325,11 @@
     if (!nama || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { f.pesan = 'Nama dan email yang sah wajib diisi.'; return; }
     if (EXO_DB.where('users', function (u) { return u.role === 'admin' && String(u.email || '').toLowerCase() === email; }).length) { f.pesan = 'Email ini sudah dipakai akun admin lain.'; return; }
     if (!f.sandi || f.sandi.length < 10) { f.pesan = 'Sandi minimal 10 karakter.'; return; }
-    var sandi = f.sandi, peran = f.peran;
+    if (f.peran !== 'superadmin' && !(f.unit || []).length) { f.pesan = 'Pilih minimal satu unit kerja.'; return; }
+    var sandi = f.sandi, peran = f.peran, unit = (f.unit || []).slice();
     denganPin('Buat akun admin ' + nama + ' (' + namaPeran(peran) + ')', function (oleh) {
       EXO_ADMIN_AUTH.buatHash(sandi).then(function (h) {
-        var u = EXO_DB.insert('users', { role:'admin', nama:nama, email:email, peran:peran, passHash:h, sandiBawaan:true, aktif:true, sumber:'admin', createdAt:new Date().toISOString() });
+        var u = EXO_DB.insert('users', { role:'admin', nama:nama, email:email, peran:peran, unit:unit, passHash:h, sandiBawaan:true, aktif:true, sumber:'admin', createdAt:new Date().toISOString() });
         EXO_PERSETUJUAN.audit(oleh, 'Membuat akun admin ' + u.nama, u.id, 'peran ' + peran + ' · wajib ganti sandi saat masuk pertama');
         S.akunForm = null; A.sekilas('Akun ' + u.nama + ' dibuat · pengguna wajib mengganti sandi saat masuk pertama.'); A.gambar();
       });
@@ -335,6 +339,14 @@
     var p = v.split(':'), u = EXO_DB.find('users', p[0]); if (!u) return;
     var judul = 'Ubah peran ' + u.nama + ': ' + namaPeran(EXO_PERSETUJUAN.peranDari(u)) + ' → ' + namaPeran(p[1]);
     denganPin('Ajukan: ' + judul + ' (tingkat tinggi)', function (oleh) { var h = EXO_PERSETUJUAN.ajukan('peran', judul, 'Perubahan hak persetujuan', { peran:EXO_PERSETUJUAN.peranDari(u) }, { peran:p[1] }, { id:u.id, peran:p[1] }, oleh); laporUsulan(h, judul); }, opsiTinggi({ tingkat:'tinggi' }));
+  };
+  /* Menugaskan/mencabut unit kerja = mengubah menu yang tampil → usulan tingkat tinggi (jenis peran). */
+  AKSI.unitUsul = function (v) {
+    var p = v.split(':'), u = EXO_DB.find('users', p[0]); if (!u) return;
+    var unitLama = A.unitKini(u), unitBaru = unitLama.indexOf(p[1]) >= 0 ? unitLama.filter(function (x) { return x !== p[1]; }) : unitLama.concat([p[1]]);
+    if (!unitBaru.length) { A.sekilas('Akun harus punya minimal satu unit.', 'err'); return; }
+    var judul = 'Unit ' + u.nama + ': ' + unitBaru.map(function (k) { return A.UNIT_NAMA[k]; }).join(', ');
+    denganPin('Ajukan: ' + judul + ' (tingkat tinggi — mengubah menu yang tampil)', function (oleh) { var h = EXO_PERSETUJUAN.ajukan('peran', judul, 'Perubahan unit kerja / hak menu', { unit:unitLama.map(function (k) { return A.UNIT_NAMA[k]; }) }, { unit:unitBaru.map(function (k) { return A.UNIT_NAMA[k]; }) }, { id:u.id, unit:unitBaru }, oleh); laporUsulan(h, judul); }, opsiTinggi({ tingkat:'tinggi' }));
   };
   AKSI.passkeyDaftar = function () { EXO_ADMIN_AUTH.daftarPasskey().then(function (r) { A.sekilas(r.ok ? 'Passkey terdaftar — persetujuan bisa lewat sidik jari/wajah.' : 'Passkey gagal: ' + r.pesan, r.ok ? 'ok' : 'err'); A.gambar(); }); };
   AKSI.passkeyHapus = function () { denganPin('Hapus passkey Anda', function () { EXO_ADMIN_AUTH.hapusPasskey(); A.sekilas('Passkey dihapus.'); }); };

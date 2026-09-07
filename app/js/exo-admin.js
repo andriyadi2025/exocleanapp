@@ -64,12 +64,46 @@ var ADMIN = (function () {
      konsol perusahaan untuk IT). NAV tetap daftar datar untuk lencana; KELOMPOK
      menentukan judul bagian di bilah samping. */
   var KELOMPOK = [
-    ['Operasional', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['komunikasi','Komunikasi tim','']]],
-    ['Accounting & Finance', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
-    ['HRD', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['penggajian','Penggajian karyawan','']]],
-    ['IT', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
+    ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['komunikasi','Komunikasi tim','']]],
+    ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
+    ['HRD', 'hrd', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['penggajian','Penggajian karyawan','']]],
+    ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
   ];
-  var NAV = []; KELOMPOK.forEach(function (g) { g[1].forEach(function (n) { NAV.push(n); }); });
+  var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
+  var UNIT_NAMA = { ops:'Operasional', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
+  /* ------------------------------------------------------------ HAK AKSES MENU
+     Menu yang tampil mengikuti PERAN (staf · supervisor · superadmin) dan UNIT
+     kerja yang ditugaskan ke akun (ops · keuangan · hrd · it):
+       · superadmin  → semua menu.
+       · supervisor  → menu unit yang ditugaskan (bawaan: ops, keuangan, hrd)
+                       + Persetujuan & audit.
+       · staf        → menu unit yang ditugaskan (bawaan: ops) + Persetujuan
+                       (untuk melihat usulannya sendiri); tidak ada menu IT.
+     Beberapa menu IT hanya untuk superadmin apa pun unitnya: roles, team,
+     integrasi, data, brand. Menu yang tidak berhak tidak digambar di bilah
+     samping, dan tampilan yang dipanggil lewat hash ditolak. */
+  var HANYA_SUPERADMIN = { roles:true, team:true, integrasi:true, data:true, brand:true };
+  var SELALU = { persetujuan:true };
+  function penggunaKini() { return window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna ? EXO_ADMIN_AUTH.pengguna() : null; }
+  function peranKini(u) { u = u || penggunaKini(); return (u && u.peran) || (u && u.role === 'admin' ? 'superadmin' : 'staf'); }
+  function unitKini(u) {
+    u = u || penggunaKini(); var pr = peranKini(u);
+    if (pr === 'superadmin') return ['ops', 'keuangan', 'hrd', 'it'];
+    if (u && Array.isArray(u.unit) && u.unit.length) return u.unit.slice();
+    return pr === 'supervisor' ? ['ops', 'keuangan', 'hrd'] : ['ops'];
+  }
+  function unitMenu(id) { for (var i = 0; i < KELOMPOK.length; i++) for (var j = 0; j < KELOMPOK[i][2].length; j++) if (KELOMPOK[i][2][j][0] === id) return KELOMPOK[i][1]; return null; }
+  function bolehLihat(id, u) {
+    if (!window.EXO_ADMIN_AUTH) return true;            /* tanpa gerbang (mis. uji) — tidak ada pembatasan */
+    u = u || penggunaKini(); if (!u) return false;       /* belum masuk: gerbang menutup semuanya */
+    var pr = peranKini(u);
+    if (pr === 'superadmin') return true;
+    if (SELALU[id]) return true;
+    if (HANYA_SUPERADMIN[id]) return false;
+    var unit = unitMenu(id); return unit ? unitKini(u).indexOf(unit) >= 0 : false;
+  }
+  function menuPertama() { for (var i = 0; i < NAV.length; i++) if (bolehLihat(NAV[i][0])) return NAV[i][0]; return 'persetujuan'; }
+
   var META = {
     dash:['Dashboard','Jabodetabek · today, ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),'New booking'],
     live:['Live ops','24 petugas di lapangan · peta armada dan status real time','Reassign job'],
@@ -327,7 +361,7 @@ var ADMIN = (function () {
   };
 
   /* ================================================================ AKSI */
-  AKSI.view = function (v) { S.view = v; location.hash = v; };
+  AKSI.view = function (v) { if (!bolehLihat(v)) { sekilas('Menu ini tidak tersedia untuk peran/unit Anda.', 'err'); return; } S.view = v; location.hash = v; };
   AKSI.toast = function (v) { sekilas(v); };
   AKSI.orderFilter = function (v) { S.orderFilter = v; };
   AKSI.deskFilter = function (v) { S.deskFilter = v; };
@@ -380,16 +414,19 @@ var ADMIN = (function () {
   /* ============================================================== GAMBAR */
   function gambar() {
     if (!VIEW[S.view]) S.view = 'dash';
+    if (!bolehLihat(S.view)) { var awal = menuPertama(); if (S.view !== awal) { S.view = awal; if (location.hash.slice(1) !== awal) location.hash = awal; } }
     /* usulan tingkat tinggi yang sudah lewat masa tunda → diterapkan; lencana antrean */
     if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.terapkanJatuhTempo(); var nAntre = EXO_PERSETUJUAN.menunggu().length + EXO_PERSETUJUAN.dijadwalkan().length; NAV.forEach(function (n) { if (n[0] === 'persetujuan') n[2] = nAntre ? String(nAntre) : ''; }); } catch (e) { /* abaikan */ } }
     var side = document.getElementById('adm-side'), top = document.getElementById('adm-top'), body = document.getElementById('adm-body'), lapis = document.getElementById('adm-lapis');
     var b = S.brand;
     var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">Backend console</div></div></div><div class="adm-nav">';
     KELOMPOK.forEach(function (g) {
+      var item = g[2].filter(function (n) { return bolehLihat(n[0]); }); if (!item.length) return;
       h += '<div class="adm-grup">' + esc(g[0]) + '</div>';
-      g[1].forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
+      item.forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
     });
-    h += '</div><div class="adm-me">' + av('AN', 34) + '<div class="grow"><div class="t-125 bold">Andriyadi N.</div><div class="t-105 o-6">Super admin' + (adaDB() ? ' · DB connected' : ' · sample data') + '</div></div></div>';
+    var me = penggunaKini(), inisial = me ? me.nama.split(' ').map(function (x) { return x[0]; }).join('').slice(0, 2).toUpperCase() : 'AN';
+    h += '</div><div class="adm-me">' + av(inisial, 34) + '<div class="grow"><div class="t-125 bold">' + esc(me ? me.nama : 'Belum masuk') + '</div><div class="t-105 o-6">' + esc(me ? ({ staf:'Staf', supervisor:'Supervisor', superadmin:'Super admin' }[peranKini(me)] || peranKini(me)) + ' · ' + (peranKini(me) === 'superadmin' ? 'semua unit' : unitKini(me).map(function (k) { return UNIT_NAMA[k] || k; }).join(', ')) : 'gerbang terkunci') + (adaDB() ? ' · DB' : '') + '</div></div></div>';
     side.innerHTML = h;
     var m = META[S.view];
     top.innerHTML = '<div class="grow"><h3>' + esc(m[0]) + '</h3><div class="sub">' + esc(m[1]) + '</div></div><div class="adm-search">Search order, cleaner, customer…</div><button class="btn btn-secondary"' + aksi('toast', 'Export queued — CSV lands in your inbox.') + '>Export</button><button class="btn btn-primary"' + aksi('toast', m[2] + ' — form opens in the full build.') + '>' + esc(m[2]) + '</button>';
@@ -411,9 +448,9 @@ var ADMIN = (function () {
       var el = ev.target; if (!el.getAttribute) return;
       var ubah = el.getAttribute('data-ubah'); if (ubah && AKSI[ubah]) { AKSI[ubah](el.getAttribute('data-arg'), el.value, el); gambar(); }
     });
-    window.addEventListener('hashchange', function () { var v = location.hash.slice(1); if (VIEW[v]) { S.view = v; gambar(); } });
+    window.addEventListener('hashchange', function () { var v = location.hash.slice(1); if (VIEW[v] && bolehLihat(v)) { S.view = v; gambar(); } else if (VIEW[v]) { sekilas('Menu ini tidak tersedia untuk peran/unit Anda.', 'err'); gambar(); } });
     gambar();
   }
 
-  return { S:S, VIEW:VIEW, AKSI:AKSI, KELOMPOK:KELOMPOK, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
+  return { S:S, VIEW:VIEW, AKSI:AKSI, KELOMPOK:KELOMPOK, UNIT_NAMA:UNIT_NAMA, bolehLihat:bolehLihat, unitKini:unitKini, peranKini:peranKini, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
 })();
