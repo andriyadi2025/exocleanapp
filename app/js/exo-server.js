@@ -21,7 +21,7 @@
 var EXO_SERVER = (function () {
   'use strict';
 
-  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200' };
+  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300' };
   /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
      localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
      localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
@@ -135,6 +135,28 @@ var EXO_SERVER = (function () {
     });
   }
 
+  /* -------------------------------------------------------- kurir (Biteship)
+     kirim-server.js memegang API key; browser hanya minta tarif, membuat
+     pesanan kirim atas nomor pesanan (idempoten di server), dan membaca
+     status yang diperbarui webhook. Bila server mati atau kunci kosong,
+     aplikasi memakai tarif statis. */
+  var infoKirim = null;
+  function ambil(nama, jalur) {
+    return fetch(alamat()[nama] + jalur).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return r.ok ? { ok:true, data:j } : { ok:false, error:j.error || ('HTTP ' + r.status) }; }); })
+      .catch(function (e) { sehat[nama] = { ok:false, at:Date.now() }; return { ok:false, offline:true, error:e.message }; });
+  }
+  function kirimInfo(segar) {
+    if (infoKirim && !segar && Date.now() - infoKirim.at < 60000) return Promise.resolve(infoKirim.j);
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, 2500) : null;
+    return fetch(alamat().kirim + '/api/kirim/health', { signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.ok ? r.json() : { ok:false, siap:false }; }).catch(function () { return { ok:false, siap:false, offline:true }; })
+      .then(function (j) { if (timer) clearTimeout(timer); infoKirim = { at:Date.now(), j:j }; sehat.kirim = { ok:!!j.ok, at:Date.now() }; return j; });
+  }
+  function tarifKirim(dari, ke, items, kurir) { return kirimInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false }; return kirim('kirim', '/api/kirim/rates', { dari:dari, ke:ke, items:items, kurir:kurir }); }); }
+  function buatKirim(isi) { return kirimInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:'Server kurir belum siap' }; return kirim('kirim', '/api/kirim/orders', isi); }); }
+  function statusKirim(ref) { return ambil('kirim', '/api/kirim/status/' + encodeURIComponent(String(ref || '').replace(/[^A-Za-z0-9_\-]/g, '-').slice(0, 40))); }
+  function lacakKirim(id) { return ambil('kirim', '/api/kirim/tracking/' + encodeURIComponent(id)); }
+  function cariArea(q) { return ambil('kirim', '/api/kirim/areas?q=' + encodeURIComponent(q)); }
+
   /* Pemuat skrip pihak ketiga, sekali per URL. */
   var dimuat = {};
   function muatSkrip(url) {
@@ -148,5 +170,5 @@ var EXO_SERVER = (function () {
   }
 
   return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
-    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
+    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

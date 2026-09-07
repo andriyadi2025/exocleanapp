@@ -207,3 +207,49 @@ blok **PENYIMPANAN OTP** dengan Redis (punya TTL bawaan, paling cocok) atau
 tabel database — bentuk datanya sudah sesuai dan sisanya tidak perlu diubah.
 
 ---
+
+
+# kirim-server.js — kurir marketplace (Biteship)
+
+Jembatan ke [Biteship](https://biteship.com) untuk marketplace perlengkapan:
+tarif kurir saat checkout, pembuatan pesanan kirim (kurir menjemput ke alamat
+toko) saat mitra toko memproses pesanan, pelacakan, dan webhook status.
+
+## Kenapa di server
+API key Biteship berhak **membuat pesanan kirim** — artinya mengeluarkan uang.
+Kunci hanya ada di `.env` (`BITESHIP_API_KEY`); browser bicara ke server ini.
+Kunci `biteship_test.…` tidak pernah memanggil kurir sungguhan; `biteship_live.…`
+menagih ongkos betulan pada setiap pesanan.
+
+## Menjalankan
+```bash
+npm run start:kirim        # KIRIM_PORT, bawaan 4300
+```
+Tanpa kunci, `/api/kirim/health` membalas `siap:false` dan aplikasi otomatis memakai
+tarif statis (Reguler/Kilat/Ambil di toko).
+
+## Endpoint
+| Method | Path | Kegunaan |
+|---|---|---|
+| GET | `/api/kirim/health` | hidup, jenis kunci (test/live/kosong), daftar kurir, webhook terpasang |
+| GET | `/api/kirim/couriers` | kurir & layanan aktif di akun |
+| GET | `/api/kirim/areas?q=` | cari kelurahan / kode pos |
+| POST | `/api/kirim/rates` | `{dari:{kodePos|lat,lng}, ke:{…}, items:[{name,value,quantity,weight}], kurir:[…]}` → `{opsi:[…]}` |
+| POST | `/api/kirim/orders` | `{refId, kurir, layanan, dari, ke, items}` → `{orderId, resi, status}`; idempoten per `refId` |
+| GET | `/api/kirim/status/:ref` | status tersimpan (diperbarui webhook; disegarkan dari Biteship bila > 10 menit) |
+| GET | `/api/kirim/tracking/:id` | riwayat langsung dari Biteship |
+| POST | `/api/kirim/webhook` | pemberitahuan Biteship; header `x-biteship-signature` harus sama dengan `BITESHIP_WEBHOOK_SECRET` |
+
+Status kurir dipetakan: confirmed/allocated/picking_up → diproses, picked/dropping_off → dikirim,
+delivered → selesai, returned → retur, cancelled/rejected → gagal. Aplikasi mengikuti
+pemetaan ini saat pembeli/toko menekan **Lacak** (pesanan otomatis selesai saat delivered).
+
+## Webhook
+Dashboard Biteship → Settings → Webhooks → `https://domain-anda/api/kirim/webhook`
+(nginx meneruskan ke 4300). Isi `BITESHIP_WEBHOOK_SECRET` dengan nilai yang sama;
+tanpa secret, server menolak webhook di `NODE_ENV=production`.
+
+## Pengaman
+CORS ketat (`ALLOWED_ORIGINS`), pembatas laju per IP (tarif 30/menit, pesanan kirim
+20/jam, baca 60/menit), badan JSON ≤ 64 kB, teks disaring, log tanpa PII.
+Penyimpanan `data/kirim.json` (refId → orderId, resi, status, riwayat).

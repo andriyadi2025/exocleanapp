@@ -1,6 +1,7 @@
 # systemd unit — server pembayaran EXOCLEAN dengan hak akses seminimal mungkin.
 # Salin ke /etc/systemd/system/exoclean-pay.service, lalu buat salinan untuk
-# auth (auth-server.js, port 4100) dan posisi (posisi-server.js, port 4200).
+# auth (auth-server.js, port 4100) dan posisi (posisi-server.js, port 4200);
+# kurir memakai exoclean-kirim.service (kirim-server.js, port 4300).
 #
 #   sudo useradd --system --home /var/www/exoclean --shell /usr/sbin/nologin exoclean
 #   sudo chown -R exoclean:exoclean /var/www/exoclean/app/server

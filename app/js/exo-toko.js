@@ -41,10 +41,10 @@ var EXO_TOKO = (function () {
   function semai() {
     var d = db(); if (!d || d.all('toko').length) return false;
     var T = [
-      { nama:'EXOCLEAN Official Store', slug:'exoclean-official', deskripsi:'Perlengkapan standar SOP EXOCLEAN: chemical berlabel takaran, microfiber kode warna, APD.', kota:'Jakarta Selatan', badge:'official', status:'aktif', jamBuka:'08:00–20:00', kurir:['reguler','kilat','ambil'], catatan:'Pesanan sebelum 14:00 dikirim hari yang sama.', templateBalasan:['Terima kasih, pesanan sedang kami siapkan.','Resi sudah diinput, mohon ditunggu ya.'], pemilikId:null, pemilikNama:'PT EXO POINT', daftarAt:hariLalu(120), skorDasar:96 },
-      { nama:'Kimia Bersih Nusantara', slug:'kimia-bersih', deskripsi:'Distributor chemical pembersih profesional. Grosir untuk mitra & gedung.', kota:'Kota Tangerang Selatan', badge:'power', status:'aktif', jamBuka:'09:00–18:00', kurir:['reguler','kilat'], catatan:'Grosir ≥ 10 pcs hubungi chat untuk harga khusus.', templateBalasan:['Halo kak, stok tersedia. Silakan checkout.','Untuk grosir kami beri harga khusus, cek chat ya.'], pemilikId:null, pemilikNama:'Bagus Hermawan', daftarAt:hariLalu(80), skorDasar:88 },
-      { nama:'Toko Alat Kebersihan Sejahtera', slug:'alat-sejahtera', deskripsi:'Mop, ember, sikat, vacuum, dan sparepart mesin poles.', kota:'Depok', badge:'reguler', status:'aktif', jamBuka:'09:00–17:00', kurir:['reguler','ambil'], catatan:'', templateBalasan:['Terima kasih sudah berbelanja.'], pemilikId:null, pemilikNama:'Sri Rahayu', daftarAt:hariLalu(40), skorDasar:74 },
-      { nama:'APD Mandiri', slug:'apd-mandiri', deskripsi:'Sarung tangan, masker, sepatu safety, goggles.', kota:'Bekasi', badge:'reguler', status:'menunggu', jamBuka:'09:00–17:00', kurir:['reguler'], catatan:'', templateBalasan:[], pemilikId:null, pemilikNama:'Dedi Kurniawan', daftarAt:hariLalu(2), skorDasar:0 }
+      { nama:'EXOCLEAN Official Store', slug:'exoclean-official', deskripsi:'Perlengkapan standar SOP EXOCLEAN: chemical berlabel takaran, microfiber kode warna, APD.', kota:'Jakarta Selatan', alamat:'Jl. Kemang Raya 8, Bangka, Mampang Prapatan', kodePos:'12730', lat:-6.2607, lng:106.8140, telp:'081234567001', badge:'official', status:'aktif', jamBuka:'08:00–20:00', kurir:['reguler','kilat','ambil'], catatan:'Pesanan sebelum 14:00 dikirim hari yang sama.', templateBalasan:['Terima kasih, pesanan sedang kami siapkan.','Resi sudah diinput, mohon ditunggu ya.'], pemilikId:null, pemilikNama:'PT EXO POINT', daftarAt:hariLalu(120), skorDasar:96 },
+      { nama:'Kimia Bersih Nusantara', slug:'kimia-bersih', deskripsi:'Distributor chemical pembersih profesional. Grosir untuk mitra & gedung.', kota:'Kota Tangerang Selatan', alamat:'Ruko BSD Sektor 7 Blok RL 12, Lengkong Gudang', kodePos:'15310', lat:-6.3010, lng:106.6650, telp:'081234567011', badge:'power', status:'aktif', jamBuka:'09:00–18:00', kurir:['reguler','kilat'], catatan:'Grosir ≥ 10 pcs hubungi chat untuk harga khusus.', templateBalasan:['Halo kak, stok tersedia. Silakan checkout.','Untuk grosir kami beri harga khusus, cek chat ya.'], pemilikId:null, pemilikNama:'Bagus Hermawan', daftarAt:hariLalu(80), skorDasar:88 },
+      { nama:'Toko Alat Kebersihan Sejahtera', slug:'alat-sejahtera', deskripsi:'Mop, ember, sikat, vacuum, dan sparepart mesin poles.', kota:'Depok', alamat:'Jl. Margonda Raya 210, Kemiri Muka', kodePos:'16423', lat:-6.3810, lng:106.8320, telp:'081234567021', badge:'reguler', status:'aktif', jamBuka:'09:00–17:00', kurir:['reguler','ambil'], catatan:'', templateBalasan:['Terima kasih sudah berbelanja.'], pemilikId:null, pemilikNama:'Sri Rahayu', daftarAt:hariLalu(40), skorDasar:74 },
+      { nama:'APD Mandiri', slug:'apd-mandiri', deskripsi:'Sarung tangan, masker, sepatu safety, goggles.', kota:'Bekasi', alamat:'Jl. Ahmad Yani 5, Marga Jaya', kodePos:'17141', lat:-6.2450, lng:106.9930, telp:'081234567031', badge:'reguler', status:'menunggu', jamBuka:'09:00–17:00', kurir:['reguler'], catatan:'', templateBalasan:[], pemilikId:null, pemilikNama:'Dedi Kurniawan', daftarAt:hariLalu(2), skorDasar:0 }
     ];
     var peta = {}; T.forEach(function (t) { var r = d.insert('toko', Object.assign({ poinPenalti:0, saldoDitarik:0 }, t)); peta[t.slug] = r.id; });
     var P = [
@@ -98,12 +98,22 @@ var EXO_TOKO = (function () {
   function ulasan(produkId) { var d = db(); return d ? d.all('ulasanProduk').filter(function (u) { return u.produkId === produkId; }).slice().reverse() : []; }
 
   /* ------------------------------------------------------------ keranjang & checkout */
-  function hitungKeranjang(items, kuponKode, kurirId) {
+  /* Opsi kurir untuk satu toko: tarif langsung dari kirim-server (Biteship)
+     bila tersedia di peta tarif, kalau tidak tabel statis; "Ambil di toko"
+     selalu ikut bila toko melayaninya. */
+  function opsiKurir(t, tarif) {
+    var daftar = tarif && tarif[t.id] && tarif[t.id].length ? tarif[t.id].slice() : KURIR.filter(function (k) { return k[0] !== 'ambil' && (t.kurir || ['reguler']).indexOf(k[0]) >= 0; }).map(function (k) { return { id:k[0], nama:k[1], harga:k[2], statis:true }; });
+    if (!daftar.length) daftar.push({ id:'reguler', nama:KURIR[0][1], harga:KURIR[0][2], statis:true });
+    if ((t.kurir || []).indexOf('ambil') >= 0) daftar.push({ id:'ambil', nama:'Ambil di toko', harga:0, statis:true });
+    return daftar;
+  }
+  function hitungKeranjang(items, kuponKode, kurirId, tarif) {
     var perToko = {}, d = db();
     (items || []).forEach(function (it) { var p = produk(it.produkId); if (!p) return; var v = (p.varian || []).filter(function (x) { return x.nama === it.varian; })[0] || p.varian[0] || { nama:'', harga:p.harga, stok:p.stok }; var g = perToko[p.tokoId] = perToko[p.tokoId] || { toko:p.toko, items:[], subtotal:0, ongkir:0, diskon:0, total:0, kupon:null, galat:[], peringatan:'' }; var harga = hargaSetelahDiskon(p, v), sub = harga * it.qty; if (it.qty > v.stok) g.galat.push(p.nama + ' (' + v.nama + ') stok hanya ' + v.stok); g.items.push({ produkId:p.id, nama:p.nama, varian:v.nama, qty:it.qty, harga:harga, ikon:p.ikon, berat:p.berat || 500 }); g.subtotal += sub; });
     Object.keys(perToko).forEach(function (tid) {
-      var g = perToko[tid], kr = kurir(kurirId || 'reguler'); if ((g.toko.kurir || []).indexOf(kr.id) < 0) kr = kurir((g.toko.kurir || ['reguler'])[0]);
-      g.kurir = kr; g.ongkir = kr.harga;
+      var g = perToko[tid], opsi = opsiKurir(g.toko, tarif), pilih = typeof kurirId === 'object' && kurirId ? kurirId[tid] : kurirId;
+      var kr = opsi.filter(function (o) { return o.id === pilih; })[0] || opsi[0];
+      g.opsiKurir = opsi; g.kurir = kr; g.ongkir = kr.harga; g.berat = g.items.reduce(function (n, it) { return n + it.berat * it.qty; }, 0);
       if (kuponKode) { var k = d ? d.all('kuponToko').filter(function (x) { return x.tokoId === tid && x.aktif && x.kode.toUpperCase() === String(kuponKode).toUpperCase() && x.terpakai < x.kuota && (!x.sampai || x.sampai >= new Date().toISOString().slice(0, 10)); })[0] : null;
         if (k) { if (g.subtotal >= k.minBelanja) { g.kupon = k; g.diskon = k.jenis === 'persen' ? Math.round(g.subtotal * k.nilai / 100) : k.jenis === 'ongkir' ? Math.min(k.nilai, g.ongkir) : k.nilai; } else g.peringatan = 'Kupon ' + k.kode + ' butuh belanja minimal ' + rp(k.minBelanja) + ' di toko ini — belum dipotong'; } }
       g.total = Math.max(0, g.subtotal + g.ongkir - g.diskon);
@@ -112,11 +122,11 @@ var EXO_TOKO = (function () {
     return { toko:daftar, total:daftar.reduce(function (n, g) { return n + g.total; }, 0), galat:daftar.reduce(function (a, g) { return a.concat(g.galat); }, []), peringatan:daftar.map(function (g) { return g.peringatan; }).filter(Boolean) };
   }
   /* Membuat pesanan per toko setelah pembayaran dompet berhasil di lapisan pemanggil. */
-  function checkout(items, kuponKode, kurirId, pembeli, alamat, catatan) {
-    var d = db(), h = hitungKeranjang(items, kuponKode, kurirId); if (h.galat.length) throw new Error(h.galat[0]);
+  function checkout(items, kuponKode, kurirId, pembeli, alamat, catatan, tarif) {
+    var d = db(), h = hitungKeranjang(items, kuponKode, kurirId, tarif); if (h.galat.length) throw new Error(h.galat[0]);
     var dibuat = [];
     h.toko.forEach(function (g) {
-      var n = d.nextNo('pesananToko'), o = d.insert('pesananToko', { no:'TK-' + (1000 + n), tokoId:g.toko.id, pembeliId:pembeli.id || null, pembeliNama:pembeli.nama, items:g.items, subtotal:g.subtotal, ongkir:g.ongkir, diskon:g.diskon, kupon:g.kupon ? g.kupon.kode : '', total:g.total, biayaLayanan:Math.round(g.subtotal * BIAYA_LAYANAN), kurir:g.kurir.nama, kurirId:g.kurir.id, resi:'', status:'baru', alamat:alamat, catatan:catatan || '', bayar:'wallet', at:kini(), contoh:false });
+      var n = d.nextNo('pesananToko'), o = d.insert('pesananToko', { no:'TK-' + (1000 + n), tokoId:g.toko.id, pembeliId:pembeli.id || null, pembeliNama:pembeli.nama, items:g.items, subtotal:g.subtotal, ongkir:g.ongkir, diskon:g.diskon, kupon:g.kupon ? g.kupon.kode : '', total:g.total, biayaLayanan:Math.round(g.subtotal * BIAYA_LAYANAN), kurir:g.kurir.nama, kurirId:g.kurir.id, kurirKode:g.kurir.kurir || '', layanan:g.kurir.layanan || '', kurirEtd:g.kurir.etd || '', berat:g.berat, resi:'', status:'baru', alamat:alamat, titik:pembeli.titik || null, pembeliTelp:pembeli.telp || '', catatan:catatan || '', bayar:'wallet', at:kini(), contoh:false });
       g.items.forEach(function (it) { var p = d.find('produk', it.produkId); if (!p) return; var vr = (p.varian || []).map(function (v) { if (v.nama === it.varian) v.stok = Math.max(0, v.stok - it.qty); return v; }); d.update('produk', p.id, { varian:vr, stok:vr.reduce(function (s, v) { return s + v.stok; }, 0), terjual:(p.terjual || 0) + it.qty }); });
       if (g.kupon) d.update('kuponToko', g.kupon.id, { terpakai:(g.kupon.terpakai || 0) + 1 });
       dibuat.push(o);
@@ -131,6 +141,10 @@ var EXO_TOKO = (function () {
   /* transisi oleh toko */
   function proses(id) { var d = db(), o = pesanan(id); if (!o || o.status !== 'baru') throw new Error('Pesanan tidak menunggu diproses'); return d.update('pesananToko', id, { status:'diproses', diprosesAt:kini() }); }
   function kirim(id, resi) { var d = db(), o = pesanan(id); if (!o || o.status !== 'diproses') throw new Error('Pesanan belum diproses'); if (!resi || String(resi).length < 6) throw new Error('Nomor resi minimal 6 karakter'); return d.update('pesananToko', id, { status:'dikirim', resi:String(resi).trim(), dikirimAt:kini() }); }
+  /* Pesanan kirim dari kirim-server: simpan resi/status, dan ikuti status
+     kurir (dikirim → selesai otomatis saat 'delivered'; retur/gagal ditandai). */
+  function simpanPengiriman(id, info) { var d = db(), o = pesanan(id); if (!o) return null; var patch = { pengiriman:Object.assign({}, o.pengiriman || {}, info, { diperbarui:kini() }) }; var resi = info.resi || info.trackingId || info.orderId; if (resi && !o.resi) patch.resi = String(resi); if (o.status === 'diproses' && (patch.resi || o.resi)) { patch.status = 'dikirim'; patch.dikirimAt = kini(); } return d.update('pesananToko', id, patch); }
+  function terapkanStatusKurir(id, info) { var d = db(), o = pesanan(id); if (!o) return null; var patch = { pengiriman:Object.assign({}, o.pengiriman || {}, info, { diperbarui:kini() }) }; if (info.resi) patch.resi = info.resi; if (info.status === 'dikirim' && o.status === 'diproses') { patch.status = 'dikirim'; patch.dikirimAt = kini(); } if (info.status === 'selesai' && (o.status === 'dikirim' || o.status === 'diproses')) { patch.status = 'selesai'; patch.selesaiAt = kini(); patch.otomatis = true; if (!o.dikirimAt) patch.dikirimAt = kini(); } if ((info.status === 'retur' || info.status === 'gagal') && o.status !== 'selesai') patch.masalahKurir = info.statusKurir || info.status; return d.update('pesananToko', id, patch); }
   function tolak(id, alasan) { var d = db(), o = pesanan(id); if (!o || o.status === 'selesai' || o.status === 'dibatalkan') throw new Error('Pesanan tidak bisa ditolak'); kembalikanStok(o); return d.update('pesananToko', id, { status:'dibatalkan', alasanBatal:alasan || 'Ditolak toko', dibatalkanAt:kini(), refund:o.total }); }
   function kembalikanStok(o) { var d = db(); (o.items || []).forEach(function (it) { var p = d.find('produk', it.produkId); if (!p) return; var vr = (p.varian || []).map(function (v) { if (v.nama === it.varian) v.stok += it.qty; return v; }); d.update('produk', p.id, { varian:vr, stok:vr.reduce(function (s, v) { return s + v.stok; }, 0) }); }); }
   /* oleh pembeli */
@@ -192,6 +206,6 @@ var EXO_TOKO = (function () {
   }
 
   return { BIAYA_LAYANAN:BIAYA_LAYANAN, KATEGORI:KATEGORI, KURIR:KURIR, ALUR_STATUS:ALUR_STATUS, rp:rp, namaKategori:namaKategori, kurir:kurir, labelStatus:labelStatus, semai:semai, semuaToko:semuaToko, toko:toko, produkToko:produkToko, katalog:katalog, produk:produk, hargaSetelahDiskon:hargaSetelahDiskon, ulasan:ulasan,
-    hitungKeranjang:hitungKeranjang, checkout:checkout, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
+    hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
     simpanProduk:simpanProduk, ubahStatusProduk:ubahStatusProduk, kuponToko:kuponToko, simpanKupon:simpanKupon, chatToko:chatToko, balasChat:balasChat, kirimChatPembeli:kirimChatPembeli, keuanganToko:keuanganToko, ajukanPenarikan:ajukanPenarikan, putusPenarikan:putusPenarikan, skorToko:skorToko, statistikToko:statistikToko, simpanPengaturan:simpanPengaturan, daftarToko:daftarToko, verifikasiToko:verifikasiToko, penalti:penalti, ringkasanAdmin:ringkasanAdmin, uid:uid };
 })();
