@@ -26,6 +26,8 @@
 var EXO_TOKO = (function () {
   'use strict';
   var BIAYA_LAYANAN = 0.05, TAHAN_OTOMATIS_HARI = 3;
+  /* Aturan checkout (pola Tokopedia): gratis ongkir platform di atas ambang, asuransi pengiriman opsional (bawaan aktif), proteksi produk 12 bulan untuk barang bernilai/mesin, biaya jasa aplikasi digratiskan untuk EXO Wallet, poin bisa dipakai sampai 10% total. */
+  var ATURAN = { gratisOngkirMin:150000, gratisOngkirMaks:20000, asuransiPct:0.5, asuransiMin:2500, proteksiPct:5, proteksiMinHarga:500000, proteksiKategori:['mesin'], biayaJasa:1000, poinMaksPct:10 };
   var KATEGORI = [['chemical','Chemical'],['alat','Alat kebersihan'],['apd','APD'],['habis','Habis pakai'],['mesin','Mesin & elektronik']];
   var KURIR = [['reguler','Reguler · 2–3 hari',12000],['kilat','Kilat · besok sampai',25000],['ambil','Ambil di toko',0]];
   function db() { try { return window.EXO_DB && EXO_DB.init() ? EXO_DB : null; } catch (e) { return null; } }
@@ -107,37 +109,50 @@ var EXO_TOKO = (function () {
     if ((t.kurir || []).indexOf('ambil') >= 0) daftar.push({ id:'ambil', nama:'Ambil di toko', harga:0, statis:true });
     return daftar;
   }
-  function hitungKeranjang(items, kuponKode, kurirId, tarif) {
-    var perToko = {}, d = db();
-    (items || []).forEach(function (it) { var p = produk(it.produkId); if (!p) return; var v = (p.varian || []).filter(function (x) { return x.nama === it.varian; })[0] || p.varian[0] || { nama:'', harga:p.harga, stok:p.stok }; var g = perToko[p.tokoId] = perToko[p.tokoId] || { toko:p.toko, items:[], subtotal:0, ongkir:0, diskon:0, total:0, kupon:null, galat:[], peringatan:'' }; var harga = hargaSetelahDiskon(p, v), sub = harga * it.qty; if (it.qty > v.stok) g.galat.push(p.nama + ' (' + v.nama + ') stok hanya ' + v.stok); g.items.push({ produkId:p.id, nama:p.nama, varian:v.nama, qty:it.qty, harga:harga, ikon:p.ikon, berat:p.berat || 500 }); g.subtotal += sub; });
+  function bulat(n, ke) { return Math.round(n / ke) * ke; }
+  function proteksiBoleh(p, harga) { return ATURAN.proteksiKategori.indexOf(p.kategori) >= 0 || harga >= ATURAN.proteksiMinHarga; }
+  /* opsi = { asuransi:{tokoId:false→matikan}, proteksi:{produkId|varian:true}, poin:angka, metode:'wallet'|'qris'|…, catatan:{tokoId:teks}, poinTersedia:angka } */
+  function hitungKeranjang(items, kuponKode, kurirId, tarif, opsi) {
+    opsi = opsi || {}; var perToko = {}, d = db();
+    (items || []).forEach(function (it) { var p = produk(it.produkId); if (!p) return; var v = (p.varian || []).filter(function (x) { return x.nama === it.varian; })[0] || p.varian[0] || { nama:'', harga:p.harga, stok:p.stok }; var g = perToko[p.tokoId] = perToko[p.tokoId] || { toko:p.toko, items:[], subtotal:0, ongkir:0, diskon:0, total:0, kupon:null, galat:[], peringatan:'', asuransi:0, proteksi:0, diskonOngkir:0, gratisOngkir:0, kuponOngkir:0, catatan:(opsi.catatan || {})[p.tokoId] || '' }; var harga = hargaSetelahDiskon(p, v), sub = harga * it.qty, kunci = p.id + '|' + v.nama, boleh = proteksiBoleh(p, harga), pHarga = boleh ? bulat(harga * ATURAN.proteksiPct / 100, 100) : 0, pAktif = boleh && !!(opsi.proteksi || {})[kunci]; if (it.qty > v.stok) g.galat.push(p.nama + ' (' + v.nama + ') stok hanya ' + v.stok); g.items.push({ produkId:p.id, nama:p.nama, varian:v.nama, qty:it.qty, harga:harga, hargaAsli:v.harga, diskonPct:p.diskonPct || 0, ikon:p.ikon, berat:p.berat || 500, kategori:p.kategori, proteksiBoleh:boleh, proteksiHarga:pHarga, proteksi:pAktif, kunci:kunci }); g.subtotal += sub; if (pAktif) g.proteksi += pHarga * it.qty; });
     Object.keys(perToko).forEach(function (tid) {
-      var g = perToko[tid], opsi = opsiKurir(g.toko, tarif), pilih = typeof kurirId === 'object' && kurirId ? kurirId[tid] : kurirId;
-      var kr = opsi.filter(function (o) { return o.id === pilih; })[0] || opsi[0];
-      g.opsiKurir = opsi; g.kurir = kr; g.ongkir = kr.harga; g.berat = g.items.reduce(function (n, it) { return n + it.berat * it.qty; }, 0);
+      var g = perToko[tid], opsiK = opsiKurir(g.toko, tarif), pilih = typeof kurirId === 'object' && kurirId ? kurirId[tid] : kurirId;
+      var kr = opsiK.filter(function (o) { return o.id === pilih; })[0] || opsiK[0];
+      g.opsiKurir = opsiK; g.kurir = kr; g.ongkir = kr.harga; g.berat = g.items.reduce(function (n, it) { return n + it.berat * it.qty; }, 0);
+      g.asuransiAktif = (opsi.asuransi || {})[tid] !== false && kr.id !== 'ambil'; g.asuransiHarga = Math.max(ATURAN.asuransiMin, bulat(g.subtotal * ATURAN.asuransiPct / 100, 500)); g.asuransi = g.asuransiAktif ? g.asuransiHarga : 0;
       if (kuponKode) { var k = d ? d.all('kuponToko').filter(function (x) { return x.tokoId === tid && x.aktif && x.kode.toUpperCase() === String(kuponKode).toUpperCase() && x.terpakai < x.kuota && (!x.sampai || x.sampai >= new Date().toISOString().slice(0, 10)); })[0] : null;
-        if (k) { if (g.subtotal >= k.minBelanja) { g.kupon = k; g.diskon = k.jenis === 'persen' ? Math.round(g.subtotal * k.nilai / 100) : k.jenis === 'ongkir' ? Math.min(k.nilai, g.ongkir) : k.nilai; } else g.peringatan = 'Kupon ' + k.kode + ' butuh belanja minimal ' + rp(k.minBelanja) + ' di toko ini — belum dipotong'; } }
-      g.total = Math.max(0, g.subtotal + g.ongkir - g.diskon);
+        if (k) { if (g.subtotal >= k.minBelanja) { g.kupon = k; if (k.jenis === 'ongkir') g.kuponOngkir = Math.min(k.nilai, g.ongkir); else g.diskon = k.jenis === 'persen' ? Math.round(g.subtotal * k.nilai / 100) : k.nilai; } else g.peringatan = 'Kupon ' + k.kode + ' butuh belanja minimal ' + rp(k.minBelanja) + ' di toko ini — belum dipotong'; } }
+      g.gratisOngkir = g.ongkir > 0 && g.subtotal >= ATURAN.gratisOngkirMin ? Math.min(g.ongkir, ATURAN.gratisOngkirMaks) : 0;
+      g.diskonOngkir = Math.min(g.ongkir, g.gratisOngkir + g.kuponOngkir);
+      g.diskonProduk = g.items.reduce(function (n, it) { return n + Math.max(0, it.hargaAsli - it.harga) * it.qty; }, 0);
+      g.total = Math.max(0, g.subtotal + g.ongkir + g.asuransi + g.proteksi - g.diskon - g.diskonOngkir);
     });
     var daftar = Object.keys(perToko).map(function (k) { return perToko[k]; });
-    return { toko:daftar, total:daftar.reduce(function (n, g) { return n + g.total; }, 0), galat:daftar.reduce(function (a, g) { return a.concat(g.galat); }, []), peringatan:daftar.map(function (g) { return g.peringatan; }).filter(Boolean) };
+    var metode = opsi.metode || 'wallet', biayaJasa = metode === 'wallet' ? 0 : ATURAN.biayaJasa, subTotal = daftar.reduce(function (n, g) { return n + g.total; }, 0);
+    var poinMaks = Math.min(Number(opsi.poinTersedia) || 0, Math.floor(subTotal * ATURAN.poinMaksPct / 100)), poinDipakai = opsi.poin ? (opsi.poin === true ? poinMaks : Math.min(poinMaks, Number(opsi.poin) || 0)) : 0;
+    var total = Math.max(0, subTotal + biayaJasa - poinDipakai);
+    var ringkas = { barang:daftar.reduce(function (n, g) { return n + g.items.reduce(function (m, it) { return m + it.qty; }, 0); }, 0), hargaBarang:daftar.reduce(function (n, g) { return n + g.subtotal; }, 0), ongkir:daftar.reduce(function (n, g) { return n + g.ongkir; }, 0), asuransi:daftar.reduce(function (n, g) { return n + g.asuransi; }, 0), proteksi:daftar.reduce(function (n, g) { return n + g.proteksi; }, 0), biayaJasaAsli:ATURAN.biayaJasa, biayaJasa:biayaJasa, diskonOngkir:daftar.reduce(function (n, g) { return n + g.diskonOngkir; }, 0), diskonKupon:daftar.reduce(function (n, g) { return n + g.diskon; }, 0), diskonProduk:daftar.reduce(function (n, g) { return n + g.diskonProduk; }, 0), poinDipakai:poinDipakai, poinMaks:poinMaks };
+    ringkas.promo = ringkas.diskonOngkir + ringkas.diskonKupon + ringkas.poinDipakai; ringkas.hemat = ringkas.promo + ringkas.diskonProduk + (ATURAN.biayaJasa - biayaJasa);
+    return { toko:daftar, total:total, metode:metode, ringkas:ringkas, galat:daftar.reduce(function (a, g) { return a.concat(g.galat); }, []), peringatan:daftar.map(function (g) { return g.peringatan; }).filter(Boolean) };
   }
   /* Membuat pesanan per toko setelah pembayaran dompet berhasil di lapisan pemanggil. */
-  function checkout(items, kuponKode, kurirId, pembeli, alamat, catatan, tarif) {
-    var d = db(), h = hitungKeranjang(items, kuponKode, kurirId, tarif); if (h.galat.length) throw new Error(h.galat[0]);
-    var dibuat = [];
+  function checkout(items, kuponKode, kurirId, pembeli, alamat, catatan, tarif, opsi) {
+    var d = db(), h = hitungKeranjang(items, kuponKode, kurirId, tarif, opsi); if (h.galat.length) throw new Error(h.galat[0]);
+    var dibuat = [], batch = 'B' + Date.now().toString(36), metode = h.metode, sisaPoin = h.ringkas.poinDipakai, sisaJasa = h.ringkas.biayaJasa;
     h.toko.forEach(function (g) {
-      var n = d.nextNo('pesananToko'), o = d.insert('pesananToko', { no:'TK-' + (1000 + n), tokoId:g.toko.id, pembeliId:pembeli.id || null, pembeliNama:pembeli.nama, items:g.items, subtotal:g.subtotal, ongkir:g.ongkir, diskon:g.diskon, kupon:g.kupon ? g.kupon.kode : '', total:g.total, biayaLayanan:Math.round(g.subtotal * BIAYA_LAYANAN), kurir:g.kurir.nama, kurirId:g.kurir.id, kurirKode:g.kurir.kurir || '', layanan:g.kurir.layanan || '', kurirEtd:g.kurir.etd || '', berat:g.berat, resi:'', status:'baru', alamat:alamat, titik:pembeli.titik || null, pembeliTelp:pembeli.telp || '', catatan:catatan || '', bayar:'wallet', at:kini(), contoh:false });
+      var n = d.nextNo('pesananToko'), o = d.insert('pesananToko', { no:'TK-' + (1000 + n), tokoId:g.toko.id, pembeliId:pembeli.id || null, pembeliNama:pembeli.nama, items:g.items, subtotal:g.subtotal, ongkir:g.ongkir, diskon:g.diskon, kupon:g.kupon ? g.kupon.kode : '', total:g.total, biayaLayanan:Math.round(g.subtotal * BIAYA_LAYANAN), kurir:g.kurir.nama, kurirId:g.kurir.id, kurirKode:g.kurir.kurir || '', layanan:g.kurir.layanan || '', kurirEtd:g.kurir.etd || '', berat:g.berat, resi:'', status:metode === 'wallet' ? 'baru' : 'menunggu-bayar', alamat:alamat, titik:pembeli.titik || null, pembeliTelp:pembeli.telp || '', catatan:g.catatan || catatan || '', bayar:metode, batch:batch, asuransi:g.asuransi, proteksi:g.proteksi, diskonOngkir:g.diskonOngkir, gratisOngkir:g.gratisOngkir, poinDipakai:Math.min(sisaPoin, g.total), biayaJasa:sisaJasa, at:kini(), contoh:false });
+      sisaPoin = Math.max(0, sisaPoin - o.poinDipakai); sisaJasa = 0;
       g.items.forEach(function (it) { var p = d.find('produk', it.produkId); if (!p) return; var vr = (p.varian || []).map(function (v) { if (v.nama === it.varian) v.stok = Math.max(0, v.stok - it.qty); return v; }); d.update('produk', p.id, { varian:vr, stok:vr.reduce(function (s, v) { return s + v.stok; }, 0), terjual:(p.terjual || 0) + it.qty }); });
       if (g.kupon) d.update('kuponToko', g.kupon.id, { terpakai:(g.kupon.terpakai || 0) + 1 });
       dibuat.push(o);
     });
     if (d.log) d.log(pembeli.id || null, 'Belanja perlengkapan ' + dibuat.map(function (o) { return o.no; }).join(', ') + ' · ' + rp(h.total), 'toko', dibuat[0] && dibuat[0].id);
-    return { pesanan:dibuat, total:h.total };
+    return { pesanan:dibuat, total:h.total, metode:metode, poinDipakai:h.ringkas.poinDipakai, batch:batch };
   }
   function pesananPembeli(pembeliNama, pembeliId) { var d = db(); return d ? d.all('pesananToko').filter(function (o) { return (pembeliId && o.pembeliId === pembeliId) || o.pembeliNama === pembeliNama; }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }) : []; }
   function pesanan(id) { var d = db(); return d ? d.find('pesananToko', id) : null; }
   var ALUR_STATUS = ['baru','diproses','dikirim','selesai'];
-  function labelStatus(s) { return { baru:'Menunggu diproses', diproses:'Sedang disiapkan', dikirim:'Dalam pengiriman', selesai:'Selesai', dibatalkan:'Dibatalkan', komplain:'Komplain / retur' }[s] || s; }
+  function labelStatus(s) { return { 'menunggu-bayar':'Menunggu pembayaran', baru:'Menunggu diproses', diproses:'Sedang disiapkan', dikirim:'Dalam pengiriman', selesai:'Selesai', dibatalkan:'Dibatalkan', komplain:'Komplain / retur' }[s] || s; }
   /* transisi oleh toko */
   function proses(id) { var d = db(), o = pesanan(id); if (!o || o.status !== 'baru') throw new Error('Pesanan tidak menunggu diproses'); return d.update('pesananToko', id, { status:'diproses', diprosesAt:kini() }); }
   function kirim(id, resi) { var d = db(), o = pesanan(id); if (!o || o.status !== 'diproses') throw new Error('Pesanan belum diproses'); if (!resi || String(resi).length < 6) throw new Error('Nomor resi minimal 6 karakter'); return d.update('pesananToko', id, { status:'dikirim', resi:String(resi).trim(), dikirimAt:kini() }); }
@@ -145,6 +160,9 @@ var EXO_TOKO = (function () {
      kurir (dikirim → selesai otomatis saat 'delivered'; retur/gagal ditandai). */
   function simpanPengiriman(id, info) { var d = db(), o = pesanan(id); if (!o) return null; var patch = { pengiriman:Object.assign({}, o.pengiriman || {}, info, { diperbarui:kini() }) }; var resi = info.resi || info.trackingId || info.orderId; if (resi && !o.resi) patch.resi = String(resi); if (o.status === 'diproses' && (patch.resi || o.resi)) { patch.status = 'dikirim'; patch.dikirimAt = kini(); } return d.update('pesananToko', id, patch); }
   function terapkanStatusKurir(id, info) { var d = db(), o = pesanan(id); if (!o) return null; var patch = { pengiriman:Object.assign({}, o.pengiriman || {}, info, { diperbarui:kini() }) }; if (info.resi) patch.resi = info.resi; if (info.status === 'dikirim' && o.status === 'diproses') { patch.status = 'dikirim'; patch.dikirimAt = kini(); } if (info.status === 'selesai' && (o.status === 'dikirim' || o.status === 'diproses')) { patch.status = 'selesai'; patch.selesaiAt = kini(); patch.otomatis = true; if (!o.dikirimAt) patch.dikirimAt = kini(); } if ((info.status === 'retur' || info.status === 'gagal') && o.status !== 'selesai') patch.masalahKurir = info.statusKurir || info.status; return d.update('pesananToko', id, patch); }
+  /* Pembayaran non-dompet (QRIS/VA/e-wallet/kartu) dikonfirmasi gateway → pesanan berpindah dari menunggu-bayar ke baru. Di prototipe: tombol simulasi. */
+  function konfirmasiBayar(batch) { var d = db(), n = 0; d.all('pesananToko').forEach(function (o) { if (o.batch === batch && o.status === 'menunggu-bayar') { d.update('pesananToko', o.id, { status:'baru', dibayarAt:kini() }); n++; } }); return n; }
+  function batalMenungguBayar(batch) { var d = db(), n = 0; d.all('pesananToko').forEach(function (o) { if (o.batch === batch && o.status === 'menunggu-bayar') { kembalikanStok(o); d.update('pesananToko', o.id, { status:'dibatalkan', alasanBatal:'Pembayaran tidak diselesaikan', dibatalkanAt:kini() }); n++; } }); return n; }
   function tolak(id, alasan) { var d = db(), o = pesanan(id); if (!o || o.status === 'selesai' || o.status === 'dibatalkan') throw new Error('Pesanan tidak bisa ditolak'); kembalikanStok(o); return d.update('pesananToko', id, { status:'dibatalkan', alasanBatal:alasan || 'Ditolak toko', dibatalkanAt:kini(), refund:o.total }); }
   function kembalikanStok(o) { var d = db(); (o.items || []).forEach(function (it) { var p = d.find('produk', it.produkId); if (!p) return; var vr = (p.varian || []).map(function (v) { if (v.nama === it.varian) v.stok += it.qty; return v; }); d.update('produk', p.id, { varian:vr, stok:vr.reduce(function (s, v) { return s + v.stok; }, 0) }); }); }
   /* oleh pembeli */
@@ -206,6 +224,6 @@ var EXO_TOKO = (function () {
   }
 
   return { BIAYA_LAYANAN:BIAYA_LAYANAN, KATEGORI:KATEGORI, KURIR:KURIR, ALUR_STATUS:ALUR_STATUS, rp:rp, namaKategori:namaKategori, kurir:kurir, labelStatus:labelStatus, semai:semai, semuaToko:semuaToko, toko:toko, produkToko:produkToko, katalog:katalog, produk:produk, hargaSetelahDiskon:hargaSetelahDiskon, ulasan:ulasan,
-    hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
+    ATURAN:ATURAN, hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, konfirmasiBayar:konfirmasiBayar, batalMenungguBayar:batalMenungguBayar, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
     simpanProduk:simpanProduk, ubahStatusProduk:ubahStatusProduk, kuponToko:kuponToko, simpanKupon:simpanKupon, chatToko:chatToko, balasChat:balasChat, kirimChatPembeli:kirimChatPembeli, keuanganToko:keuanganToko, ajukanPenarikan:ajukanPenarikan, putusPenarikan:putusPenarikan, skorToko:skorToko, statistikToko:statistikToko, simpanPengaturan:simpanPengaturan, daftarToko:daftarToko, verifikasiToko:verifikasiToko, penalti:penalti, ringkasanAdmin:ringkasanAdmin, uid:uid };
 })();
