@@ -367,8 +367,6 @@ var ADMIN = (function () {
     var b = S.brand;
     var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">Backend console</div></div></div><div class="adm-nav">';
     NAV.forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
-    h += '<a href="exo-analisa.html" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:18px;font-size:13.5px;font-weight:600;text-decoration:none;color:inherit;opacity:.8"><span class="lbl" style="flex:1">Analisa pasar ↗</span></a>' +
-      '<a href="exo.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:18px;font-size:13.5px;font-weight:600;text-decoration:none;color:inherit;opacity:.8"><span class="lbl" style="flex:1">Buka EXOCLEAN App ↗</span></a>';
     h += '</div><div class="adm-me">' + av('AN', 34) + '<div class="grow"><div class="t-125 bold">Andriyadi N.</div><div class="t-105 o-6">Super admin' + (adaDB() ? ' · DB connected' : ' · sample data') + '</div></div></div>';
     side.innerHTML = h;
     var m = META[S.view];
