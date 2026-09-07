@@ -220,3 +220,7 @@ Menu yang berkaitan dengan mitra dipisah dari HRD ke kelompok **Mitra**: Cleaner
 ## Pemilih rentang waktu di dasbor (7 Sep 2026)
 
 Analitik dasbor mengikuti rentang yang dipilih lewat pemilih bergaya Google Ads/Analytics: preset (Kustom, Hari ini, Kemarin, Minggu ini, 7 hari terakhir, Minggu lalu, 14 hari terakhir, Bulan ini, 30 hari terakhir, Bulan lalu, Sepanjang waktu, N hari sampai hari ini / kemarin), tanggal mulai–selesai, kalender bulanan dengan sorotan rentang (klik dua tanggal), dan sakelar **Bandingkan** yang menampilkan selisih GMV, pendapatan, dan kunjungan terhadap periode sebelumnya yang sama panjang. Tren diagregasi per hari (≤ 62 hari), per minggu (≤ 400 hari), atau per bulan.
+
+## Sakelar bahasa konsol admin (7 Sep 2026)
+
+Header kanan atas konsol admin punya sakelar **ID / EN** (`js/exo-admin-teks.js`, tersimpan di `exoclean_admin_lang`). Kamus menerjemahkan kerangka konsol: nama kelompok, label menu, judul dan keterangan modul, tombol header, kartu profil, dan pesan hak menu. Isi tabel/kartu di dalam modul masih mengikuti bahasa penulisan aslinya dan diterjemahkan bertahap lewat kamus yang sama. Aplikasi pelanggan sudah punya tombol bahasa (kode ID/EN) di kanan atas beranda yang membuka layar 12 bahasa.

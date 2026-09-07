@@ -141,6 +141,8 @@ var ADMIN = (function () {
   /* ---------------------------------------------------------- pembantu */
   function rp(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
   function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  /* Terjemahan kerangka konsol (ID/EN) — kamus di exo-admin-teks.js. */
+  function tr(x) { return window.EXO_ADMIN_TEKS ? EXO_ADMIN_TEKS.t(x) : x; }
   function aksi(n, a) { return ' data-aksi="' + n + '"' + (a === undefined ? '' : ' data-arg="' + esc(a) + '"'); }
   function chip(tone, teks, extra) {
     var k = tone === 'accent' ? 'chip-solid' : tone === 'green' ? 'chip-line' : 'chip-flat';
@@ -366,7 +368,8 @@ var ADMIN = (function () {
   };
 
   /* ================================================================ AKSI */
-  AKSI.view = function (v) { if (!bolehLihat(v)) { sekilas('Menu ini tidak tersedia untuk peran/unit Anda.', 'err'); return; } S.view = v; location.hash = v; };
+  AKSI.bahasaAdmin = function (v) { if (window.EXO_ADMIN_TEKS) EXO_ADMIN_TEKS.set(v); };
+  AKSI.view = function (v) { if (!bolehLihat(v)) { sekilas(tr('Menu ini tidak tersedia untuk peran/unit Anda.'), 'err'); return; } S.view = v; location.hash = v; };
   AKSI.toast = function (v) { sekilas(v); };
   AKSI.orderFilter = function (v) { S.orderFilter = v; };
   AKSI.deskFilter = function (v) { S.deskFilter = v; };
@@ -424,23 +427,26 @@ var ADMIN = (function () {
     if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.terapkanJatuhTempo(); var nAntre = EXO_PERSETUJUAN.menunggu().length + EXO_PERSETUJUAN.dijadwalkan().length; NAV.forEach(function (n) { if (n[0] === 'persetujuan') n[2] = nAntre ? String(nAntre) : ''; }); } catch (e) { /* abaikan */ } }
     var side = document.getElementById('adm-side'), top = document.getElementById('adm-top'), body = document.getElementById('adm-body'), lapis = document.getElementById('adm-lapis');
     var b = S.brand;
-    var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">Backend console</div></div></div><div class="adm-nav">';
+    var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">' + esc(tr('Backend console')) + '</div></div></div><div class="adm-nav">';
     KELOMPOK.forEach(function (g) {
       var item = g[2].filter(function (n) { return bolehLihat(n[0]); }); if (!item.length) return;
-      h += '<div class="adm-grup">' + esc(g[0]) + '</div>';
-      item.forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
+      h += '<div class="adm-grup">' + esc(tr(g[0])) + '</div>';
+      item.forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + esc(tr(n[1])) + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
     });
     var me = penggunaKini(), inisial = me ? me.nama.split(' ').map(function (x) { return x[0]; }).join('').slice(0, 2).toUpperCase() : 'AN';
-    h += '</div><div class="adm-me">' + av(inisial, 34) + '<div class="grow"><div class="t-125 bold">' + esc(me ? me.nama : 'Belum masuk') + '</div><div class="t-105 o-6">' + esc(me ? ({ staf:'Staf', supervisor:'Supervisor', superadmin:'Super admin' }[peranKini(me)] || peranKini(me)) + ' · ' + (peranKini(me) === 'superadmin' ? 'semua unit' : unitKini(me).map(function (k) { return UNIT_NAMA[k] || k; }).join(', ')) : 'gerbang terkunci') + (adaDB() ? ' · DB' : '') + '</div></div></div>';
+    h += '</div><div class="adm-me">' + av(inisial, 34) + '<div class="grow"><div class="t-125 bold">' + esc(me ? me.nama : tr('Belum masuk')) + '</div><div class="t-105 o-6">' + esc(me ? tr({ staf:'Staf', supervisor:'Supervisor', superadmin:'Super admin' }[peranKini(me)] || peranKini(me)) + ' · ' + (peranKini(me) === 'superadmin' ? tr('semua unit') : unitKini(me).map(function (k) { return tr(UNIT_NAMA[k] || k); }).join(', ')) : tr('gerbang terkunci')) + (adaDB() ? ' · DB' : '') + '</div></div></div>';
     side.innerHTML = h;
     var m = META[S.view];
-    top.innerHTML = '<div class="grow"><h3>' + esc(m[0]) + '</h3><div class="sub">' + esc(m[1]) + '</div></div><div class="adm-search">Search order, cleaner, customer…</div><button class="btn btn-secondary"' + aksi('toast', 'Export queued — CSV lands in your inbox.') + '>Export</button><button class="btn btn-primary"' + aksi('toast', m[2] + ' — form opens in the full build.') + '>' + esc(m[2]) + '</button>';
+    var bhs = window.EXO_ADMIN_TEKS ? EXO_ADMIN_TEKS.get() : 'id';
+    top.innerHTML = '<div class="grow"><h3>' + esc(tr(m[0])) + '</h3><div class="sub">' + esc(tr(m[1])) + '</div></div><div class="adm-search">' + esc(tr('Search order, cleaner, customer…')) + '</div>' +
+      '<div class="adm-lang" role="group" aria-label="Bahasa"><button class="' + (bhs === 'id' ? 'on' : '') + '"' + aksi('bahasaAdmin', 'id') + ' lang="id" title="Bahasa Indonesia">ID</button><button class="' + (bhs === 'en' ? 'on' : '') + '"' + aksi('bahasaAdmin', 'en') + ' lang="en" title="English">EN</button></div>' +
+      '<button class="btn btn-secondary"' + aksi('toast', tr('Export queued — CSV lands in your inbox.')) + '>' + esc(tr('Export')) + '</button><button class="btn btn-primary"' + aksi('toast', tr(m[2]) + tr(' — form opens in the full build.')) + '>' + esc(tr(m[2])) + '</button>';
     var gulir = window.scrollY;
     body.innerHTML = VIEW[S.view]();
     window.scrollTo(0, gulir);
     lapis.innerHTML = S.sekilas ? '<div class="adm-toast ' + S.sekilas.nada + '">' + esc(S.sekilas.teks) + '</div>' : '';
     EXO_BRAND.terapkan(S.brand);
-    document.title = b.appName + ' — Backend console';
+    document.title = b.appName + ' — ' + tr('Backend console');
   }
   function pasang() {
     document.addEventListener('click', function (ev) {
@@ -453,7 +459,7 @@ var ADMIN = (function () {
       var el = ev.target; if (!el.getAttribute) return;
       var ubah = el.getAttribute('data-ubah'); if (ubah && AKSI[ubah]) { AKSI[ubah](el.getAttribute('data-arg'), el.value, el); gambar(); }
     });
-    window.addEventListener('hashchange', function () { var v = location.hash.slice(1); if (VIEW[v] && bolehLihat(v)) { S.view = v; gambar(); } else if (VIEW[v]) { sekilas('Menu ini tidak tersedia untuk peran/unit Anda.', 'err'); gambar(); } });
+    window.addEventListener('hashchange', function () { var v = location.hash.slice(1); if (VIEW[v] && bolehLihat(v)) { S.view = v; gambar(); } else if (VIEW[v]) { sekilas(tr('Menu ini tidak tersedia untuk peran/unit Anda.'), 'err'); gambar(); } });
     gambar();
   }
 

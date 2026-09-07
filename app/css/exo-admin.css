@@ -124,3 +124,8 @@ body { background: var(--color-bg); }
 .adm-kal button.dalam { background: color-mix(in srgb, var(--color-accent) 14%, transparent); border-radius:0; }
 .adm-kal button.ujung { background: var(--color-accent); color:#fff; font-weight:700; }
 .adm-kal button.depan { opacity:.3; cursor:default; }
+
+/* ---- sakelar bahasa header (ID / EN) ---- */
+.adm-lang { display:inline-flex; border:1px solid var(--color-divider); border-radius:999px; padding:2px; background:var(--color-surface); }
+.adm-lang button { border:0; background:none; font:inherit; font-size:12px; font-weight:700; letter-spacing:.04em; padding:6px 12px; border-radius:999px; cursor:pointer; color:inherit; opacity:.6; }
+.adm-lang button.on { background: var(--color-accent); color:#fff; opacity:1; }
