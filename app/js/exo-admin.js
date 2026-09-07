@@ -64,13 +64,15 @@ var ADMIN = (function () {
      konsol perusahaan untuk IT). NAV tetap daftar datar untuk lencana; KELOMPOK
      menentukan judul bagian di bilah samping. */
   var KELOMPOK = [
-    ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['komunikasi','Komunikasi tim','']]],
+    ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
+    ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['pelatihan','Pelatihan & sertifikasi',''], ['lms','Pembelajaran (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
-    ['HRD', 'hrd', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran (LMS)',''], ['belajar','Belajar saya',''], ['penggajian','Penggajian karyawan','']]],
+    ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
   ];
   var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
-  var UNIT_NAMA = { ops:'Operasional', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
+  var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
+  var UNIT_URUT = ['ops', 'mitra', 'keuangan', 'hrd', 'it'];
   /* ------------------------------------------------------------ HAK AKSES MENU
      Menu yang tampil mengikuti PERAN (staf · supervisor · superadmin) dan UNIT
      kerja yang ditugaskan ke akun (ops · keuangan · hrd · it):
@@ -88,9 +90,9 @@ var ADMIN = (function () {
   function peranKini(u) { u = u || penggunaKini(); return (u && u.peran) || (u && u.role === 'admin' ? 'superadmin' : 'staf'); }
   function unitKini(u) {
     u = u || penggunaKini(); var pr = peranKini(u);
-    if (pr === 'superadmin') return ['ops', 'keuangan', 'hrd', 'it'];
+    if (pr === 'superadmin') return UNIT_URUT.slice();
     if (u && Array.isArray(u.unit) && u.unit.length) return u.unit.slice();
-    return pr === 'supervisor' ? ['ops', 'keuangan', 'hrd'] : ['ops'];
+    return pr === 'supervisor' ? ['ops', 'mitra', 'keuangan', 'hrd'] : ['ops'];
   }
   function unitMenu(id) { for (var i = 0; i < KELOMPOK.length; i++) for (var j = 0; j < KELOMPOK[i][2].length; j++) if (KELOMPOK[i][2][j][0] === id) return KELOMPOK[i][1]; return null; }
   function bolehLihat(id, u) {
@@ -121,6 +123,7 @@ var ADMIN = (function () {
     jadwal:['Jadwal & cuti','Ketersediaan mingguan mitra · cuti/izin disetujui lewat Persetujuan','Cuti baru'],
     pelatihan:['Pelatihan & sertifikasi','Kurikulum wajib per fungsi · sertifikat & dokumen kepatuhan · pengingat kedaluwarsa','Kursus baru'],
     kinerja:['Kinerja & sanksi','Rating, keluhan, inspeksi, ketepatan · poin pelanggaran 90 hari · penghargaan','Catat'],
+    payoutmitra:['Payout mitra','Upah terhutang per mitra · batch pencairan lewat Persetujuan (dari Accounting & Finance)','Ajukan batch'],
     lms:['Pembelajaran (LMS)','Kursus → modul → materi + kuis · level & prasyarat · jalur per fungsi · sertifikat otomatis · ala Coursera','Kursus baru'],
     belajar:['Belajar saya','Akademi EXOCLEAN untuk staf kantor — kursus, kuis, sertifikat','Lanjutkan'],
     penggajian:['Penggajian karyawan','Gaji kantor · BPJS · PPh 21 · payroll bulanan lewat Persetujuan (tinggi)','Jalankan'],
@@ -454,5 +457,5 @@ var ADMIN = (function () {
     gambar();
   }
 
-  return { S:S, VIEW:VIEW, AKSI:AKSI, KELOMPOK:KELOMPOK, UNIT_NAMA:UNIT_NAMA, bolehLihat:bolehLihat, unitKini:unitKini, peranKini:peranKini, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
+  return { S:S, VIEW:VIEW, AKSI:AKSI, KELOMPOK:KELOMPOK, UNIT_NAMA:UNIT_NAMA, UNIT_URUT:UNIT_URUT, bolehLihat:bolehLihat, unitKini:unitKini, peranKini:peranKini, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
 })();

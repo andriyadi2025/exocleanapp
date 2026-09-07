@@ -53,6 +53,8 @@
     var f = { ringkasan:tabRingkasan, piutang:tabPiutang, rekon:tabRekon, payout:tabPayout, dompet:tabDompet, pajak:tabPajak, jurnal:tabJurnal, biaya:tabBiaya, laporan:tabLaporan, periode:tabPeriode }[S.keuTab] || tabRingkasan;
     return h + f();
   };
+  /* Menu “Payout mitra” di kelompok Mitra menampilkan tab payout yang sama. */
+  VIEW.payoutmitra = function () { S.keuTab = 'payout'; return VIEW.keuangan(); };
   AKSI.keuTab = function (v) { S.keuTab = v; };
   AKSI.keuBulan = function (v) { S.keuBulan = v; };
 

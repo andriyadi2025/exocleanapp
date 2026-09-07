@@ -208,3 +208,7 @@ Pola Coursera: **kursus → modul → materi (video/bacaan/tautan) + kuis per mo
 - Mesin bersama `js/exo-lms.js` (7 kursus benih berisi materi SOP EXOCLEAN, 4 jalur); terbitan ke aplikasi lewat `exoclean_admin_pub.lms`.
 - Konsol admin → HRD → **Pembelajaran (LMS)**: ringkasan (tingkat penyelesaian, nilai), editor kursus lengkap (modul, materi, kuis, jawaban benar, prasyarat, target, wajib), jalur, peserta & progres. Terbit/tarik kursus lewat Persetujuan; **Belajar saya** untuk staf kantor.
 - Aplikasi mitra → tab **Akademi** (`js/exo-screens-belajar.js`): beranda dengan jalur & kursus wajib, detail kursus, pembaca materi (video YouTube/Vimeo diizinkan CSP), kuis dengan hasil dan pembahasan, sertifikat di profil.
+
+## Kelompok menu Mitra (7 Sep 2026)
+
+Menu yang berkaitan dengan mitra dipisah dari HRD ke kelompok **Mitra**: Cleaners & rekrutmen, Absensi & timesheet, Jadwal & cuti, Kinerja & sanksi, Pelatihan & sertifikasi, Pembelajaran (LMS), **Payout mitra** (tampilan yang sama dengan tab payout di Accounting & Finance), dan Komunikasi tim. HRD kini berisi Penggajian karyawan dan Belajar saya. Unit kerja baru `mitra` ikut dalam hak menu; akun yang sudah memegang unit HRD otomatis mendapat unit Mitra sekali saat migrasi.

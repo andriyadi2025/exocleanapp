@@ -51,6 +51,8 @@
   function migrasi() {
     var d = db(); if (!d || !subtle) return Promise.resolve();
     d.where('users', function (u) { return u.role === 'admin' && !u.peran; }).forEach(function (u) { d.update('users', u.id, { peran:'superadmin' }); });
+    /* 7 Sep 2026: menu mitra dipisah dari HRD — akun yang sudah memegang unit HRD ikut mendapat unit Mitra sekali. */
+    d.where('users', function (u) { return u.role === 'admin' && Array.isArray(u.unit) && u.unit.indexOf('hrd') >= 0 && u.unit.indexOf('mitra') < 0 && !u.unitMigrasiMitra; }).forEach(function (u) { d.update('users', u.id, { unit:u.unit.concat(['mitra']), unitMigrasiMitra:true }); });
     var polos = d.where('users', function (u) { return u.role === 'admin' && u.pass && !u.passHash; });
     return Promise.all(polos.map(function (u) {
       return buatHash(String(u.pass)).then(function (h) { d.update('users', u.id, { passHash:h, pass:null, sandiBawaan: String(u.pass) === '123456' }); });
@@ -166,7 +168,7 @@
   function mulai() {
     gaya();
     var s = sesi();
-    if (s) { var u = admins().filter(function (x) { return x.id === s.id; })[0]; if (u) { pengguna = u; buka(); tombolKeluar(); jagaSesi(); if (window.ADMIN && ADMIN.gambar) { try { ADMIN.gambar(); } catch (e) { /* abaikan */ } } return; } hapusSesi(); }
+    if (s) { migrasi(); var u = admins().filter(function (x) { return x.id === s.id; })[0]; if (u) { pengguna = u; buka(); tombolKeluar(); jagaSesi(); if (window.ADMIN && ADMIN.gambar) { try { ADMIN.gambar(); } catch (e) { /* abaikan */ } } return; } hapusSesi(); }
     kunci();
     migrasi().then(function () { mode = admins().length ? 'masuk' : 'bootstrap'; gambar(); jagaSesi(); });
   }
