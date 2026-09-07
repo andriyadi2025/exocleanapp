@@ -28,7 +28,7 @@
   X.LAYAR.pbelajar = function () {
     var u = pesertaObj(), semua = L().untukPeserta(u), wajib = L().wajibBelum(u), sert = L().sertifikatPeserta(u.id), jalur = L().jalurUntuk(u);
     var jam = semua.reduce(function (n, k) { var p = L().progres(u.id, k.id); return n + (p && p.status === 'selesai' ? k.jam : 0); }, 0);
-    var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) + '<div class="grow"><div class="f-head t-17">Akademi EXOCLEAN</div><div class="t-115 o-7">Belajar bertahap, bersertifikat · ' + esc(L().namaFungsi(L().fungsiDari(u))) + '</div></div></div>' +
+    var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) + '<div class="grow"><div class="f-head t-17">Akademi EXOCLEAN</div><div class="t-115 o-7">Belajar bertahap, bersertifikat · ' + esc(L().namaFungsi(L().fungsiDari(u))) + '</div></div>' + X.tombolBahasa() + '</div>' +
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>' + wajib.length + '</b><span>Wajib belum tuntas</span></div><div class="stat"><b>' + sert.length + '</b><span>Sertifikat</span></div><div class="stat"><b>' + jam + ' jam</b><span>Selesai</span></div></div></div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
     if (wajib.length) h += '<div class="card card-clay gap-4"><div class="f-head t-15">' + wajib.length + ' kursus wajib belum tuntas</div><div class="t-115 lh-15 o-85">Kursus wajib menentukan job yang boleh Anda terima. Mulai dari yang paling dasar: ' + esc(wajib[0].judul) + '.</div></div>';

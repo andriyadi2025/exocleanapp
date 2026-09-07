@@ -564,8 +564,12 @@ var ExoApp = (function () {
   function kepala(judul, sub, tujuanKembali, ekstra) {
     return '<div class="hdr">' + (tujuanKembali ? tombolKembali(tujuanKembali) : '') +
       '<div class="hdr-txt"><div class="hdr-title">' + judul + '</div>' +
-      (sub ? '<div class="hdr-sub">' + sub + '</div>' : '') + '</div>' + (ekstra || '') + '</div>';
+      (sub ? '<div class="hdr-sub">' + sub + '</div>' : '') + '</div>' + (ekstra || '') + (KEADAAN.layar !== 'lang' ? tombolBahasa('') : '') + '</div>';
   }
+  /* Tombol bahasa: ada di setiap layar (header, atau mengambang bila layar
+     tanpa header) supaya pelanggan, mitra, dan staf bisa berganti bahasa
+     dari mana pun. Layar bahasa mengingat asal untuk tombol kembali. */
+  function tombolBahasa(kelasTambahan) { return '<button class="lang-btn lang-btn-sm' + (kelasTambahan ? ' ' + kelasTambahan : '') + '"' + aksi('bahasaBuka') + ' aria-label="Language" title="Language">' + esc(String(KEADAAN.lang).toUpperCase()) + '</button>'; }
   function langkah(n) {
     var h = '<div class="steps">';
     for (var i = 1; i <= 3; i++) h += '<i class="' + (i <= n ? 'on' : '') + '"></i>';
@@ -723,11 +727,13 @@ var ExoApp = (function () {
     var buat = LAYAR[KEADAAN.layar] || LAYAR.home;
     akar.setAttribute('dir', I.isRtl() ? 'rtl' : 'ltr');
     akar.setAttribute('lang', KEADAAN.lang);
-    akar.innerHTML = buat() + bilahTab();
+    var isiLayar = buat();
+    akar.innerHTML = isiLayar + bilahTab();
     akar.setAttribute('data-layar', KEADAAN.layar);
 
     var atas = '';
     if (KEADAAN.lembar && LEMBAR[KEADAAN.lembar]) atas += LEMBAR[KEADAAN.lembar]();
+    if (KEADAAN.layar !== 'lang' && isiLayar.indexOf('lang-btn') < 0) atas += tombolBahasa('lang-mengambang');
     if (KEADAAN.sekilas) atas += '<div class="toast ' + KEADAAN.sekilas.nada + '" role="status">' + esc(KEADAAN.sekilas.teks) + '</div>';
     lapis.innerHTML = atas;
     lembarTergambar = KEADAAN.lembar;
@@ -808,7 +814,7 @@ var ExoApp = (function () {
     keUTC:keUTC, mulaiUTC:mulaiUTC, jamSelesai:jamSelesai, menitKeMulai:menitKeMulai, dalamKunci4Jam:dalamKunci4Jam, wilayahPesanan:wilayahPesanan, sopMeta:sopMeta, ppeComplete:ppeComplete, sopSelesai:sopSelesai,
     coverage:coverage, addrFilled:addrFilled,
     isoNegara:isoNegara, wilayahSiap:wilayahSiap, wilayahDaftar:wilayahDaftar, wilayahSiapkan:wilayahSiapkan, sumberWilayah:sumberWilayah, kodeWilayah:kodeWilayah,
-    simpanPosisi:simpanPosisi, bacaPosisi:bacaPosisi, hapusPosisi:hapusPosisi, jarakKe:jarakKe, teksJarak:teksJarak, menitTempuh:menitTempuh, posisiMitra:posisiMitra,
+    tombolBahasa:tombolBahasa, simpanPosisi:simpanPosisi, bacaPosisi:bacaPosisi, hapusPosisi:hapusPosisi, jarakKe:jarakKe, teksJarak:teksJarak, menitTempuh:menitTempuh, posisiMitra:posisiMitra,
     fotoMitra:fotoMitra, simpanFotoMitra:simpanFotoMitra, avJuru:avJuru,
     pelangganDB:pelangganDB, tulisOrderDB:tulisOrderDB, tulisRatingDB:tulisRatingDB, tulisKomplainDB:tulisKomplainDB,
     hooks:[],

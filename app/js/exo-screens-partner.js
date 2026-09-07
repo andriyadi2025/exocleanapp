@@ -34,7 +34,7 @@
     var a = aku(), nd = X.namaDepan(a);
     var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) +
       '<div class="grow"><div class="f-head t-17">Selamat pagi, ' + esc(nd) + '</div><div class="t-115 o-7">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · area Kemang</div></div>' +
-      '<button class="' + kelas('pill', K.daring) + '" style="padding:8px 14px"' + aksi('daring') + '>' + (K.daring ? 'Aktif' : 'Nonaktif') + '</button></div>' +
+      X.tombolBahasa() + '<button class="' + kelas('pill', K.daring) + '" style="padding:8px 14px"' + aksi('daring') + '>' + (K.daring ? 'Aktif' : 'Nonaktif') + '</button></div>' +
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div></div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
     h += kartuPengumuman();
@@ -204,7 +204,7 @@
 
   /* =============================================================== PEARN */
   X.LAYAR.pearn = function () {
-    var h = '<div class="screen"><div style="padding:18px 20px 0"><h3 style="margin:0">Penghasilan</h3></div><div class="stack gap-14" style="padding:16px 20px 0">';
+    var h = '<div class="screen"><div class="flex items-center gap-8" style="padding:18px 20px 0"><h3 class="grow" style="margin:0">Penghasilan</h3>' + X.tombolBahasa() + '</div><div class="stack gap-14" style="padding:16px 20px 0">';
     h += '<div class="card elev-md gap-11"><div class="t-12 o-65">Tersedia sekarang</div><div class="f-head t-34" style="line-height:1">' + rp(K.saldoMitra) + '</div>' +
       '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'pwallet') + '>Cairkan</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'rincian') + '>Rekap</button></div></div>';
     h += '<div class="card elev-sm gap-11"><div class="f-head t-15">7 hari terakhir</div><div class="bars">';

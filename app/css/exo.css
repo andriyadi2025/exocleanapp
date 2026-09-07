@@ -674,3 +674,8 @@ button.box.on { background: var(--color-accent-2-600); color: var(--color-bg); }
 .c-accent-700 { color: var(--color-accent-700) } .c-accent-900 { color: var(--color-accent-900) }
 .up { letter-spacing:.08em; text-transform:uppercase }
 .nowrap { white-space:nowrap }
+
+/* tombol bahasa di semua layar */
+.lang-btn-sm { height:32px; padding:0 11px; font-size:11px; letter-spacing:.04em; flex:none; }
+.lang-mengambang { position:absolute; top:12px; right:14px; z-index:25; box-shadow: var(--shadow-md); background: var(--color-surface); }
+[dir=rtl] .lang-mengambang { right:auto; left:14px; }

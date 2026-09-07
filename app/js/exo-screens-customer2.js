@@ -33,7 +33,7 @@
   /* ============================================================== ORDERS */
   X.LAYAR.orders = function () {
     var j = X.juruKini();
-    var h = '<div class="screen"><div style="padding:18px 20px 12px"><h3 style="margin:0">' + esc(t('orders')) + '</h3></div>';
+    var h = '<div class="screen"><div class="flex items-center gap-8" style="padding:18px 20px 12px"><h3 class="grow" style="margin:0">' + esc(t('orders')) + '</h3>' + X.tombolBahasa() + '</div>';
     h += '<div class="flex gap-8 pad-x"><button class="' + kelas('pill', K.tabPesanan === 'up') + '"' + aksi('tabPesanan', 'up') + '>' + esc(t('upcoming')) + '</button>' +
       '<button class="' + kelas('pill', K.tabPesanan === 'past') + '"' + aksi('tabPesanan', 'past') + '>' + esc(t('past')) + '</button></div>';
     h += '<div class="stack gap-12" style="padding:16px 20px 0">';
@@ -76,7 +76,7 @@
 
   /* ============================================================== WALLET */
   X.LAYAR.wallet = function () {
-    var h = '<div class="screen"><div class="hero"><h3 style="margin:0">' + esc(t('wallet')) + '</h3><div class="balance">' + rp(X.saldoTersedia()) + '</div>' +
+    var h = '<div class="screen"><div class="hero"><div class="flex items-center gap-8"><h3 class="grow" style="margin:0">' + esc(t('wallet')) + '</h3>' + X.tombolBahasa() + '</div><div class="balance">' + rp(X.saldoTersedia()) + '</div>' +
       (K.saldoTertahan ? '<div class="t-12 o-7" style="margin-top:4px">' + rp(K.saldoTertahan) + ' ' + esc(tx('held')) + ' · ' + rp(K.saldo) + ' ' + esc(tx('in total')) + ' · ' + esc(tx('charged when done')) + '</div>' : '') +
       '<div class="t-12 o-7" style="margin-top:4px">' + esc(tx('Includes Rp100.000 guarantee credit')) + '</div>' +
       '<div class="flex gap-8" style="margin-top:16px"><button class="btn btn-primary" style="flex:1"' + aksi('lembar', 'isi') + '>' + esc(t('topUp')) + '</button>' +
@@ -219,7 +219,7 @@
 
   /* ================================================================ LANG */
   X.LAYAR.lang = function () {
-    var h = '<div class="screen">' + X.kepala(esc(t('language')), I.LANGS.length + ' languages · applies to the app, receipts and notifications', 'profile');
+    var h = '<div class="screen">' + X.kepala(esc(t('language')), I.LANGS.length + ' languages · applies to the app, receipts and notifications', K.bahasaAsal || 'profile');
     h += '<div class="stack gap-8" style="padding:12px 18px 0">';
     for (var i = 0; i < I.LANGS.length; i++) {
       var l = I.LANGS[i], on = K.lang === l.code;

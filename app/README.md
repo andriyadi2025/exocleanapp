@@ -224,3 +224,7 @@ Analitik dasbor mengikuti rentang yang dipilih lewat pemilih bergaya Google Ads/
 ## Sakelar bahasa konsol admin (7 Sep 2026)
 
 Header kanan atas konsol admin punya sakelar **ID / EN** (`js/exo-admin-teks.js`, tersimpan di `exoclean_admin_lang`). Kamus menerjemahkan kerangka konsol: nama kelompok, label menu, judul dan keterangan modul, tombol header, kartu profil, dan pesan hak menu. Isi tabel/kartu di dalam modul masih mengikuti bahasa penulisan aslinya dan diterjemahkan bertahap lewat kamus yang sama. Aplikasi pelanggan sudah punya tombol bahasa (kode ID/EN) di kanan atas beranda yang membuka layar 12 bahasa.
+
+## Tombol bahasa di semua layar (7 Sep 2026)
+
+Aplikasi pelanggan & mitra: setiap layar punya tombol bahasa (kode ID/EN/…) — di header untuk layar berjudul, atau mengambang di kanan atas untuk layar tanpa header (beranda, pesanan, dompet, pelacakan, job mitra, Akademi, dst.). Menekannya membuka layar 12 bahasa; tombol kembali mengarah ke layar asal. Konsol admin (staf): sakelar ID/EN di header kanan atas. Catatan: layar mitra ditulis dalam bahasa Indonesia; pilihan bahasa di sisi mitra memengaruhi bagian yang sudah berkamus (label umum, ketentuan), penerjemahan penuh layar mitra menyusul.

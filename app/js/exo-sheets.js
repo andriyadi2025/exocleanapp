@@ -501,6 +501,7 @@
     K.shared = true;
   };
   A.termTab = function (v) { K.termTab = v; };
+  A.bahasaBuka = function () { if (K.layar !== 'lang') K.bahasaAsal = K.layar; K.layar = 'lang'; };
   A.bahasa = function (v) { K.lang = I.set(v); try { localStorage.setItem('exoclean_lang', K.lang); } catch (e) { /* abaikan */ } };
   A.daring = function () { K.daring = !K.daring; };
   A.keMitra = function () { K.sisi = 'partner'; K.layar = 'pjobs'; };
