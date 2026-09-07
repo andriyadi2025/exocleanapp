@@ -727,10 +727,11 @@ var EXO_DATA = (function () {
     { id:'pjobs',   label:'Job',         d:'M3 6h18M3 12h18M3 18h12' },
     { id:'pjob',    label:'Berjalan',    d:'m5 13 4 4L19 7' },
     { id:'pearn',   label:'Penghasilan', d:'M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+    { id:'pbelajar', label:'Akademi',    d:'M2 7l10-4 10 4-10 4L2 7zm4 3v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5' },
     { id:'profile', label:'Profil',      d:'M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8' }
   ];
-  var TAB_SCREENS = ['home','orders','wallet','profile','pjobs','pearn'];
-  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pearn','preg','preport','pwallet'];
+  var TAB_SCREENS = ['home','orders','wallet','profile','pjobs','pearn','pbelajar'];
+  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
   var JUMP_PARTNER  = [['preg','Daftar mitra'],['pjobs','Job feed'],['pjob','Active job'],['proute','Route'],['psop','SOP checklist'],['preport','Before-after'],['pearn','Earnings'],['pwallet','Dompet mitra']];

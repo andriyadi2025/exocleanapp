@@ -17,6 +17,13 @@
     var hari = new Date().toISOString().slice(0, 10);
     return p.filter(function (x) { return x.aktif !== false && (!x.sampai || x.sampai >= hari); }).slice(-3).reverse();
   }
+  /* Kartu Akademi: kursus wajib yang belum tuntas (LMS). */
+  function kartuAkademi() {
+    if (!window.EXO_LMS) return '';
+    var a = aku(); var u = (window.EXO_DB && EXO_DB.ada() && a.id ? EXO_DB.find('users', a.id) : null) || { id:a.id || 'contoh_peserta', nama:a.name, jabatan:(a.tags || [])[0] || 'Cleaner', role:'worker' };
+    var wajib = EXO_LMS.wajibBelum(u); if (!wajib.length) return '';
+    return '<button class="card card-leaf gap-4" style="text-align:start;cursor:pointer;width:100%"' + aksi('ke', 'pbelajar') + '><div class="flex items-center gap-8"><span class="tag tag-accent">Akademi</span><span class="t-11 o-6">' + wajib.length + ' kursus wajib belum tuntas</span></div><div class="f-head t-15">' + esc(wajib[0].judul) + '</div><div class="t-115 o-7 lh-145">' + esc(wajib[0].jam) + ' jam · ' + esc(EXO_LMS.namaLevel(wajib[0].level)) + ' · selesaikan untuk membuka lebih banyak job →</div></button>';
+  }
   function kartuPengumuman() {
     var d = pengumumanKonsol(); if (!d.length) return '';
     var h = '';
@@ -31,6 +38,7 @@
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div></div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
     h += kartuPengumuman();
+    h += kartuAkademi();
     h += '<div class="card elev-md gap-11"><div class="flex items-center gap-8"><span class="tag tag-accent">Mulai 24 menit lagi</span><span style="margin-inline-start:auto" class="t-115 o-6">EXO-4471</span></div>' +
       '<div><div class="f-head t-16">Cleaning per jam · 3 jam</div><div class="t-12 o-7">Kemang Residence 12B · 2,1 km · Dewi A.</div></div>' +
       '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'proute') + '>Mulai rute</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'obrol') + '>Chat</button></div></div>';

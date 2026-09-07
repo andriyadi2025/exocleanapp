@@ -200,3 +200,11 @@ Modul baru ada di `js/exo-admin-modul.js`; semua tindakan berdampak (cuti, sanks
 ## Menu sesuai peran & unit (7 Sep 2026)
 
 Bilah samping hanya menggambar menu yang berhak: **super admin** semua menu; **supervisor** menu unit yang ditugaskan (bawaan Operasional, Accounting & Finance, HRD) + Persetujuan; **staf** menu unit yang ditugaskan (bawaan Operasional) + Persetujuan, tanpa menu IT. Roles, Admins, Integrasi, Cadangan & data, dan Appearance hanya untuk super admin. Navigasi lewat hash atau tombol ke menu yang tidak berhak ditolak dan dialihkan ke menu pertama yang boleh. Unit per akun ditugaskan super admin di Admins & akun (usulan tingkat tinggi) atau saat membuat akun baru; kartu profil menampilkan peran dan unit pengguna yang masuk.
+
+## Learning Management System — Akademi EXOCLEAN (7 Sep 2026)
+
+Pola Coursera: **kursus → modul → materi (video/bacaan/tautan) + kuis per modul**, level dasar/menengah/lanjutan dengan **prasyarat** yang mengunci kursus lanjutan, **kuis** pilihan ganda berambang lulus 80% dan maksimal 3 percobaan dengan penjelasan per soal, **jalur pembelajaran** per fungsi (cleaner, teknisi AC, pengasuh, juru masak, supervisor, staf kantor), progres per peserta, **sertifikat otomatis** (tabel `sertifikat`, berlaku 24 bulan), dan kursus **wajib** yang tampil sebagai pengingat di beranda mitra.
+
+- Mesin bersama `js/exo-lms.js` (7 kursus benih berisi materi SOP EXOCLEAN, 4 jalur); terbitan ke aplikasi lewat `exoclean_admin_pub.lms`.
+- Konsol admin → HRD → **Pembelajaran (LMS)**: ringkasan (tingkat penyelesaian, nilai), editor kursus lengkap (modul, materi, kuis, jawaban benar, prasyarat, target, wajib), jalur, peserta & progres. Terbit/tarik kursus lewat Persetujuan; **Belajar saya** untuk staf kantor.
+- Aplikasi mitra → tab **Akademi** (`js/exo-screens-belajar.js`): beranda dengan jalur & kursus wajib, detail kursus, pembaca materi (video YouTube/Vimeo diizinkan CSP), kuis dengan hasil dan pembahasan, sertifikat di profil.

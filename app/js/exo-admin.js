@@ -66,7 +66,7 @@ var ADMIN = (function () {
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['komunikasi','Komunikasi tim','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
-    ['HRD', 'hrd', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['penggajian','Penggajian karyawan','']]],
+    ['HRD', 'hrd', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran (LMS)',''], ['belajar','Belajar saya',''], ['penggajian','Penggajian karyawan','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
   ];
   var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
@@ -83,7 +83,7 @@ var ADMIN = (function () {
      integrasi, data, brand. Menu yang tidak berhak tidak digambar di bilah
      samping, dan tampilan yang dipanggil lewat hash ditolak. */
   var HANYA_SUPERADMIN = { roles:true, team:true, integrasi:true, data:true, brand:true };
-  var SELALU = { persetujuan:true };
+  var SELALU = { persetujuan:true, belajar:true };
   function penggunaKini() { return window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna ? EXO_ADMIN_AUTH.pengguna() : null; }
   function peranKini(u) { u = u || penggunaKini(); return (u && u.peran) || (u && u.role === 'admin' ? 'superadmin' : 'staf'); }
   function unitKini(u) {
@@ -121,6 +121,8 @@ var ADMIN = (function () {
     jadwal:['Jadwal & cuti','Ketersediaan mingguan mitra · cuti/izin disetujui lewat Persetujuan','Cuti baru'],
     pelatihan:['Pelatihan & sertifikasi','Kurikulum wajib per fungsi · sertifikat & dokumen kepatuhan · pengingat kedaluwarsa','Kursus baru'],
     kinerja:['Kinerja & sanksi','Rating, keluhan, inspeksi, ketepatan · poin pelanggaran 90 hari · penghargaan','Catat'],
+    lms:['Pembelajaran (LMS)','Kursus → modul → materi + kuis · level & prasyarat · jalur per fungsi · sertifikat otomatis · ala Coursera','Kursus baru'],
+    belajar:['Belajar saya','Akademi EXOCLEAN untuk staf kantor — kursus, kuis, sertifikat','Lanjutkan'],
     penggajian:['Penggajian karyawan','Gaji kantor · BPJS · PPh 21 · payroll bulanan lewat Persetujuan (tinggi)','Jalankan'],
     inventaris:['Inventaris & perlengkapan','Stok chemical, alat, APD · permintaan dari lapangan (H-005) · PO lewat Persetujuan','PO baru'],
     komunikasi:['Komunikasi tim','Pengumuman ke aplikasi mitra · target per fungsi/kota · disetujui sebelum tayang','Pengumuman'],
