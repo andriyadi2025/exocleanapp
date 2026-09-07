@@ -66,7 +66,7 @@ var ADMIN = (function () {
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['pelatihan','Pelatihan & sertifikasi',''], ['lms','Pembelajaran (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
-    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan','']]],
+    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan',''], ['ppob','Bayar & isi ulang (PPOB)','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
@@ -134,6 +134,7 @@ var ADMIN = (function () {
     integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
     data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
     pasar:['Marketplace perlengkapan','Mitra toko · produk & moderasi · pesanan · komisi 5% & pencairan · komplain · flash sale — pola Tokopedia','Verifikasi'],
+    ppob:['Bayar & isi ulang — Darmawisata H2H','Tagihan PLN/BPJS/PDAM & isi ulang pulsa/data/token dari EXO Wallet · deposit agen · pencocokan transaksi tertunda/ragu · biaya admin & margin','PIN'],
     keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],

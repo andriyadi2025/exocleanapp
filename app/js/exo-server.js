@@ -21,7 +21,7 @@
 var EXO_SERVER = (function () {
   'use strict';
 
-  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300' };
+  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400' };
   /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
      localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
      localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
@@ -157,6 +157,29 @@ var EXO_SERVER = (function () {
   function lacakKirim(id) { return ambil('kirim', '/api/kirim/tracking/' + encodeURIComponent(id)); }
   function cariArea(q) { return ambil('kirim', '/api/kirim/areas?q=' + encodeURIComponent(q)); }
 
+  /* -------------------------------------------------------- Darmawisata (PPOB/TopUp)
+     dwi-server.js memegang kredensial agen, daftar putih jalur, dan kunci
+     idempotensi. Browser hanya memanggil jalur baca lewat /call dan jalur uang
+     lewat /bayar; balasan memuat status HTTP supaya 202 (tertunda) dan 409
+     (berjalan/ragu) bisa dibedakan dari sukses. */
+  var infoDwi = null;
+  function dwiInfo(segar) {
+    if (infoDwi && !segar && Date.now() - infoDwi.at < 60000) return Promise.resolve(infoDwi.j);
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, 4000) : null;
+    return fetch(alamat().dwi + '/api/dwi/health', { signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.ok ? r.json() : { ok:false, siap:false }; }).catch(function () { return { ok:false, siap:false, offline:true }; })
+      .then(function (j) { if (timer) clearTimeout(timer); infoDwi = { at:Date.now(), j:j }; sehat.dwi = { ok:!!j.ok, at:Date.now() }; return j; });
+  }
+  function kirimStatus(nama, jalur, body) {
+    return fetch(alamat()[nama] + jalur, { method:'POST', headers:{ 'Content-Type': 'application/json' }, body:JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok:r.ok, status:r.status, data:j, error:r.ok ? '' : (j.error || ('HTTP ' + r.status)) }; }); })
+      .catch(function (e) { sehat[nama] = { ok:false, at:Date.now() }; return { ok:false, offline:true, status:0, data:{}, error:e.message }; });
+  }
+  function dwiCall(jalur, isi) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/call', { jalur:jalur, isi:isi || {} }).then(function (r) { r.mode = j.mode; return r; }); }); }
+  function dwiBayar(jalur, isi) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/bayar', { jalur:jalur, isi:isi || {} }); }); }
+  function dwiCocokkan(kunci) { return kirimStatus('dwi', '/api/dwi/cocokkan', { kunci:kunci }); }
+  function dwiSaldo() { return ambil('dwi', '/api/dwi/balance'); }
+  function dwiTransaksi() { return ambil('dwi', '/api/dwi/transaksi'); }
+
   /* Pemuat skrip pihak ketiga, sekali per URL. */
   var dimuat = {};
   function muatSkrip(url) {
@@ -170,5 +193,5 @@ var EXO_SERVER = (function () {
   }
 
   return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
-    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
+    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

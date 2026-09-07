@@ -46,11 +46,11 @@ var EXO_KEUANGAN = (function () {
 
   /* ------------------------------------------------------------ bagan akun */
   var COA = [
-    ['1100','Kas & bank','aset'], ['1110','Piutang gateway (settlement)','aset'], ['1200','Piutang usaha (kontrak)','aset'], ['1300','Uang muka & deposit','aset'],
+    ['1100','Kas & bank','aset'], ['1110','Piutang gateway (settlement)','aset'], ['1200','Piutang usaha (kontrak)','aset'], ['1300','Uang muka & deposit','aset'], ['1400','Deposit agen Darmawisata (PPOB)','aset'],
     ['2100','Utang upah mitra','liabilitas'], ['2200','Saldo dompet pelanggan','liabilitas'], ['2210','Kredit jaminan pelanggan','liabilitas'], ['2220','Cashback & poin belum ditukar','liabilitas'],
     ['2300','PPN keluaran','liabilitas'], ['2310','PPh 21/23 dipotong','liabilitas'], ['2400','Pendapatan diterima di muka (prabayar)','liabilitas'], ['2500','Dana pembeli marketplace ditahan','liabilitas'], ['2510','Utang ke mitra toko (marketplace)','liabilitas'],
     ['3100','Modal','ekuitas'], ['3200','Laba ditahan','ekuitas'],
-    ['4100','Pendapatan fee platform — pelanggan','pendapatan'], ['4110','Pendapatan fee platform — mitra','pendapatan'], ['4200','Pendapatan kontrak B2B','pendapatan'], ['4300','Pendapatan langganan & prabayar','pendapatan'], ['4120','Pendapatan biaya layanan marketplace','pendapatan'],
+    ['4100','Pendapatan fee platform — pelanggan','pendapatan'], ['4110','Pendapatan fee platform — mitra','pendapatan'], ['4200','Pendapatan kontrak B2B','pendapatan'], ['4300','Pendapatan langganan & prabayar','pendapatan'], ['4120','Pendapatan biaya layanan marketplace','pendapatan'], ['4130','Pendapatan biaya admin PPOB & isi ulang','pendapatan'],
     ['5100','Beban refund & kompensasi jaminan','beban'], ['5200','Beban voucher & cashback','beban'], ['5300','Beban gateway pembayaran','beban'], ['5400','Beban SMS/OTP & server','beban'],
     ['6100','Gaji & tunjangan kantor','beban'], ['6200','Chemical, alat & APD','beban'], ['6300','Pemasaran','beban'], ['6400','Sewa, utilitas & operasional','beban'], ['6500','Pelatihan & sertifikasi mitra','beban'], ['6900','Beban lain-lain','beban']
   ].map(function (a) { return { kode:a[0], nama:a[1], tipe:a[2], normal:(a[2] === 'aset' || a[2] === 'beban') ? 'debit' : 'kredit' }; });
@@ -136,6 +136,11 @@ var EXO_KEUANGAN = (function () {
         if (o.status === 'dibatalkan' && o.refund && dlm(o.dibatalkanAt || o.selesaiAt)) out.push({ id:'jtb_' + o.id, tgl:String(o.dibatalkanAt || o.selesaiAt).slice(0, 10), ref:o.no, ket:'Marketplace · refund ke dompet pembeli', sumber:src, baris:[{ akun:'2500', debit:o.refund, kredit:0 }, { akun:'2200', debit:0, kredit:o.refund }] });
       });
       EXO_DB.all('penarikanToko').forEach(function (p) { if (p.status === 'dibayar' && dlm(p.putusAt)) out.push({ id:'jtp_' + p.id, tgl:String(p.putusAt).slice(0, 10), ref:'Pencairan toko', ket:'Marketplace · pencairan saldo mitra toko', sumber:'otomatis', baris:[{ akun:'2510', debit:p.jumlah, kredit:0 }, { akun:'1100', debit:0, kredit:p.jumlah }] }); });
+    }
+    /* PPOB & isi ulang (EXO_PPOB): pelanggan bayar dari dompet (2200 turun);
+       harga penyedia memotong deposit agen (1400); biaya admin/margin → 4130. */
+    if (window.EXO_PPOB && window.EXO_DB) {
+      EXO_DB.all('ppobTx').forEach(function (t) { if (t.keadaan !== 'selesai' || !t.dompetDipotong || String(t.selesaiAt || t.at).slice(0, 7) !== bulan) return; var fee = t.biayaAdmin || 0; out.push({ id:'jp_' + t.id, tgl:String(t.selesaiAt || t.at).slice(0, 10), ref:t.penanda || t.kunci, ket:(t.jenis === 'ppob' ? 'Bayar tagihan ' : 'Isi ulang ') + t.produk + ' · ' + t.nomor, sumber:t.sumber === 'simulasi' ? 'contoh' : 'otomatis', baris:[{ akun:'2200', debit:t.total, kredit:0 }, { akun:'1400', debit:0, kredit:t.total - fee }, { akun:'4130', debit:0, kredit:fee }] }); });
     }
     /* Saldo awal (hanya mode contoh): kas escrow menutup kewajiban dompet,
        jaminan, poin, dan prabayar — tanpa ini mutasi dompet bulan berjalan

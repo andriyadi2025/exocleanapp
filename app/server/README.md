@@ -253,3 +253,49 @@ tanpa secret, server menolak webhook di `NODE_ENV=production`.
 CORS ketat (`ALLOWED_ORIGINS`), pembatas laju per IP (tarif 30/menit, pesanan kirim
 20/jam, baca 60/menit), badan JSON ≤ 64 kB, teks disaring, log tanpa PII.
 Penyimpanan `data/kirim.json` (refId → orderId, resi, status, riwayat).
+
+
+# dwi-server.js — Darmawisata Indonesia H2H (PPOB & isi ulang)
+
+Jembatan ke API H2H Darmawisata untuk **Bayar & Isi Ulang** di aplikasi pelanggan:
+tagihan (PLN, BPJS, PDAM, Telkom, internet, multifinance) dan TopUp (pulsa, data,
+token PLN, e-wallet). Jalur baca rumpun perjalanan ikut di daftar putih; jalur
+Booking/Issued sengaja tidak dibuka.
+
+## Kenapa di server
+Model **agen prabayar**: tiap transaksi memotong deposit perusahaan, dan password
+agen adalah kunci ke deposit itu. Password hanya di `.env`; yang dikirim ke
+Darmawisata adalah `securityCode = MD5(token + MD5(password))` per login, dan
+`accessToken` tidak pernah sampai ke browser. Server bukan proxy buta: hanya jalur
+di `DAFTAR_PUTIH` yang lewat, dan jalur yang memotong deposit hanya lewat
+`POST /api/dwi/bayar` yang punya **kunci idempotensi** (PPOB: `billingReferenceID`
+sekali pakai; TopUp: `MSISDN + productCode + sequence`) — klik ganda, coba-ulang,
+atau muat ulang halaman tidak pernah membayar dua kali.
+
+## Menjalankan
+```bash
+npm run start:dwi          # DWI_PORT, bawaan 4400
+```
+`DWI_BASE_URL` bawaan UAT (`uat-backup…`); alamat apa pun tanpa "uat" dianggap
+**produksi** dan memotong deposit sungguhan. `DWI_SIMULASI=1` memberi balasan tiruan
+(produk, tagihan, pembayaran, saldo) untuk pengembangan tanpa akun.
+
+## Endpoint
+| Method | Path | Kegunaan |
+|---|---|---|
+| GET | `/api/dwi/health` | siap?, mode uat/produksi/simulasi, sesi, jumlah jalur terbuka (tanpa rahasia) |
+| GET | `/api/dwi/balance` | sisa deposit agen |
+| POST | `/api/dwi/call` | `{jalur, isi}` jalur BACA berdaftar-putih (ProductGroup, Product, Inquiry, …) |
+| POST | `/api/dwi/bayar` | `{jalur, isi}` jalur UANG: 200 selesai · 202 tertunda · 409 berjalan/ragu · 400 ditolak |
+| POST | `/api/dwi/cocokkan` | `{kunci}` tanyakan nasib transaksi tertunda/ragu ke TransactionDetail |
+| GET | `/api/dwi/transaksi` | catatan idempotensi (untuk pencocokan admin) |
+
+Keadaan: **selesai** · **berjalan** (di udara, permintaan kedua ditolak) · **tertunda**
+(sudah masuk penyedia, status belum final — deposit bisa jadi terpotong) · **ragu**
+(putus tanpa jawaban). Tertunda dan ragu **tidak pernah diulang otomatis**; admin
+mencocokkan lewat konsol → Marketplace → Bayar & isi ulang. Catatan di
+`data/dwi-transaksi.json`.
+
+## Pengaman
+CORS ketat, pembatas laju (baca 60/menit, jalur uang 10 per 10 menit per IP), badan
+JSON ≤ 32 kB, teks disaring, log tanpa PII dan tanpa kredensial.

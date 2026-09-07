@@ -81,7 +81,7 @@
       (K.saldoTertahan ? '<div class="t-12 o-7" style="margin-top:4px">' + rp(K.saldoTertahan) + ' ' + esc(tx('held')) + ' · ' + rp(K.saldo) + ' ' + esc(tx('in total')) + ' · ' + esc(tx('charged when done')) + '</div>' : '') +
       '<div class="t-12 o-7" style="margin-top:4px">' + esc(tx('Includes Rp100.000 guarantee credit')) + '</div>' +
       '<div class="flex gap-8" style="margin-top:16px"><button class="btn btn-primary" style="flex:1"' + aksi('lembar', 'isi') + '>' + esc(t('topUp')) + '</button>' +
-      '<button class="btn btn-secondary btn-plain" style="flex:1"' + aksi('lembar', 'riwayat') + '>' + esc(t('history')) + '</button></div></div>';
+      '<button class="btn btn-secondary btn-plain" style="flex:1"' + aksi('lembar', 'riwayat') + '>' + esc(t('history')) + '</button></div>' + (window.EXO_PPOB ? '<button class="btn btn-secondary btn-plain btn-block" style="margin:8px 0 0"' + aksi('ke', 'tagihan') + '>🧾 Bayar tagihan & isi ulang pulsa →</button>' : '') + '</div>';
     h += '<div class="stack gap-14" style="padding:18px 20px 0"><div class="flex gap-10">' +
       '<div class="card" style="flex:1;gap:3px"><div class="f-head t-22">' + K.poin.toLocaleString('id-ID') + '</div><div class="t-115 o-65">' + esc(t('points')) + '</div></div>' +
       '<div class="card" style="flex:1;gap:3px"><div class="f-head t-22">Gold</div><div class="t-115 o-65">' + esc(tx('5% off every visit')) + '</div></div></div>';

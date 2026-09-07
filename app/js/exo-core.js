@@ -680,7 +680,7 @@ var ExoApp = (function () {
         h += '<button class="' + (KEADAAN.layar === daftar[i][0] ? 'on' : '') + '"' + aksi('lompat', daftar[i][0]) + '>' + esc(daftar[i][1]) + '</button>';
       }
     }
-    deret(D.JUMP_CUSTOMER); h += '<span class="sep"></span>'; deret(D.JUMP_PARTNER); if (D.JUMP_TOKO) { h += '<span class="sep"></span>'; deret(D.JUMP_TOKO); }
+    deret(D.JUMP_CUSTOMER); h += '<span class="sep"></span>'; deret(D.JUMP_PARTNER); if (D.JUMP_TOKO) { h += '<span class="sep"></span>'; deret(D.JUMP_TOKO); } if (D.JUMP_PPOB) deret(D.JUMP_PPOB);
     el.innerHTML = h;
   }
   /* ============================================== PENERJEMAH PASCA-RENDER

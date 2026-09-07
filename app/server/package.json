@@ -16,7 +16,9 @@
     "start:posisi": "node posisi-server.js",
     "dev:posisi": "node --watch posisi-server.js",
     "start:kirim": "node kirim-server.js",
-    "dev:kirim": "node --watch kirim-server.js"
+    "dev:kirim": "node --watch kirim-server.js",
+    "start:dwi": "node dwi-server.js",
+    "dev:dwi": "node --watch dwi-server.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

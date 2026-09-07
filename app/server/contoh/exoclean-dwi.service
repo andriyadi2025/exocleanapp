@@ -1,0 +1,41 @@
+# systemd unit — server kurir EXOCLEAN (jembatan Biteship), port 4400.
+# Salin ke /etc/systemd/system/exoclean-dwi.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now exoclean-dwi
+# Pengerasan proses sama dengan exoclean-pay.service.
+[Unit]
+Description=EXOCLEAN dwi server (Darmawisata H2H — PPOB & isi ulang)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=exoclean
+Group=exoclean
+WorkingDirectory=/var/www/exoclean/app/server
+EnvironmentFile=/var/www/exoclean/app/server/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node dwi-server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/var/www/exoclean/app/server/data
+LimitNOFILE=4096
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

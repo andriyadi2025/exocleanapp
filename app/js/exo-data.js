@@ -743,6 +743,7 @@ var EXO_DATA = (function () {
   var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
+  var JUMP_PPOB = [['tagihan','Bayar & isi ulang']];
   var JUMP_TOKO = [['tberanda','Seller Center'],['tpesanan','Pesanan toko'],['tproduk','Produk'],['tpromosi','Promosi'],['tchat','Chat & ulasan'],['tkeuangan','Keuangan toko'],['tstatistik','Statistik'],['tskor','Skor toko'],['tpengaturan','Pengaturan toko'],['tdaftar','Buka toko']];
   var JUMP_PARTNER  = [['preg','Daftar mitra'],['pjobs','Job feed'],['pjob','Active job'],['proute','Route'],['psop','SOP checklist'],['preport','Before-after'],['pearn','Earnings'],['pwallet','Dompet mitra']];
 
@@ -760,7 +761,7 @@ var EXO_DATA = (function () {
     RADII: RADII, RADIUS_JOBS: RADIUS_JOBS, RADIUS_TRAVEL: RADIUS_TRAVEL, REPORT_AREAS: REPORT_AREAS,
     SOP_META: SOP_META, PPE_LABELS: PPE_LABELS, FINDINGS: FINDINGS, ALUR: ALUR, ALUR_META: ALUR_META, TAHAN_DANA: TAHAN_DANA, LANGGANAN: LANGGANAN,
     WILAYAH: WILAYAH, ADDR_ORDER: ADDR_ORDER, ADDR_LABELS: ADDR_LABELS, COVERAGE: COVERAGE,
-    TABS_CUSTOMER: TABS_CUSTOMER, TABS_PARTNER: TABS_PARTNER, TAB_SCREENS: TAB_SCREENS, PARTNER_SCREENS: PARTNER_SCREENS, TABS_TOKO: TABS_TOKO, TOKO_SCREENS: TOKO_SCREENS, JUMP_TOKO: JUMP_TOKO,
+    TABS_CUSTOMER: TABS_CUSTOMER, TABS_PARTNER: TABS_PARTNER, TAB_SCREENS: TAB_SCREENS, PARTNER_SCREENS: PARTNER_SCREENS, TABS_TOKO: TABS_TOKO, TOKO_SCREENS: TOKO_SCREENS, JUMP_TOKO: JUMP_TOKO, JUMP_PPOB: JUMP_PPOB,
     JUMP_CUSTOMER: JUMP_CUSTOMER, JUMP_PARTNER: JUMP_PARTNER
   };
 })();

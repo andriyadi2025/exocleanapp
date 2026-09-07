@@ -39,6 +39,11 @@ var EXO_DB = (function () {
   function emit() { listeners.forEach(function (f) { try { f(); } catch (e) { /* abaikan */ } }); }
   function onChange(fn) { listeners.push(fn); }
   function init() { if (!state) { state = load(); if (!state) { state = blank(); save(true); } } return state; }
+  /* Lintas tab: tab lain (mis. konsol admin dan aplikasi) menulis kunci yang
+     sama. Tanpa ini tiap tab memegang salinan lama dan penulis terakhir
+     menimpa perubahan tab lain. Saat 'storage' berbunyi, salinan di memori
+     dimuat ulang dari localStorage lalu pendengar diberi tahu. */
+  try { window.addEventListener('storage', function (e) { if (e.key !== KEY || !e.newValue || saveTimer) return; var p = load(); if (p) { state = p; emit(); } }); } catch (e) { /* tanpa window */ }
   function all(table) { return ((state || {})[table] || []).slice(); }
   function find(table, id) { var rows = (state || {})[table] || []; for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i]; return null; }
   function where(table, pred) {
