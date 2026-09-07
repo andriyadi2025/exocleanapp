@@ -18,7 +18,7 @@
      digambar; hasilnya dipetakan ke K.tokoTarif[tokoId] lalu layar digambar ulang. */
   function muatTarif(r) {
     if (!window.EXO_SERVER || !EXO_SERVER.tarifKirim) return;
-    var a = X.alamatKini(), kunci = JSON.stringify([K.keranjang, a && a.id]);
+    var a = X.alamatKini(), kunci = JSON.stringify([K.keranjang.filter(function (it) { return it.pilih !== false; }), a && a.id]);
     if (kunci === K.tokoTarifKunci) return; K.tokoTarifKunci = kunci; K.tokoTarifStatus = 'memuat';
     var tugas = r.toko.filter(function (g) { return g.toko.kodePos || typeof g.toko.lat === 'number'; }).map(function (g) {
       return EXO_SERVER.tarifKirim({ kodePos:g.toko.kodePos, lat:g.toko.lat, lng:g.toko.lng }, { lat:a && a.point ? a.point.lat : undefined, lng:a && a.point ? a.point.lng : undefined, kodePos:a && a.kodePos }, g.items.map(function (it) { return { name:it.nama, value:it.harga, quantity:it.qty, weight:it.berat }; }), g.toko.kurirKode).then(function (res) {
@@ -34,7 +34,7 @@
   function badgeToko(t) { return t.badge === 'official' ? '<span class="tag tag-accent">Official Store</span>' : t.badge === 'power' ? '<span class="tag tag-accent-2">Power Merchant</span>' : '<span class="tag tag-neutral">Toko</span>'; }
   function statusTag(s) { var m = { baru:'tag-accent', diproses:'tag-accent-2', dikirim:'tag-accent-2', selesai:'tag-neutral', dibatalkan:'tag-neutral', komplain:'tag-accent' }; return '<span class="tag ' + (m[s] || 'tag-neutral') + '">' + esc(T().labelStatus(s)) + '</span>'; }
   function jumlahKeranjang() { return K.keranjang.reduce(function (n, it) { return n + it.qty; }, 0); }
-  function tombolKeranjang() { var n = jumlahKeranjang(); return '<button class="btn btn-icon btn-secondary btn-plain" style="position:relative"' + aksi('ke', 'keranjang') + ' aria-label="Keranjang">🛒' + (n ? '<span class="tag tag-accent" style="position:absolute;top:-6px;right:-6px;padding:1px 6px;font-size:10px">' + n + '</span>' : '') + '</button>'; }
+  function tombolKeranjang() { var n = jumlahKeranjang(); return '<button class="btn btn-icon btn-secondary btn-plain" style="position:relative"' + aksi('ke', 'keranjangDaftar') + ' aria-label="Keranjang">🛒' + (n ? '<span class="tag tag-accent" style="position:absolute;top:-6px;right:-6px;padding:1px 6px;font-size:10px">' + n + '</span>' : '') + '</button>'; }
 
   /* ================================================================ PEMBELI */
   X.LAYAR.toko = function () {
@@ -77,9 +77,10 @@
   };
   A.tokoVarian = function (v) { K.tokoVarian = v; K.tokoQty = 1; };
   A.tokoQty = function (d) { var p = T().produk(K.tokoProdukId), v = p.varian.filter(function (x) { return x.nama === K.tokoVarian; })[0] || p.varian[0]; K.tokoQty = Math.max(1, Math.min(v.stok, K.tokoQty + Number(d))); };
-  function tambah() { var ada = K.keranjang.filter(function (it) { return it.produkId === K.tokoProdukId && it.varian === K.tokoVarian; })[0]; if (ada) ada.qty += K.tokoQty; else K.keranjang.push({ produkId:K.tokoProdukId, varian:K.tokoVarian, qty:K.tokoQty }); }
+  function tambah() { var ada = K.keranjang.filter(function (it) { return it.produkId === K.tokoProdukId && it.varian === K.tokoVarian; })[0]; if (ada) { ada.qty += K.tokoQty; ada.pilih = true; } else K.keranjang.push({ produkId:K.tokoProdukId, varian:K.tokoVarian, qty:K.tokoQty, pilih:true }); }
   A.tokoTambahKeranjang = function () { tambah(); X.sekilas('Masuk keranjang · ' + jumlahKeranjang() + ' barang.'); };
-  A.tokoBeliSekarang = function () { tambah(); K.layar = 'keranjang'; };
+  A.tokoBeliSekarang = function () { K.keranjang.forEach(function (it) { it.pilih = false; }); tambah(); K.layar = 'keranjang'; };
+  function terpilih() { return K.keranjang.filter(function (it) { return it.pilih !== false; }); }
 
   /* Estimasi tiba dari teks etd kurir ("2 - 3 hari", "1 hari", "1 - 3 jam", "besok"). */
   function estimasiTiba(etd) {
@@ -91,9 +92,9 @@
   function kotak(on) { return '<span class="' + (on ? 'tag tag-accent' : 'tag tag-neutral') + '" style="width:22px;height:22px;padding:0;display:inline-grid;place-items:center;border-radius:6px">' + (on ? '✓' : '') + '</span>'; }
   X.LAYAR.keranjang = function () {
     var o = K.tokoOpsi, alamat = X.alamatKini();
-    var h = '<div class="screen">' + X.kepala('Checkout', jumlahKeranjang() + ' barang', 'toko') + '<div class="stack gap-12 pad-x18">';
-    if (!K.keranjang.length) return h + '<div class="card elev-sm t-125 o-7">Keranjang kosong. <button class="btn btn-ghost t-125"' + aksi('ke', 'toko') + '>Lihat produk →</button></div></div></div>';
-    var r = T().hitungKeranjang(K.keranjang, K.tokoKupon, K.tokoKurir, K.tokoTarif, opsiCheckout()); muatTarif(r); var R = r.ringkas;
+    var h = '<div class="screen">' + X.kepala('Checkout', terpilih().reduce(function (n, it) { return n + it.qty; }, 0) + ' barang', 'keranjangDaftar') + '<div class="stack gap-12 pad-x18">';
+    if (!terpilih().length) return h + '<div class="card elev-sm t-125 o-7">Keranjang kosong. <button class="btn btn-ghost t-125"' + aksi('ke', 'toko') + '>Lihat produk →</button></div></div></div>';
+    var r = T().hitungKeranjang(terpilih(), K.tokoKupon, K.tokoKurir, K.tokoTarif, opsiCheckout()); muatTarif(r); var R = r.ringkas;
     if (R.diskonOngkir) h += '<div class="flex items-center gap-8 t-125 c-leaf-800"><span class="tag tag-accent">🚚 Gratis ongkir</span><span>untuk pesanan ini · hemat ' + rp(R.diskonOngkir) + '</span></div>';
     /* alamat */
     h += '<button class="card elev-sm gap-3" style="text-align:start;cursor:pointer;width:100%"' + aksi('lembar', 'alamat') + '><div class="flex items-center gap-8"><span class="t-115 up o-6 grow">Alamat pengiriman kamu</span><span class="o-6">›</span></div><div class="t-135 bold">📍 ' + esc(alamat.label) + ' · ' + esc(pembeli().nama) + '</div><div class="t-115 o-7 lh-145">' + esc(alamat.full) + '</div></button>';
@@ -139,18 +140,18 @@
   A.tokoKurir = function (v) { var p = String(v).split('|'); if (typeof K.tokoKurir !== 'object' || !K.tokoKurir) K.tokoKurir = {}; K.tokoKurir[p[0]] = p[1]; };
   A.tokoPinBatal = function () { K.tokoPinOpen = false; K.payPin = ''; };
   A.tokoBayar = function () {
-    var o = K.tokoOpsi, r = T().hitungKeranjang(K.keranjang, K.tokoKupon, K.tokoKurir, K.tokoTarif, opsiCheckout()); if (r.galat.length) { X.sekilas(r.galat[0], 'err'); return; }
+    var o = K.tokoOpsi, r = T().hitungKeranjang(terpilih(), K.tokoKupon, K.tokoKurir, K.tokoTarif, opsiCheckout()); if (r.galat.length) { X.sekilas(r.galat[0], 'err'); return; }
     if (o.metode === 'wallet') {
       if (!K.tokoPinOpen) { K.tokoPinOpen = true; K.payPin = ''; return; }
       if (K.payPin.length < 6) return;
       if (r.total > X.saldoTersedia()) { X.sekilas('EXO Wallet kurang ' + rp(r.total - X.saldoTersedia()) + '. Isi saldo dulu atau pilih metode lain.', 'err'); K.tokoPinOpen = false; K.payPin = ''; return; }
     }
     try {
-      var hasil = T().checkout(K.keranjang, K.tokoKupon, K.tokoKurir, pembeli(), X.alamatKini().full, '', K.tokoTarif, opsiCheckout());
+      var hasil = T().checkout(terpilih(), K.tokoKupon, K.tokoKurir, pembeli(), X.alamatKini().full, '', K.tokoTarif, opsiCheckout());
       if (hasil.poinDipakai) K.poin = Math.max(0, (K.poin || 0) - hasil.poinDipakai);
       if (hasil.metode === 'wallet') { K.saldo -= hasil.total; K.mutasi.unshift({ label:'Belanja perlengkapan · ' + hasil.pesanan.map(function (x) { return x.no; }).join(', '), date:'today · ditahan sampai diterima', amount:-hasil.total }); X.sekilas('Pembayaran berhasil · ' + hasil.pesanan.length + ' pesanan dibuat. Toko akan memproses.'); }
       else X.sekilas('Pesanan dibuat · selesaikan pembayaran ' + rp(hasil.total) + ' via ' + hasil.metode.toUpperCase() + ' (simulasi gateway).');
-      K.keranjang = []; K.tokoKupon = ''; K.tokoPinOpen = false; K.payPin = ''; K.tokoOpsi = { asuransi:{}, proteksi:{}, poin:false, metode:'wallet', catatan:{}, kurirBuka:{}, promoBuka:false }; K.tokoTab = 'berjalan'; K.layar = 'pesananToko';
+      K.keranjang = K.keranjang.filter(function (it) { return it.pilih === false; }); K.keranjang.forEach(function (it) { it.pilih = true; }); K.tokoKupon = ''; K.tokoPinOpen = false; K.payPin = ''; K.tokoOpsi = { asuransi:{}, proteksi:{}, poin:false, metode:'wallet', catatan:{}, kurirBuka:{}, promoBuka:false }; K.tokoTab = 'berjalan'; K.layar = 'pesananToko';
     } catch (e) { X.sekilas(e.message, 'err'); }
   };
   A.tokoBayarGateway = function (batch) { var n = T().konfirmasiBayar(batch); X.sekilas(n ? 'Pembayaran diterima (simulasi gateway) · ' + n + ' pesanan diteruskan ke toko.' : 'Tidak ada pesanan menunggu bayar.'); };

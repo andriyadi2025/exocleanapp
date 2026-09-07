@@ -744,7 +744,7 @@ var EXO_DATA = (function () {
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
   var JUMP_PPOB = [['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['perjalananPesanan','Permintaan perjalanan']];
-  var JUMP_TOKO = [['tberanda','Seller Center'],['tpesanan','Pesanan toko'],['tproduk','Produk'],['tpromosi','Promosi'],['tchat','Chat & ulasan'],['tkeuangan','Keuangan toko'],['tstatistik','Statistik'],['tskor','Skor toko'],['tpengaturan','Pengaturan toko'],['tdaftar','Buka toko']];
+  var JUMP_TOKO = [['tberanda','Seller Center'],['tpesanan','Pesanan toko'],['tproduk','Produk'],['tpromosi','Promosi'],['tchat','Chat & ulasan'],['tkeuangan','Keuangan toko'],['keranjangDaftar','Keranjang'],['tstatistik','Statistik'],['tskor','Skor toko'],['tpengaturan','Pengaturan toko'],['tdaftar','Buka toko']];
   var JUMP_PARTNER  = [['preg','Daftar mitra'],['pjobs','Job feed'],['pjob','Active job'],['proute','Route'],['psop','SOP checklist'],['preport','Before-after'],['pearn','Earnings'],['pwallet','Dompet mitra']];
 
   return {

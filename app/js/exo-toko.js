@@ -67,7 +67,7 @@ var EXO_TOKO = (function () {
       ['exoclean-official','Kantong sampah 60 L (roll 20)','habis',28000,200,'Tebal 30 mikron, hitam.',[['Roll 20',28000,200],['Roll 50',60000,80]],'Habis pakai',false,'🗑️',890,4.8]
     ];
     var prodIds = [];
-    P.forEach(function (x, i) { var r = d.insert('produk', { tokoId:peta[x[0]], nama:x[1], kategori:x[2], harga:x[3], stok:x[4], deskripsi:x[5], varian:x[6].map(function (v) { return { nama:v[0], harga:v[1], stok:v[2] }; }), etalase:x[7], unggulan:x[8], ikon:x[9], terjual:x[10], rating:x[11], status:'aktif', berat:500 + Math.round(acak(i) * 4000), diskonPct:i % 5 === 0 ? 10 : 0, createdAt:hariLalu(60 - i) }); prodIds.push(r); });
+    P.forEach(function (x, i) { var r = d.insert('produk', { tokoId:peta[x[0]], nama:x[1], kategori:x[2], harga:x[3], stok:x[4], deskripsi:x[5], varian:x[6].map(function (v) { return { nama:v[0], harga:v[1], stok:v[2] }; }), etalase:x[7], unggulan:x[8], ikon:x[9], terjual:x[10], rating:x[11], status:'aktif', berat:500 + Math.round(acak(i) * 4000), diskonPct:i % 5 === 0 ? 10 : i === 12 ? 15 : 0, kondisi:i === 13 ? 'bekas' : 'baru', preorder:i === 9, createdAt:hariLalu(60 - i * 4) }); prodIds.push(r); });
     /* pesanan contoh */
     var pembeli = ['Dewi Anggraini','Rangga Pratama','Maya Sari','Intan Kusuma','Farah Nabila','PT Karya Mitra'], status = ['selesai','selesai','selesai','dikirim','diproses','baru','selesai','komplain','dibatalkan','selesai','selesai','baru'];
     for (var k = 0; k < 12; k++) {
@@ -87,13 +87,43 @@ var EXO_TOKO = (function () {
   }
 
   /* ------------------------------------------------------------ katalog */
-  function semuaToko() { var d = db(); if (d) semai(); return d ? d.all('toko') : []; }
+  function semuaToko() { var d = db(); if (d) { semai(); if (!semaiTambahan) { semaiTambahan = true; d.all('produk').forEach(function (p, i) { if (p.kondisi === undefined) d.update('produk', p.id, { kondisi:'baru', preorder:!!p.preorder }); }); } } return d ? d.all('toko') : []; }
+  var semaiTambahan = false;
   function toko(id) { var d = db(); return d ? d.find('toko', id) : null; }
   function produkToko(tokoId, semuaStatus) { var d = db(); return d ? d.all('produk').filter(function (p) { return p.tokoId === tokoId && (semuaStatus || p.status === 'aktif'); }) : []; }
   function katalog(q, kategori) {
     var d = db(); if (d) semai(); var aktifToko = {}; semuaToko().forEach(function (t) { if (t.status === 'aktif') aktifToko[t.id] = t; });
     var s = String(q || '').toLowerCase();
     return (d ? d.all('produk') : []).filter(function (p) { return p.status === 'aktif' && aktifToko[p.tokoId] && (!kategori || kategori === 'semua' || p.kategori === kategori) && (!s || p.nama.toLowerCase().indexOf(s) >= 0 || (p.deskripsi || '').toLowerCase().indexOf(s) >= 0); }).map(function (p) { return Object.assign({ toko:aktifToko[p.tokoId] }, p); }).sort(function (a, b) { return (b.unggulan - a.unggulan) || (b.terjual - a.terjual); });
+  }
+  /* ---- jelajah ala marketplace: filter, urutkan, rekomendasi ---- */
+  function jarakKm(a, b) { if (!a || !b || typeof a.lat !== 'number' || typeof b.lat !== 'number') return null; var R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180, x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2); return Math.round(2 * R * Math.asin(Math.sqrt(x)) * 10) / 10; }
+  function kuponPerToko() { var d = db(), out = {}, hari = new Date().toISOString().slice(0, 10); (d ? d.all('kuponToko') : []).forEach(function (k) { if (k.aktif && k.terpakai < k.kuota && (!k.sampai || k.sampai >= hari)) out[k.tokoId] = true; }); return out; }
+  function katalogFilter(q, kategori, f, titik) {
+    f = f || {}; var kupon = kuponPerToko(), semua = katalog(q, kategori).map(function (p) { p.adaKupon = !!kupon[p.tokoId]; p.jarakKm = titik ? jarakKm(titik, p.toko) : null; p.hargaJual = hargaSetelahDiskon(p, null); return p; }), kini = Date.now();
+    var daftar = semua.filter(function (p) {
+      if (f.gratisOngkir && p.hargaJual < ATURAN.gratisOngkirMin) return false;
+      if (f.radius && (p.jarakKm == null || p.jarakKm > f.radius)) return false;
+      if (f.kota && f.kota.length && f.kota.indexOf(p.toko.kota) < 0) return false;
+      if (f.jenis && f.jenis.length && f.jenis.indexOf(p.toko.badge) < 0) return false;
+      if (f.hargaMin && p.hargaJual < Number(f.hargaMin)) return false; if (f.hargaMaks && p.hargaJual > Number(f.hargaMaks)) return false;
+      if (f.rating4 && (p.rating || 0) < 4) return false;
+      if (f.diskon && !p.diskonPct) return false; if (f.kupon && !p.adaKupon) return false;
+      if (f.kondisi && f.kondisi.length && f.kondisi.indexOf(p.kondisi || 'baru') < 0) return false;
+      if (f.hari && (kini - new Date(p.createdAt).getTime()) > f.hari * 86400000) return false;
+      if (f.stok && p.stok <= 0) return false; if (f.preorder && !p.preorder) return false;
+      if (f.durasi && f.durasi.length) { var kr = p.toko.kurir || []; var ok = (f.durasi.indexOf('instan') >= 0 && kr.indexOf('kilat') >= 0 && p.jarakKm != null && p.jarakKm <= 20) || (f.durasi.indexOf('sameday') >= 0 && kr.indexOf('kilat') >= 0) || (f.durasi.indexOf('ambil') >= 0 && kr.indexOf('ambil') >= 0); if (!ok) return false; }
+      return true;
+    });
+    var urut = f.urut || 'terkait';
+    daftar.sort(function (a, b) { switch (urut) { case 'terbaru': return String(b.createdAt).localeCompare(String(a.createdAt)); case 'terlaris': return (b.terjual || 0) - (a.terjual || 0); case 'termurah': return a.hargaJual - b.hargaJual; case 'termahal': return b.hargaJual - a.hargaJual; case 'rating': return (b.rating || 0) - (a.rating || 0) || (b.terjual || 0) - (a.terjual || 0); default: return (b.unggulan - a.unggulan) || (b.terjual || 0) - (a.terjual || 0); } });
+    return { daftar:daftar, semua:semua, kuponToko:kupon };
+  }
+  function infoFilter() { var semua = katalog('', 'semua').map(function (p) { return hargaSetelahDiskon(p, null); }).sort(function (a, b) { return a - b; }), kota = {}; semuaToko().forEach(function (t) { if (t.status === 'aktif' && t.kota) kota[t.kota] = 1; }); var n = semua.length, t1 = semua[Math.floor(n / 3)] || 0, t2 = semua[Math.floor(2 * n / 3)] || 0; return { kota:Object.keys(kota), preset:n ? [[semua[0], t1], [t1, t2], [t2, semua[n - 1]]] : [] }; }
+  function rekomendasi(dilihatIds, keranjang, n) {
+    var semua = katalog('', 'semua'), kat = {}, kecuali = {}; (dilihatIds || []).forEach(function (id) { kecuali[id] = 1; var p = semua.filter(function (x) { return x.id === id; })[0]; if (p) kat[p.kategori] = 1; }); (keranjang || []).forEach(function (it) { kecuali[it.produkId] = 1; var p = semua.filter(function (x) { return x.id === it.produkId; })[0]; if (p) kat[p.kategori] = 1; });
+    var kandidat = semua.filter(function (p) { return !kecuali[p.id]; }).sort(function (a, b) { var ka = kat[a.kategori] ? 1 : 0, kb = kat[b.kategori] ? 1 : 0; return (kb - ka) || (b.rating || 0) - (a.rating || 0) || (b.terjual || 0) - (a.terjual || 0); });
+    return kandidat.slice(0, n || 6);
   }
   function produk(id) { var d = db(); var p = d ? d.find('produk', id) : null; if (!p) return null; return Object.assign({ toko:toko(p.tokoId) }, p); }
   function hargaSetelahDiskon(p, v) { var dasar = v ? v.harga : p.harga; return p.diskonPct ? Math.round(dasar * (100 - p.diskonPct) / 100 / 100) * 100 : dasar; }
@@ -224,6 +254,6 @@ var EXO_TOKO = (function () {
   }
 
   return { BIAYA_LAYANAN:BIAYA_LAYANAN, KATEGORI:KATEGORI, KURIR:KURIR, ALUR_STATUS:ALUR_STATUS, rp:rp, namaKategori:namaKategori, kurir:kurir, labelStatus:labelStatus, semai:semai, semuaToko:semuaToko, toko:toko, produkToko:produkToko, katalog:katalog, produk:produk, hargaSetelahDiskon:hargaSetelahDiskon, ulasan:ulasan,
-    ATURAN:ATURAN, hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, konfirmasiBayar:konfirmasiBayar, batalMenungguBayar:batalMenungguBayar, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
+    ATURAN:ATURAN, katalogFilter:katalogFilter, infoFilter:infoFilter, rekomendasi:rekomendasi, jarakKm:jarakKm, hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, konfirmasiBayar:konfirmasiBayar, batalMenungguBayar:batalMenungguBayar, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
     simpanProduk:simpanProduk, ubahStatusProduk:ubahStatusProduk, kuponToko:kuponToko, simpanKupon:simpanKupon, chatToko:chatToko, balasChat:balasChat, kirimChatPembeli:kirimChatPembeli, keuanganToko:keuanganToko, ajukanPenarikan:ajukanPenarikan, putusPenarikan:putusPenarikan, skorToko:skorToko, statistikToko:statistikToko, simpanPengaturan:simpanPengaturan, daftarToko:daftarToko, verifikasiToko:verifikasiToko, penalti:penalti, ringkasanAdmin:ringkasanAdmin, uid:uid };
 })();
