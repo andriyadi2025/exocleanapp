@@ -45,6 +45,7 @@ var EXO_LMS = (function () {
   function soal(t, p, j, x) { return { id:uid('so'), tanya:t, pilihan:p, jawaban:j, penjelasan:x || '' }; }
   function bacaan(judul, isi, menit) { return { id:uid('mt'), jenis:'bacaan', judul:judul, isi:isi, menit:menit || 5 }; }
   function video(judul, url, menit) { return { id:uid('mt'), jenis:'video', judul:judul, url:url || '', menit:menit || 8 }; }
+  function tautan(judul, url, isi, menit) { return { id:uid('mt'), jenis:'tautan', judul:judul, url:url || '', isi:isi || '', menit:menit || 5 }; }
   function modul(judul, materi, kuis) { return { id:uid('md'), judul:judul, materi:materi, kuis:kuis ? Object.assign({ id:uid('kz'), judul:'Kuis: ' + judul, lulus:80, maksPercobaan:3 }, kuis) : null }; }
   function BENIH() {
     var k3 = { kode:'LMS-001', judul:'K3 & APD dasar untuk petugas lapangan', level:'dasar', target:['semua'], jam:2, wajib:true, kompetensi:['APD','Ergonomi','Bahan kimia'], prasyarat:[], deskripsi:'Kursus wajib pertama: mengenali bahaya di lokasi pelanggan, memakai APD dengan benar, dan bertindak saat kecelakaan kecil. Selesaikan sebelum job pertama.',
@@ -90,11 +91,27 @@ var EXO_LMS = (function () {
     terbitkanSemua(); return true;
   }
 
+  /* ------------------------------------------------------------ katalog materi terbuka (exo-lms-katalog.js) */
+  function perbaruiKatalog() {
+    var d = db(), K = window.EXO_LMS_KATALOG; if (!d || !K) return false;
+    var rev = Number(d.setting('lmsKatalogRev') || 0); if (rev >= K.rev) return false;
+    var b = K.bangun({ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal }), ada = {}, n = 0;
+    d.all('kursus').forEach(function (k) { ada[k.kode] = k; });
+    b.kursus.forEach(function (k) { if (ada[k.kode]) return; var r = d.insert('kursus', Object.assign({ status:'terbit', rev:1, terbitAt:kini(), oleh:'Katalog terbuka', masaBerlakuBulan:24, katalogRev:K.rev }, k)); ada[k.kode] = r; n++; });
+    Object.keys(b.tambahModul).forEach(function (kode) { var k = ada[kode]; if (!k || (k.katalogRev || 0) >= K.rev) return; d.update('kursus', k.id, { modul:(k.modul || []).concat(b.tambahModul[kode]), katalogRev:K.rev, rev:(k.rev || 1) + 1 }); n++; });
+    var semuaJalur = d.all('jalur'), petaJalur = {}; semuaJalur.forEach(function (j) { petaJalur[j.kode] = j; });
+    Object.keys(b.jalur).forEach(function (kode) { var j = petaJalur[kode]; if (!j) return; var kursusKode = (j.kursus || []).slice(); b.jalur[kode].forEach(function (kd) { if (kursusKode.indexOf(kd) < 0 && ada[kd]) kursusKode.push(kd); }); d.update('jalur', j.id, { kursus:kursusKode, kursusIds:kursusKode.map(function (kd) { return ada[kd] && ada[kd].id; }).filter(Boolean) }); });
+    b.jalurBaru.forEach(function (j) { if (petaJalur[j.kode]) return; d.insert('jalur', Object.assign({}, j, { kursusIds:j.kursus.map(function (kd) { return ada[kd] && ada[kd].id; }).filter(Boolean) })); });
+    d.setting('lmsKatalogRev', K.rev); terbitkanSemua();
+    if (d.log) d.log(null, 'Katalog materi LMS rev ' + K.rev + ' diterapkan (' + n + ' kursus baru/diperkaya)', 'lms', '');
+    return true;
+  }
+
   /* ------------------------------------------------------------ katalog */
-  function semuaKursus() { var d = db(); if (d) semai(); return d ? d.all('kursus') : []; }
+  function semuaKursus() { var d = db(); if (d) { semai(); perbaruiKatalog(); } return d ? d.all('kursus') : []; }
   function kursus(id) { var d = db(); return d ? d.find('kursus', id) : null; }
   function kursusKode(kode) { return semuaKursus().filter(function (k) { return k.kode === kode; })[0] || null; }
-  function jalur() { var d = db(); if (d) semai(); return d ? d.all('jalur') : []; }
+  function jalur() { var d = db(); if (d) { semai(); perbaruiKatalog(); } return d ? d.all('jalur') : []; }
   /* yang tayang ke peserta: terbitan (pub) bila ada, kalau tidak kursus berstatus terbit */
   function katalog() { var p = bacaPub().lms; if (p && p.kursus) return p.kursus; return semuaKursus().filter(function (k) { return k.status === 'terbit'; }); }
   function terbitkanSemua() { var p = bacaPub(); p.lms = { kursus:semuaKursus().filter(function (k) { return k.status === 'terbit'; }).map(salin), jalur:jalur().map(salin), at:kini() }; tulisPub(p); }
@@ -168,6 +185,6 @@ var EXO_LMS = (function () {
   }
   function pesertaSemua() { var d = db(); if (!d) return []; var byUser = {}; d.all('pendaftaran').forEach(function (p) { var u = d.find('users', p.userId); var k = d.find('kursus', p.kursusId); var s = byUser[p.userId] = byUser[p.userId] || { userId:p.userId, nama:u ? u.nama : p.userId, fungsi:namaFungsi(fungsiDari(u)), kursus:[] }; s.kursus.push({ kode:k ? k.kode : '?', judul:k ? k.judul : '?', status:p.status, persen:k ? hitung(k, p).persen : 0, nilai:p.nilaiAkhir }); }); return Object.keys(byUser).map(function (k) { return byUser[k]; }); }
 
-  return { LEVEL:LEVEL, FUNGSI:FUNGSI, namaLevel:namaLevel, namaFungsi:namaFungsi, fungsiDari:fungsiDari, semai:semai, semuaKursus:semuaKursus, kursus:kursus, kursusKode:kursusKode, jalur:jalur, katalog:katalog, terbitkanSemua:terbitkanSemua, terbitkan:terbitkan, tarik:tarik, simpan:simpan, periksa:periksa,
+  return { LEVEL:LEVEL, FUNGSI:FUNGSI, namaLevel:namaLevel, namaFungsi:namaFungsi, fungsiDari:fungsiDari, semai:semai, perbaruiKatalog:perbaruiKatalog, bahan:{ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal }, semuaKursus:semuaKursus, kursus:kursus, kursusKode:kursusKode, jalur:jalur, katalog:katalog, terbitkanSemua:terbitkanSemua, terbitkan:terbitkan, tarik:tarik, simpan:simpan, periksa:periksa,
     pendaftaran:pendaftaran, daftar:daftar, progres:progres, terkunci:terkunci, tandaiMateri:tandaiMateri, nilaiKuis:nilaiKuis, untukPeserta:untukPeserta, jalurUntuk:jalurUntuk, wajibBelum:wajibBelum, sertifikatPeserta:sertifikatPeserta, statistik:statistik, pesertaSemua:pesertaSemua, uid:uid };
 })();
