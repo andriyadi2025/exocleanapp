@@ -236,6 +236,7 @@ tarif statis (Reguler/Kilat/Ambil di toko).
 | GET | `/api/kirim/areas?q=` | cari kelurahan / kode pos |
 | POST | `/api/kirim/rates` | `{dari:{kodePos|lat,lng}, ke:{…}, items:[{name,value,quantity,weight}], kurir:[…]}` → `{opsi:[…]}` |
 | POST | `/api/kirim/orders` | `{refId, kurir, layanan, dari, ke, items}` → `{orderId, resi, status}`; idempoten per `refId` |
+| GET | `/api/kirim/daftar` | daftar pesanan kirim tersimpan (untuk konsol admin → H2H → Kurir) |
 | GET | `/api/kirim/status/:ref` | status tersimpan (diperbarui webhook; disegarkan dari Biteship bila > 10 menit) |
 | GET | `/api/kirim/tracking/:id` | riwayat langsung dari Biteship |
 | POST | `/api/kirim/webhook` | pemberitahuan Biteship; header `x-biteship-signature` harus sama dengan `BITESHIP_WEBHOOK_SECRET` |

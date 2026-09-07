@@ -174,6 +174,8 @@ app.post('/api/kirim/orders', lajuPesan, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+app.get('/api/kirim/daftar', lajuBaca, (req, res) => { const s = bacaSimpanan(); const daftar = Object.keys(s).map((k) => { const r = s[k]; if (r.simulasi) majukanSimulasi(r); return { refId:r.refId, orderId:r.orderId, resi:r.resi, kurir:r.kurir, layanan:r.layanan, status:r.status, statusKurir:r.statusKurir, at:r.at, diperbarui:r.diperbarui, simulasi:!!r.simulasi }; }).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 200); res.json({ total:Object.keys(s).length, daftar }); });
+
 app.get('/api/kirim/status/:ref', lajuBaca, async (req, res) => {
   const ref = req.params.ref; if (!refSah(ref)) return res.status(404).json({ error: 'Tidak ada' });
   const simpanan = bacaSimpanan(), r = simpanan[ref];
