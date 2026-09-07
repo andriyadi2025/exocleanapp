@@ -68,7 +68,8 @@ const DAFTAR_PUTIH = {
   '/Train/List': { uang: false }, '/Train/Route': { uang: false }, '/Train/Schedule': { uang: false },
   '/Bus/List': { uang: false }, '/Bus/Route': { uang: false }, '/Bus/Schedule': { uang: false },
   '/Hotel/Country': { uang: false }, '/Hotel/City': { uang: false }, '/Hotel/Search': { uang: false },
-  '/Ship/Route': { uang: false }, '/ShipDlu/Route': { uang: false }, '/Shuttle/List': { uang: false }, '/CarRental/Location': { uang: false }, '/Tour/Categories': { uang: false }, '/Umroh/Search': { uang: false }, '/Cargo/Supplier': { uang: false }
+  '/Ship/Route': { uang: false }, '/ShipDlu/Route': { uang: false }, '/Shuttle/List': { uang: false }, '/CarRental/Location': { uang: false }, '/Tour/Categories': { uang: false }, '/Umroh/Search': { uang: false }, '/Cargo/Supplier': { uang: false },
+  '/Airline/PriceAllAirline': { uang: false }, '/Airline/ScheduleAllAirline': { uang: false }, '/Hotel/AvailableRooms': { uang: false }, '/Hotel/DetailInfo': { uang: false }, '/Hotel/Search5': { uang: false }, '/Ship/Schedule': { uang: false }, '/ShipDlu/Schedule': { uang: false }, '/Shuttle/Route': { uang: false }, '/Shuttle/Schedule': { uang: false }, '/CarRental/Search': { uang: false }, '/CarRental/CarType': { uang: false }, '/Tour/Search': { uang: false }, '/Tour/Detail': { uang: false }, '/Tour/Provinces': { uang: false }, '/Umroh/Detail': { uang: false }, '/Cargo/Tariff': { uang: false }, '/Cargo/DestinationArea': { uang: false }, '/Cargo/Tracking': { uang: false }, '/Bus/Terminal': { uang: false }
 };
 function galat(pesan, status, detail) { const e = new Error(pesan); e.status = status || 500; if (detail) e.detail = detail; return e; }
 function wajibKredensial() { if (!DWI.userID || !DWI.password) throw galat('DWI_USER_ID / DWI_PASSWORD belum diisi di berkas .env', 503); }
@@ -143,6 +144,66 @@ function simulasi(jalur, isi) {
     case '/PPOB/TransactionDetail': case '/TopUp/TransactionDetail': return { status: 'SUCCESS', detail: { referenceID: isi.referenceID, transactionStatus: 'SUCCESS' } };
     default: return { status: 'SUCCESS', simulasi: true, catatan: 'Jalur ' + jalur + ' tidak disimulasikan', airlines: [], trains: [], busses: [], countries: [], origins: [], shuttles: [], locations: [], categories: [], packages: [], suppliers: [] };
   }
+}
+
+/* ---------------------------------------------------------------- perjalanan (jalur baca)
+   Pemetaan rumpun → jalur & nama parameter H2H. Nama parameter disusun dari
+   manual H2H v2.1 sejauh yang diketahui; bila UAT membalas "<field> invalid",
+   sesuaikan di sini tanpa menyentuh klien. Hasil dirapikan ke bentuk seragam
+   { items:[{judul, sub, harga, detail}] } supaya layar tidak bergantung pada
+   nama field tiap rumpun. */
+const PERJALANAN = {
+  airline:  { ketuk: '/Airline/List', isi: 'airlines', cari: '/Airline/ScheduleAllAirline', body: (p) => ({ origin: p.dari, destination: p.ke, departDate: p.tanggal, adult: Number(p.penumpang) || 1, child: 0, infant: 0 }) },
+  hotel:    { ketuk: '/Hotel/Country', isi: 'countries', cari: '/Hotel/Search', body: (p) => ({ city: p.kota, checkIn: p.checkin, checkOut: p.checkout, rooms: Number(p.kamar) || 1, adult: 2 }) },
+  train:    { ketuk: '/Train/List', isi: 'trains', cari: '/Train/Schedule', body: (p) => ({ origin: p.dari, destination: p.ke, departDate: p.tanggal, adult: Number(p.penumpang) || 1 }) },
+  bus:      { ketuk: '/Bus/List', isi: 'busses', cari: '/Bus/Schedule', body: (p) => ({ origin: p.dari, destination: p.ke, departDate: p.tanggal, seat: Number(p.penumpang) || 1 }) },
+  ship:     { ketuk: '/Ship/Route', isi: 'origins', cari: '/Ship/Schedule', body: (p) => ({ origin: p.dari, destination: p.ke, departDate: p.tanggal, adult: Number(p.penumpang) || 1 }) },
+  shuttle:  { ketuk: '/Shuttle/List', isi: 'shuttles', cari: '/Shuttle/Schedule', body: (p) => ({ origin: p.dari, destination: p.ke, departDate: p.tanggal, seat: Number(p.penumpang) || 1 }) },
+  carrental:{ ketuk: '/CarRental/Location', isi: 'locations', cari: '/CarRental/Search', body: (p) => ({ location: p.kota, startDate: p.tanggal, duration: Number(p.hari) || 1 }) },
+  tour:     { ketuk: '/Tour/Categories', isi: 'categories', cari: '/Tour/Search', body: (p) => ({ province: p.kota, month: p.bulan }) },
+  umroh:    { ketuk: '/Umroh/Search', isi: 'packages', cari: '/Umroh/Search', body: (p) => ({ month: p.bulan }) },
+  cargo:    { ketuk: '/Cargo/Supplier', isi: 'suppliers', cari: '/Cargo/Tariff', body: (p) => ({ origin: p.dari, destination: p.ke, weight: Number(p.berat) || 1 }) }
+};
+function ambilAngka(o, kunci) { for (const k of kunci) { const v = o[k]; if (v != null && v !== '' && !isNaN(Number(v))) return Number(v); } return 0; }
+function ambilTeks(o, kunci) { for (const k of kunci) { if (o[k] != null && String(o[k]).trim()) return String(o[k]); } return ''; }
+function rapikanPerjalanan(json) {
+  /* cari array objek pertama di balasan */
+  let arr = null; for (const k of Object.keys(json)) { if (Array.isArray(json[k]) && json[k].length && typeof json[k][0] === 'object') { arr = json[k]; break; } }
+  if (!arr) return [];
+  return arr.slice(0, 60).map((o) => {
+    const nama = ambilTeks(o, ['name', 'hotelName', 'airlineName', 'trainName', 'busName', 'shipName', 'packageName', 'carName', 'serviceName', 'flightNumber', 'trainNumber', 'title']);
+    const dari = ambilTeks(o, ['origin', 'originName', 'departureStation', 'from']), ke = ambilTeks(o, ['destination', 'destinationName', 'arrivalStation', 'to']);
+    const jam = ambilTeks(o, ['departTime', 'departureTime', 'etd']), tiba = ambilTeks(o, ['arriveTime', 'arrivalTime', 'eta']), kelas = ambilTeks(o, ['class', 'className', 'roomType', 'carType', 'category', 'duration']);
+    const harga = ambilAngka(o, ['price', 'totalFare', 'fare', 'rate', 'amount', 'totalPrice', 'publishRate', 'lowestPrice', 'tariff', 'basePrice']);
+    return { judul: nama || 'Pilihan', sub: [dari && ke ? dari + ' → ' + ke : '', jam ? jam + (tiba ? ' → ' + tiba : '') : '', kelas].filter(Boolean).join(' · '), harga, detail: o };
+  });
+}
+let aksesCache = { at: 0, hasil: null };
+async function aksesPerjalanan(segar) {
+  if (!segar && aksesCache.hasil && Date.now() - aksesCache.at < 600000) return aksesCache.hasil;
+  const out = {};
+  for (const r of Object.keys(PERJALANAN)) {
+    const m = PERJALANAN[r];
+    try { const j = await panggil(m.ketuk, {}); const ok = String(j.status).toUpperCase() === 'SUCCESS'; out[r] = { ok, jalur: m.ketuk, pesan: ok ? '' : (j.respMessage || 'ditolak'), n: Array.isArray(j[m.isi]) ? j[m.isi].length : null }; }
+    catch (e) { out[r] = { ok: false, jalur: m.ketuk, pesan: e.message }; }
+  }
+  aksesCache = { at: Date.now(), hasil: out }; return out;
+}
+function simulasiPerjalanan(r, p) {
+  const tgl = p.tanggal || p.checkin || '', dari = p.dari || p.kota || 'CGK', ke = p.ke || 'DPS', n = (x) => Math.max(1, Number(x) || 1);
+  const S = {
+    airline: [['Garuda Indonesia GA-402', dari + ' 07:05 → ' + ke + ' 10:00 · ' + tgl + ' · langsung · bagasi 20 kg', 1850000], ['Citilink QG-680', dari + ' 09:30 → ' + ke + ' 12:25 · ' + tgl + ' · langsung', 1120000], ['Batik Air ID-6510', dari + ' 11:45 → ' + ke + ' 14:40 · ' + tgl + ' · langsung', 1390000], ['Lion Air JT-012', dari + ' 13:10 → ' + ke + ' 16:05 · ' + tgl, 980000]],
+    hotel: [['Hotel Santika ' + dari, 'Bintang 3 · Superior · sarapan · ' + (p.checkin || '') + ' → ' + (p.checkout || ''), 650000], ['Aston ' + dari + ' City Hotel', 'Bintang 4 · Deluxe · sarapan', 920000], ['Novotel ' + dari, 'Bintang 4 · Superior · sarapan', 1050000], ['RedDoorz near ' + dari + ' Center', 'Budget · Standard', 245000]],
+    train: [['Argo Parahyangan 44', dari + ' 06:30 → ' + ke + ' 09:20 · Eksekutif', 150000], ['Argo Bromo Anggrek 2', dari + ' 20:30 → ' + ke + ' 04:55 · Eksekutif', 520000], ['Jayabaya 106', dari + ' 17:25 → ' + ke + ' 04:10 · Ekonomi', 280000]],
+    bus: [['Sinar Jaya Executive', dari + ' 19:00 → ' + ke + ' 04:30 · AC 2-2', 210000], ['Rosalia Indah Super Top', dari + ' 15:00 → ' + ke + ' 02:00 · sleeper', 365000]],
+    ship: [['KM Kelud (Pelni)', dari + ' → ' + ke + ' · ' + tgl + ' · ekonomi', 385000], ['KM Dharma Kartika IX (DLU)', dari + ' → ' + ke + ' · ' + tgl + ' · kelas 2', 520000]],
+    shuttle: [['Cititrans', dari + ' 08:00 → ' + ke + ' 11:00 · 10 kursi', 165000], ['Jackal Holidays', dari + ' 10:00 → ' + ke + ' 13:00', 150000]],
+    carrental: [['Toyota Avanza + sopir', dari + ' · 12 jam/hari · ' + n(p.hari) + ' hari · BBM di luar', 450000 * n(p.hari)], ['Toyota Innova Reborn + sopir', dari + ' · 12 jam/hari · ' + n(p.hari) + ' hari', 650000 * n(p.hari)], ['Hiace Commuter 14 kursi + sopir', dari + ' · ' + n(p.hari) + ' hari', 1250000 * n(p.hari)]],
+    tour: [['Bali 4D3N Explore', 'Hotel bintang 3 · sarapan · Uluwatu, Ubud, Kintamani · ' + (p.bulan || ''), 3250000], ['Labuan Bajo 3D2N Sailing', 'Kapal phinisi · Komodo, Padar, Pink Beach', 4750000], ['Yogyakarta 3D2N Heritage', 'Borobudur, Prambanan, Malioboro', 1950000]],
+    umroh: [['Umroh 9 hari · Madinah–Makkah', 'Hotel bintang 4 · Saudia langsung · ' + (p.bulan || ''), 28500000], ['Umroh 12 hari + Thaif', 'Hotel bintang 5 dekat Masjidil Haram', 36900000]],
+    cargo: [['Kargo darat reguler', dari + ' → ' + ke + ' · ' + n(p.berat) + ' kg · 3–5 hari', Math.max(35000, 3500 * n(p.berat))], ['Kargo udara', dari + ' → ' + ke + ' · ' + n(p.berat) + ' kg · 1–2 hari', Math.max(90000, 9000 * n(p.berat))]]
+  };
+  return (S[r] || []).map((x) => ({ judul: x[0], sub: x[1], harga: x[2], detail: { simulasi: true } }));
 }
 
 /* ---------------------------------------------------------------- catatan transaksi & idempotensi */
@@ -220,6 +281,21 @@ app.post('/api/dwi/bayar', lajuUang, async (req, res, next) => {
     const hasil = await panggilUang(target, isi);
     if (hasil.kode === 200 && !hasil.badan.idempotenDiulang) console.log('[dwi] ' + target + ' selesai · kunci ' + kunciDari(target, isi) + (SIMULASI ? ' (simulasi)' : ''));
     res.status(hasil.kode).json(hasil.badan);
+  } catch (e) { next(e); }
+});
+app.get('/api/dwi/perjalanan/akses', lajuBaca, async (req, res) => {
+  if (SIMULASI) { const out = {}; Object.keys(PERJALANAN).forEach((r) => { out[r] = { ok: true, jalur: PERJALANAN[r].ketuk, pesan: '', n: 3 }; }); return res.json({ ok: true, mode: 'simulasi', rumpun: out }); }
+  if (!DWI.userID || !DWI.password) return res.json({ ok: false, mode: 'kosong', rumpun: {}, pesan: 'Kredensial kosong' });
+  try { res.json({ ok: true, mode: DWI.produksi ? 'produksi' : 'uat', rumpun: await aksesPerjalanan(req.query.segar === '1') }); } catch (e) { res.json({ ok: false, mode: DWI.produksi ? 'produksi' : 'uat', rumpun: {}, pesan: e.message }); }
+});
+app.post('/api/dwi/perjalanan/cari', lajuBaca, async (req, res, next) => {
+  try {
+    const b = req.body || {}, r = KEAMANAN.batasiTeks(b.rumpun, 20), m = PERJALANAN[r]; if (!m) throw galat('Rumpun tidak dikenal', 400);
+    const p = {}; Object.keys(b.param || {}).slice(0, 12).forEach((k) => { p[KEAMANAN.batasiTeks(k, 20)] = KEAMANAN.batasiTeks(b.param[k], 60); });
+    if (SIMULASI) return res.json({ status: 'SUCCESS', simulasi: true, rumpun: r, items: simulasiPerjalanan(r, p) });
+    const j = await panggil(m.cari, m.body(p));
+    if (String(j.status).toUpperCase() !== 'SUCCESS') return res.json({ status: 'FAILED', respMessage: j.respMessage || 'Ditolak penyedia', rumpun: r, items: [] });
+    res.json({ status: 'SUCCESS', rumpun: r, items: rapikanPerjalanan(j), mentahRingkas: Object.keys(j).slice(0, 12) });
   } catch (e) { next(e); }
 });
 app.post('/api/dwi/cocokkan', lajuBaca, async (req, res, next) => { try { const kunci = KEAMANAN.batasiTeks((req.body || {}).kunci, 160); if (!kunci) throw galat('Sebutkan kunci transaksinya.', 400); const h = await cocokkan(kunci); res.status(h.kode).json(h.badan); } catch (e) { next(e); } });

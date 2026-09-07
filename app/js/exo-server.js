@@ -176,6 +176,8 @@ var EXO_SERVER = (function () {
   }
   function dwiCall(jalur, isi) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/call', { jalur:jalur, isi:isi || {} }).then(function (r) { r.mode = j.mode; return r; }); }); }
   function dwiBayar(jalur, isi) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/bayar', { jalur:jalur, isi:isi || {} }); }); }
+  function dwiPerjalananAkses(segar) { return dwiInfo().then(function (j) { if (!j.ok) return { ok:false, rumpun:{}, pesan:j.pesan || 'Server Darmawisata mati' }; return ambil('dwi', '/api/dwi/perjalanan/akses' + (segar ? '?segar=1' : '')).then(function (r) { return r.ok ? r.data : { ok:false, rumpun:{}, pesan:r.error }; }); }); }
+  function dwiPerjalananCari(rumpun, param) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/perjalanan/cari', { rumpun:rumpun, param:param || {} }); }); }
   function dwiCocokkan(kunci) { return kirimStatus('dwi', '/api/dwi/cocokkan', { kunci:kunci }); }
   function dwiSaldo() { return ambil('dwi', '/api/dwi/balance'); }
   function dwiTransaksi() { return ambil('dwi', '/api/dwi/transaksi'); }
@@ -193,5 +195,5 @@ var EXO_SERVER = (function () {
   }
 
   return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
-    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
+    loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

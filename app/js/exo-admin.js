@@ -67,7 +67,7 @@ var ADMIN = (function () {
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran & sertifikasi (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
     ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan','']]],
-    ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata','']]],
+    ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata',''], ['perjalanan','Perjalanan — Darmawisata','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
@@ -136,6 +136,7 @@ var ADMIN = (function () {
     data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
     pasar:['Marketplace perlengkapan','Mitra toko · produk & moderasi · pesanan · komisi 5% & pencairan · komplain · flash sale — pola Tokopedia','Verifikasi'],
     kurir:['Kurir — Biteship','Status server kurir · pesanan kirim & resi · uji tarif · panduan sambung; dipakai marketplace perlengkapan','Segarkan'],
+    perjalanan:['Perjalanan — Darmawisata H2H','Permintaan pemesanan pesawat/hotel/kereta/bus/kapal/sewa mobil/tur/umroh/kargo: konfirmasi harga & kode booking (PIN) · pembayaran EXO Wallet · terbit tiket · akses rumpun · biaya layanan','PIN'],
     ppob:['Bayar & isi ulang — Darmawisata H2H','Tagihan PLN/BPJS/PDAM & isi ulang pulsa/data/token dari EXO Wallet · deposit agen · pencocokan transaksi tertunda/ragu · biaya admin & margin','PIN'],
     keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
