@@ -479,9 +479,9 @@ var EXO_DATA = (function () {
 
   /* ------------------------------------------------------------ mitra */
   var PARTNER_JOBS = [
-    { service:'Deep cleaning · 5 jam',   meta:'Senopati · Sab 29 Agu 08:00', pay:'Rp 700.000', keep:'Rp 697.000', distance:'3,1 km', when:'Sab 08:00', repeat:'Pelanggan lama' },
-    { service:'Cuci AC · 3 unit',        meta:'Kemang · Min 30 Agu 10:00',   pay:'Rp 255.000', keep:'Rp 252.000', distance:'1,8 km', when:'Min 10:00', repeat:'Pelanggan baru' },
-    { service:'Cleaning per jam · 3 jam',meta:'Cipete · Sen 31 Agu 13:00',   pay:'Rp 234.000', keep:'Rp 231.000', distance:'4,6 km', when:'Sen 13:00', repeat:'Jadwal mingguan' }
+    { jasa:'deep', service:'Deep cleaning · 5 jam',   meta:'Senopati · Sab 29 Agu 08:00', pay:'Rp 700.000', keep:'Rp 697.000', distance:'3,1 km', when:'Sab 08:00', repeat:'Pelanggan lama' },
+    { jasa:'ac', service:'Cuci AC · 3 unit',        meta:'Kemang · Min 30 Agu 10:00',   pay:'Rp 255.000', keep:'Rp 252.000', distance:'1,8 km', when:'Min 10:00', repeat:'Pelanggan baru' },
+    { jasa:'hourly', service:'Cleaning per jam · 3 jam',meta:'Cipete · Sen 31 Agu 13:00',   pay:'Rp 234.000', keep:'Rp 231.000', distance:'4,6 km', when:'Sen 13:00', repeat:'Jadwal mingguan' }
   ];
   var PEAK_DAY = 520000;
   var BARS = [['Sen',34,'Cleaning per jam · 3 jam'],['Sel',58,'Deep cleaning · 4 jam'],['Rab',44,'Cuci AC · 3 unit'],['Kam',72,'Deep cleaning · 5 jam'],['Jum',88,'Per jam ×2 · 6 jam'],['Sab',100,'Deep cleaning · 5 jam + sofa'],['Min',26,'Setrika · 2 jam']];

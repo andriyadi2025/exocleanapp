@@ -30,6 +30,14 @@
     d.forEach(function (x) { h += '<div class="card card-leaf gap-4"><div class="flex items-center gap-8"><span class="tag tag-accent">Pengumuman</span><span class="t-11 o-6">' + esc(String(x.at || '').slice(0, 10)) + (x.target && x.target !== 'semua' ? ' · ' + esc(x.target) : '') + '</span></div><div class="f-head t-15">' + esc(x.judul) + '</div><div class="t-125 lh-15 o-85">' + esc(x.isi) + '</div></div>'; });
     return h;
   }
+  /* Job layanan X hanya bisa diterima bila kursus SOP layanan X sudah lulus (wajib per layanan). */
+  function gerbangSop(j, i) {
+    var L = window.EXO_LMS; if (!L || !j.jasa) return '<button class="btn btn-primary btn-block" style="margin:0"' + aksi('terimaJob', i) + '>Terima · terkunci untuk Anda</button>';
+    var a = aku(), u = (window.EXO_DB && EXO_DB.ada() && EXO_DB.find('users', a.id)) || { id:a.id, nama:a.name, jabatan:(a.tags || [])[0] || 'Cleaner', role:'worker' };
+    var b = L.bolehLayanan(u, j.jasa);
+    if (b.ok) return '<button class="btn btn-primary btn-block" style="margin:0"' + aksi('terimaJob', i) + '>Terima · terkunci untuk Anda</button>';
+    return '<div class="card card-clay gap-4" style="padding:10px 12px"><div class="t-125 bold">🔒 Lulus SOP dulu: ' + esc(b.kursus.kode) + '</div><div class="t-115 lh-145 o-85">' + esc(b.kursus.judul) + ' · ' + (b.kursus.jam || 1) + ' jam. Job layanan ini terbuka setelah kuisnya lulus; job layanan lain tidak terpengaruh.</div><button class="btn btn-primary" style="height:36px;align-self:flex-start"' + aksi('lmsBuka', b.kursus.id) + '>Buka kursus di Akademi</button></div>';
+  }
   X.LAYAR.pjobs = function () {
     var a = aku(), nd = X.namaDepan(a);
     var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) +
@@ -48,7 +56,7 @@
       h += '<div class="card elev-sm gap-10"><div class="flex items-start gap-10"><div class="grow"><div class="t-135 bold">' + esc(j.service) + '</div><div class="t-115 o-65">' + esc(j.meta) + '</div></div>' +
         '<div class="right"><div class="f-head t-15">' + j.pay + '</div><div class="t-105 o-6">Anda terima ' + j.keep + '</div></div></div>' +
         '<div class="flex gap-7"><span class="tag tag-neutral">' + j.distance + '</span><span class="tag tag-neutral">' + j.when + '</span><span class="tag tag-accent-2 tag-xs">' + esc(j.repeat) + '</span></div>' +
-        '<button class="btn btn-primary btn-block" style="margin:0"' + aksi('terimaJob', i) + '>Terima · terkunci untuk Anda</button></div>';
+        gerbangSop(j, i) + '</div>';
     }
     h += '<div class="card card-clay gap-7"><div class="f-head t-15">Jadwal Anda, keputusan Anda</div><div class="t-125 lh-15">Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.</div></div>';
     h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('ke', 'preg') + '>Formulir pendaftaran mitra baru</button><div class="spacer-14"></div></div>';

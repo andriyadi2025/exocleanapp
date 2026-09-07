@@ -73,15 +73,15 @@ var EXO_LMS_SOP = (function () {
     d.all('kursus').forEach(function (k) { kursusAda[k.kode] = k; });
     semuaSop.forEach(function (sop) {
       var code = sop.code, kodeKursus = KURSUS_LAMA[code] || ('SOP-' + code), k = kursusAda[kodeKursus], rev = Number(sop.rev || 0);
-      if (k && Number(k.sopRev != null ? k.sopRev : -1) === rev && k.sop === code) return;   /* sudah sinkron */
+      if (k && Number(k.sopRev != null ? k.sopRev : -1) === rev && k.sop === code && k.wajibLayanan) return;   /* sudah sinkron */
       var modulBaru = modulSop(sop, b), target = fungsiUntuk(code);
       if (k) {
         var lain = (k.modul || []).filter(function (m) { return !m.sopModul; });
         /* revisi SOP naik → mitra yang sudah lulus diminta mengulang kuis revisi baru (sertifikat lama tetap tercatat) */
         if (k.sop === code && Number(k.sopRev || 0) < rev) d.all('pendaftaran').forEach(function (p) { if (p.kursusId === k.id && p.status === 'selesai') d.update('pendaftaran', p.id, { status:'berjalan', perluUlang:'SOP ' + code + ' Rev.' + String(rev).padStart(2, '0'), selesaiAt:null }); });
-        d.update('kursus', k.id, { modul:lain.concat(modulBaru), sop:code, sopRev:rev, wajib:true, target:k.kode === kodeKursus && KURSUS_LAMA[code] ? k.target : target, rev:(k.rev || 1) + 1, sopSinkronAt:new Date().toISOString(), deskripsi:k.deskripsi || ('SOP ' + code + ' ' + sop.title) });
+        d.update('kursus', k.id, { modul:lain.concat(modulBaru), sop:code, sopRev:rev, wajib:true, wajibLayanan:sop.jasa || k.wajibLayanan || null, target:k.kode === kodeKursus && KURSUS_LAMA[code] ? k.target : target, rev:(k.rev || 1) + 1, sopSinkronAt:new Date().toISOString(), deskripsi:k.deskripsi || ('SOP ' + code + ' ' + sop.title) });
       } else {
-        var r = d.insert('kursus', { kode:kodeKursus, judul:'SOP ' + code + ' — ' + sop.title, level:LEVEL[code] || 'dasar', target:target, jam:Math.round((0.5 + (sop.steps || []).length * 0.25) * 2) / 2, wajib:true, kompetensi:['SOP ' + code, 'APD', 'Foto bukti'], prasyarat:['LMS-001', 'LMS-002'].concat(PRASYARAT_TAMBAHAN[code] || []), deskripsi:'Kursus wajib yang dibangkitkan dari SOP ' + code + ' (' + sop.title + ') revisi berlaku: APD & chemical, ' + (sop.steps || []).length + ' langkah berurutan dengan foto bukti, standar mutu. Wajib lulus sebelum menerima job layanan ini.', modul:modulBaru, status:'terbit', rev:1, terbitAt:new Date().toISOString(), oleh:'SOP ' + code, masaBerlakuBulan:12, sop:code, sopRev:rev, sopSinkronAt:new Date().toISOString() });
+        var r = d.insert('kursus', { kode:kodeKursus, judul:'SOP ' + code + ' — ' + sop.title, level:LEVEL[code] || 'dasar', target:target, jam:Math.round((0.5 + (sop.steps || []).length * 0.25) * 2) / 2, wajib:true, wajibLayanan:sop.jasa || null, kompetensi:['SOP ' + code, 'APD', 'Foto bukti'], prasyarat:['LMS-001', 'LMS-002'].concat(PRASYARAT_TAMBAHAN[code] || []), deskripsi:'Kursus wajib yang dibangkitkan dari SOP ' + code + ' (' + sop.title + ') revisi berlaku: APD & chemical, ' + (sop.steps || []).length + ' langkah berurutan dengan foto bukti, standar mutu. Wajib lulus hanya untuk menerima job layanan ini — tidak menahan job layanan lain.', modul:modulBaru, status:'terbit', rev:1, terbitAt:new Date().toISOString(), oleh:'SOP ' + code, masaBerlakuBulan:12, sop:code, sopRev:rev, sopSinkronAt:new Date().toISOString() });
         kursusAda[kodeKursus] = r;
       }
       n++;

@@ -184,7 +184,12 @@ var EXO_LMS = (function () {
   /* kursus yang relevan untuk peserta: target memuat fungsinya atau 'semua' */
   function untukPeserta(u) { var f = fungsiDari(u); return katalog().filter(function (k) { return (k.target || []).indexOf('semua') >= 0 || (k.target || []).indexOf(f) >= 0; }); }
   function jalurUntuk(u) { var f = fungsiDari(u), p = bacaPub().lms; var semuaJalur = p && p.jalur ? p.jalur : jalur(); return semuaJalur.filter(function (j) { return j.target === f; })[0] || null; }
-  function wajibBelum(u) { return untukPeserta(u).filter(function (k) { return k.wajib && !((pendaftaran(u.id, k.id) || {}).status === 'selesai'); }); }
+  /* Wajib DASAR (menahan semua job): kursus wajib tanpa wajibLayanan. */
+  function wajibBelum(u) { return untukPeserta(u).filter(function (k) { return k.wajib && !k.wajibLayanan && !((pendaftaran(u.id, k.id) || {}).status === 'selesai'); }); }
+  /* Wajib PER LAYANAN (menahan job layanan itu saja): kursus SOP dengan wajibLayanan = id jasa. */
+  function sopUntuk(jasa) { return katalog().filter(function (k) { return k.wajibLayanan === jasa; }); }
+  function sopBelum(u) { return untukPeserta(u).filter(function (k) { return k.wajib && k.wajibLayanan && !((pendaftaran(u.id, k.id) || {}).status === 'selesai'); }); }
+  function bolehLayanan(u, jasa) { var ks = sopUntuk(jasa); if (!ks.length) return { ok:true, kursus:null }; var belum = ks.filter(function (k) { return (pendaftaran(u.id, k.id) || {}).status !== 'selesai'; }); return { ok:!belum.length, kursus:belum[0] || null, semua:ks }; }
   function sertifikatPeserta(userId) { var d = db(); return d ? d.where('sertifikat', function (s) { return s.userId === userId; }) : []; }
   /* statistik admin */
   function statistik() {
@@ -196,5 +201,5 @@ var EXO_LMS = (function () {
   function pesertaSemua() { var d = db(); if (!d) return []; var byUser = {}; d.all('pendaftaran').forEach(function (p) { var u = d.find('users', p.userId); var k = d.find('kursus', p.kursusId); var s = byUser[p.userId] = byUser[p.userId] || { userId:p.userId, nama:u ? u.nama : p.userId, fungsi:namaFungsi(fungsiDari(u)), kursus:[] }; s.kursus.push({ kode:k ? k.kode : '?', judul:k ? k.judul : '?', status:p.status, persen:k ? hitung(k, p).persen : 0, nilai:p.nilaiAkhir }); }); return Object.keys(byUser).map(function (k) { return byUser[k]; }); }
 
   return { LEVEL:LEVEL, FUNGSI:FUNGSI, namaLevel:namaLevel, namaFungsi:namaFungsi, fungsiDari:fungsiDari, semai:semai, perbaruiKatalog:perbaruiKatalog, sinkronSop:sinkronSop, bahan:{ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal }, semuaKursus:semuaKursus, kursus:kursus, kursusKode:kursusKode, jalur:jalur, katalog:katalog, terbitkanSemua:terbitkanSemua, terbitkan:terbitkan, tarik:tarik, simpan:simpan, periksa:periksa,
-    pendaftaran:pendaftaran, daftar:daftar, progres:progres, terkunci:terkunci, tandaiMateri:tandaiMateri, nilaiKuis:nilaiKuis, untukPeserta:untukPeserta, jalurUntuk:jalurUntuk, wajibBelum:wajibBelum, sertifikatPeserta:sertifikatPeserta, statistik:statistik, pesertaSemua:pesertaSemua, uid:uid };
+    pendaftaran:pendaftaran, daftar:daftar, progres:progres, terkunci:terkunci, tandaiMateri:tandaiMateri, nilaiKuis:nilaiKuis, untukPeserta:untukPeserta, jalurUntuk:jalurUntuk, wajibBelum:wajibBelum, sopUntuk:sopUntuk, sopBelum:sopBelum, bolehLayanan:bolehLayanan, sertifikatPeserta:sertifikatPeserta, statistik:statistik, pesertaSemua:pesertaSemua, uid:uid };
 })();
