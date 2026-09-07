@@ -63,7 +63,7 @@ var ADMIN = (function () {
     ['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['cleaners','Cleaners','7'],
     ['services','Services & pricing',''], ['crm','CRM','3'], ['sop','SOP & QC','8'], ['desk','Complaint desk','9'], ['claims','Claims & refunds','12'],
     ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['brand','Appearance',''],
-    ['persetujuan','Persetujuan',''], ['roles','Roles & permissions','8'], ['team','Admins','9']
+    ['keuangan','Accounting & Finance',''], ['persetujuan','Persetujuan',''], ['roles','Roles & permissions','8'], ['team','Admins','9']
   ];
   var META = {
     dash:['Dashboard','Jabodetabek · today, ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),'New booking'],
@@ -78,6 +78,7 @@ var ADMIN = (function () {
     promos:['Promos & vouchers','5 codes · 2 live','Create code'],
     rewards:['Poin & cashback','Aturan poin, tier dan cashback yang berlaku di aplikasi pelanggan','Simulasi'],
     brand:['Appearance','Logo, colour and app name across every surface','Preview apps'],
+    keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],
     team:['Admins','9 admins · 2FA enforced','Invite admin']
