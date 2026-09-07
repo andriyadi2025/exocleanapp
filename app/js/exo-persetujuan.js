@@ -31,6 +31,7 @@ var EXO_PERSETUJUAN = (function () {
   var PERAN_PENYETUJU = { supervisor:true, superadmin:true };
   var MAKS_TERBIT_PER_JAM = 10, SESI_ULANG_MENIT = 15;
   var penerap = {};   /* jenis → function(usulan, oleh) yang menerapkan perubahan */
+  var penolak = {};   /* jenis → function(usulan, oleh, alasan) saat ditolak/dibatalkan (opsional) */
   var pendengar = [];
 
   function db() { try { return window.EXO_DB && EXO_DB.init() ? EXO_DB : null; } catch (e) { return null; } }
@@ -93,7 +94,7 @@ var EXO_PERSETUJUAN = (function () {
   /* ------------------------------------------------------------ usulan */
   function tingkat(jenis) { return TINGKAT[jenis] || 'sedang'; }
   function aturan(jenis) { return ATURAN[tingkat(jenis)]; }
-  function daftarkanPenerap(jenis, fn) { penerap[jenis] = fn; }
+  function daftarkanPenerap(jenis, fn, fnTolak) { penerap[jenis] = fn; if (fnTolak) penolak[jenis] = fnTolak; }
   function semua(filter) { var d = db(); var r = d ? d.all(T_USULAN) : []; if (filter) r = r.filter(function (u) { return u.status === filter; }); return r.sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); }); }
   function menunggu() { return semua('menunggu'); }
   function dijadwalkan() { return semua('disetujui'); }
@@ -138,12 +139,14 @@ var EXO_PERSETUJUAN = (function () {
     var d = db(), u = d.find(T_USULAN, id); if (!u || (u.status !== 'menunggu' && u.status !== 'disetujui')) throw new Error('Usulan ini tidak bisa ditolak lagi.');
     if (!bolehMenyetujui(penyetuju)) throw new Error('Hanya supervisor atau super admin yang boleh menolak.');
     d.update(T_USULAN, id, { status:'ditolak', alasanTolak:String(alasan || '').trim() || 'Ditolak', ditolakOleh:penyetuju.nama, ditolakAt:kini() });
+    if (penolak[u.jenis]) { try { penolak[u.jenis](u, penyetuju, alasan); } catch (e) { /* dicatat di audit di bawah */ } }
     audit(penyetuju, 'Menolak ' + u.judul, id, alasan || ''); emit(); return d.find(T_USULAN, id);
   }
   function batalkan(id, oleh) {
     var d = db(), u = d.find(T_USULAN, id); if (!u || (u.status !== 'menunggu' && u.status !== 'disetujui')) throw new Error('Usulan ini tidak bisa dibatalkan.');
     if (u.pengajuId !== oleh.id && !bolehMenyetujui(oleh)) throw new Error('Hanya pengaju atau penyetuju yang boleh membatalkan.');
     d.update(T_USULAN, id, { status:'dibatalkan', dibatalkanOleh:oleh.nama, dibatalkanAt:kini() });
+    if (penolak[u.jenis]) { try { penolak[u.jenis](u, oleh, 'dibatalkan'); } catch (e) { /* abaikan */ } }
     audit(oleh, 'Membatalkan ' + u.judul, id, u.status === 'disetujui' ? 'dibatalkan sebelum berlaku' : ''); emit(); return d.find(T_USULAN, id);
   }
   function terapkan(id, oleh, cara) {

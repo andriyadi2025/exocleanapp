@@ -298,19 +298,36 @@
           u.pinHash ? chip('green', 'ada') : chip('flat', 'belum'), u.passkey ? chip('green', 'terdaftar') : chip('flat', '—'), chip(u.aktif === false ? 'flat' : 'green', u.aktif === false ? 'nonaktif' : 'aktif'),
           (me ? '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi(u.passkey ? 'passkeyHapus' : 'passkeyDaftar') + '>' + (u.passkey ? 'Hapus passkey' : 'Daftarkan passkey') + '</button> ' : '') +
           (saya && P.peranDari(saya) === 'superadmin' && !me ? ['staf','supervisor','superadmin'].filter(function (x) { return x !== pr; }).map(function (x) { return '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('peranUsul', u.id + ':' + x) + '>→ ' + namaPeran(x) + '</button>'; }).join(' ') : '')];
-      })) + '</div>';
+      })) + '</div>' + formAkunBaru();
     return h;
   }
-  AKSI.akunTambah = function () {
-    var nama = window.prompt('Nama admin baru:'); if (!nama) return;
-    var email = window.prompt('Email (untuk masuk):'); if (!email) return;
-    var peran = window.prompt('Peran: staf / supervisor / superadmin', 'staf'); if (!peran || !/^(staf|supervisor|superadmin)$/.test(peran)) { A.sekilas('Peran tidak dikenal.', 'err'); return; }
-    var sandi = window.prompt('Sandi awal (minimal 10 karakter; minta pengguna menggantinya):'); if (!sandi || sandi.length < 10) { A.sekilas('Sandi minimal 10 karakter.', 'err'); return; }
-    denganPin('Buat akun admin ' + nama + ' (' + peran + ')', function (oleh) {
+  /* Formulir akun admin baru (menggantikan window.prompt yang menampilkan
+     sandi sebagai teks polos di layar dan bisa terekam). */
+  function formAkunBaru() {
+    var f = S.akunForm; if (!f) return '';
+    return '<div class="card elev-sm gap-10" id="akun-form"><div class="card-title">Akun admin baru</div><div class="grid g2" style="gap:8px">' +
+      '<div class="field"><label>Nama</label><input class="input" value="' + esc(f.nama) + '" data-ubah="akunUbah" data-arg="nama" maxlength="80"></div>' +
+      '<div class="field"><label>Email (untuk masuk)</label><input class="input" type="email" value="' + esc(f.email) + '" data-ubah="akunUbah" data-arg="email" maxlength="120"></div>' +
+      '<div class="field"><label>Peran</label><select class="input" style="height:40px" data-ubah="akunUbah" data-arg="peran">' + ['staf','supervisor','superadmin'].map(function (x) { return '<option value="' + x + '"' + (f.peran === x ? ' selected' : '') + '>' + namaPeran(x) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label>Sandi awal (min. 10 karakter, wajib diganti saat masuk pertama)</label><input class="input" type="password" autocomplete="new-password" value="' + esc(f.sandi) + '" data-ubah="akunUbah" data-arg="sandi"></div></div>' +
+      (f.pesan ? '<div class="t-12" style="background:#fdecec;color:#9b1c1c;border-radius:12px;padding:10px 12px">' + esc(f.pesan) + '</div>' : '') +
+      '<div class="flex gap-8"><button class="btn btn-primary" style="height:36px"' + aksi('akunSimpan') + '>Buat akun · PIN</button><button class="btn btn-secondary" style="height:36px"' + aksi('akunBatal') + '>Batal</button></div></div>';
+  }
+  AKSI.akunTambah = function () { S.akunForm = { nama:'', email:'', peran:'staf', sandi:'', pesan:'' }; };
+  AKSI.akunBatal = function () { S.akunForm = null; };
+  AKSI.akunUbah = function (arg, v) { if (S.akunForm) S.akunForm[arg] = v; };
+  AKSI.akunSimpan = function () {
+    var f = S.akunForm; if (!f) return;
+    var email = String(f.email || '').trim().toLowerCase(), nama = String(f.nama || '').trim().slice(0, 80);
+    if (!nama || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { f.pesan = 'Nama dan email yang sah wajib diisi.'; return; }
+    if (EXO_DB.where('users', function (u) { return u.role === 'admin' && String(u.email || '').toLowerCase() === email; }).length) { f.pesan = 'Email ini sudah dipakai akun admin lain.'; return; }
+    if (!f.sandi || f.sandi.length < 10) { f.pesan = 'Sandi minimal 10 karakter.'; return; }
+    var sandi = f.sandi, peran = f.peran;
+    denganPin('Buat akun admin ' + nama + ' (' + namaPeran(peran) + ')', function (oleh) {
       EXO_ADMIN_AUTH.buatHash(sandi).then(function (h) {
-        var u = EXO_DB.insert('users', { role:'admin', nama:String(nama).trim().slice(0, 80), email:String(email).trim().toLowerCase(), peran:peran, passHash:h, sandiBawaan:true, aktif:true, sumber:'admin', createdAt:new Date().toISOString() });
+        var u = EXO_DB.insert('users', { role:'admin', nama:nama, email:email, peran:peran, passHash:h, sandiBawaan:true, aktif:true, sumber:'admin', createdAt:new Date().toISOString() });
         EXO_PERSETUJUAN.audit(oleh, 'Membuat akun admin ' + u.nama, u.id, 'peran ' + peran + ' · wajib ganti sandi saat masuk pertama');
-        A.sekilas('Akun ' + u.nama + ' dibuat · pengguna wajib mengganti sandi saat masuk pertama.'); A.gambar();
+        S.akunForm = null; A.sekilas('Akun ' + u.nama + ' dibuat · pengguna wajib mengganti sandi saat masuk pertama.'); A.gambar();
       });
     });
   };

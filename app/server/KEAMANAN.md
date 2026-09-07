@@ -160,3 +160,17 @@ Menggantikan gagasan "dua PIN di satu layar" dengan dua orang, dua sesi (`js/exo
 - Anomali ditandai di log: > 10 penerapan per jam oleh satu akun, atau di luar jam 06–22.
 - **Mode satu admin**: bila tidak ada penyetuju lain, super admin boleh menerapkan sendiri, tetapi entri ditandai "tanpa pemeriksa kedua" dan konsol menampilkan peringatan. Tambahkan supervisor untuk mengaktifkan aturan dua orang.
 - Batas yang tetap berlaku: semua ini berjalan di peramban dengan data lokal. Struktur tabel `usulan` dan `audit` disiapkan untuk dipindahkan ke server, tempat penegakan sesungguhnya harus terjadi.
+
+## 6. Cek bug & analisis keamanan ulang (7 Sep 2026)
+
+Pemeriksaan otomatis: 26 tampilan konsol admin, 27 layar + 20 lembar aplikasi (4 bahasa) tanpa galat; tidak ada tombol/kolom tanpa penangan; sintaks semua berkas lulus; `npm audit` 0 kerentanan; 26 uji server lulus.
+
+Temuan dan perbaikan:
+- **CSP memblokir peta** (`maps.google.com` di iframe layar pelacakan/rute) — ditambahkan ke `frame-src` di semua halaman dan contoh nginx.
+- **Sandi akun admin baru diminta lewat `window.prompt`** (teks polos tampak di layar, bisa terekam) — diganti formulir dengan kolom sandi tersembunyi, validasi email unik, minimal 10 karakter, tetap wajib PIN.
+- **Cuti dibuat sebelum PIN** (baris "menunggu" yatim bila PIN dibatalkan) — baris kini dibuat setelah PIN; usulan yang ditolak/dibatalkan menandai cuti "ditolak" lewat kait penolakan baru di kendali perubahan.
+- Rating tanpa nilai bisa menghasilkan NaN di papan kinerja — dijaga.
+- Saldo dompet tampak negatif di neraca contoh (tanpa saldo awal) — jurnal saldo awal ditambahkan untuk mode contoh saja.
+- Uji koneksi Integrasi bisa tertulis "tidak terjangkau" karena CORS — petunjuk ALLOWED_ORIGINS ditampilkan.
+
+Yang tetap menjadi batas (bukan bug): seluruh kendali persetujuan, PIN, dan audit berjalan di peramban atas data localStorage; siapa pun yang memegang perangkat berlogin dapat memanggil fungsi langsung dari DevTools. Penegakan sungguhan menuntut server.

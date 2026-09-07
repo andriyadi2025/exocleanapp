@@ -123,6 +123,14 @@ var EXO_KEUANGAN = (function () {
         out.push({ id:'j_' + e.id, tgl:e.tgl, ref:e.orderNo, ket:'Pelunasan invoice kontrak · ' + e.klien, sumber:e.contoh ? 'contoh' : 'otomatis', baris:[{ akun:'1100', debit:e.nilai, kredit:0 }, { akun:'1200', debit:0, kredit:e.nilai }] });
       }
     });
+    /* Saldo awal (hanya mode contoh): kas escrow menutup kewajiban dompet,
+       jaminan, poin, dan prabayar — tanpa ini mutasi dompet bulan berjalan
+       membuat liabilitas 2200 tampak negatif. */
+    if (pakaiContoh()) {
+      var kw = kewajibanPelanggan(bulan);
+      out.unshift({ id:'j_awal_' + bulan, tgl:bulan + '-01', ref:'SALDO-AWAL', ket:'Saldo awal periode (contoh): kas escrow vs kewajiban pelanggan', sumber:'contoh',
+        baris:[{ akun:'1100', debit:kw.saldoDompet + kw.kreditJaminan + kw.poinCashback + kw.prabayar, kredit:0 }, { akun:'2200', debit:0, kredit:kw.saldoDompet }, { akun:'2210', debit:0, kredit:kw.kreditJaminan }, { akun:'2220', debit:0, kredit:kw.poinCashback }, { akun:'2400', debit:0, kredit:kw.prabayar }] });
+    }
     /* biaya operasional yang sudah disetujui */
     biaya().filter(function (b) { return dalamBulan(b, bulan) && b.status === 'disetujui'; }).forEach(function (b) { out.push({ id:'jb_' + b.id, tgl:b.tgl, ref:b.ref || 'BIAYA', ket:b.ket, sumber:'biaya', baris:[{ akun:b.akun, debit:b.nilai, kredit:0 }, { akun:'1100', debit:0, kredit:b.nilai }] }); });
     /* payout yang sudah diterapkan */
@@ -198,7 +206,6 @@ var EXO_KEUANGAN = (function () {
   /* ------------------------------------------------------------ dompet & dana ditahan (liabilitas ke pelanggan) */
   function kewajibanPelanggan(bulan) {
     var ev = peristiwa(), tahan = ev.filter(function (e) { return e.jenis === 'tahan'; });
-    var saldoDompet = 0; try { var app = JSON.parse(localStorage.getItem('exoclean_app_db') || 'null'); void app; } catch (e) { /* abaikan */ }
     var contoh = pakaiContoh();
     return { danaDitahan:tahan.reduce(function (n, e) { return n + e.nilai; }, 0), nTahan:tahan.length, saldoDompet:contoh ? 184300000 : 0, kreditJaminan:contoh ? 6200000 : 0, poinCashback:contoh ? 3850000 : 0, prabayar:contoh ? 42000000 : 0, contoh:contoh };
   }
