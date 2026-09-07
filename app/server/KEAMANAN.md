@@ -143,3 +143,20 @@ node alat/uji-keamanan.js
 
 Uji ini menjalankan ketiga server di port sementara dengan penyedia OTP `log`,
 lalu menembak setiap endpoint; hasil `LULUS`/`GAGAL` tercetak per kasus.
+
+## 5. Kendali perubahan pengaju–penyetuju (7 Sep 2026)
+
+Menggantikan gagasan "dua PIN di satu layar" dengan dua orang, dua sesi (`js/exo-persetujuan.js`, modul **Persetujuan** di konsol admin):
+
+| Tingkat | Aturan | Contoh |
+|---|---|---|
+| Rendah | PIN sendiri, langsung berlaku, tercatat, bisa dibatalkan | catatan, salah ketik |
+| Sedang | 1 penyetuju (supervisor/super admin) dari sesi lain; pengaju tidak boleh menyetujui usulannya sendiri | SOP, tarif, promo, poin |
+| Tinggi | 2 penyetuju berbeda, berlaku tertunda 30 menit (masih bisa dibatalkan), sesi > 15 menit wajib sandi lagi | peran & akun admin, merek, pembayaran |
+
+- Peran admin: `staf` (mengajukan), `supervisor` dan `superadmin` (menyetujui). Akun pertama = super admin. Mengubah peran adalah usulan tingkat tinggi.
+- Antrean menampilkan selisih sebelum–sesudah; setiap persetujuan/penolakan/pembatalan lewat PIN atau **passkey** (WebAuthn, sidik jari/wajah; kunci publik disimpan di baris admin, tanda tangan diverifikasi di peramban).
+- **Log audit berantai hash** (SHA-256 atas entri sebelumnya): tombol "Verifikasi rantai" mendeteksi entri yang dihapus atau diubah.
+- Anomali ditandai di log: > 10 penerapan per jam oleh satu akun, atau di luar jam 06–22.
+- **Mode satu admin**: bila tidak ada penyetuju lain, super admin boleh menerapkan sendiri, tetapi entri ditandai "tanpa pemeriksa kedua" dan konsol menampilkan peringatan. Tambahkan supervisor untuk mengaktifkan aturan dua orang.
+- Batas yang tetap berlaku: semua ini berjalan di peramban dengan data lokal. Struktur tabel `usulan` dan `audit` disiapkan untuk dipindahkan ke server, tempat penegakan sesungguhnya harus terjadi.

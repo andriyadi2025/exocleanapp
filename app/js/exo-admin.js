@@ -63,7 +63,7 @@ var ADMIN = (function () {
     ['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['cleaners','Cleaners','7'],
     ['services','Services & pricing',''], ['crm','CRM','3'], ['sop','SOP & QC','8'], ['desk','Complaint desk','9'], ['claims','Claims & refunds','12'],
     ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['brand','Appearance',''],
-    ['roles','Roles & permissions','8'], ['team','Admins','9']
+    ['persetujuan','Persetujuan',''], ['roles','Roles & permissions','8'], ['team','Admins','9']
   ];
   var META = {
     dash:['Dashboard','Jabodetabek · today, ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),'New booking'],
@@ -78,6 +78,7 @@ var ADMIN = (function () {
     promos:['Promos & vouchers','5 codes · 2 live','Create code'],
     rewards:['Poin & cashback','Aturan poin, tier dan cashback yang berlaku di aplikasi pelanggan','Simulasi'],
     brand:['Appearance','Logo, colour and app name across every surface','Preview apps'],
+    persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],
     team:['Admins','9 admins · 2FA enforced','Invite admin']
   };
@@ -363,6 +364,8 @@ var ADMIN = (function () {
   /* ============================================================== GAMBAR */
   function gambar() {
     if (!VIEW[S.view]) S.view = 'dash';
+    /* usulan tingkat tinggi yang sudah lewat masa tunda → diterapkan; lencana antrean */
+    if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.terapkanJatuhTempo(); var nAntre = EXO_PERSETUJUAN.menunggu().length + EXO_PERSETUJUAN.dijadwalkan().length; NAV.forEach(function (n) { if (n[0] === 'persetujuan') n[2] = nAntre ? String(nAntre) : ''; }); } catch (e) { /* abaikan */ } }
     var side = document.getElementById('adm-side'), top = document.getElementById('adm-top'), body = document.getElementById('adm-body'), lapis = document.getElementById('adm-lapis');
     var b = S.brand;
     var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">Backend console</div></div></div><div class="adm-nav">';

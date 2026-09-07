@@ -175,3 +175,7 @@ Audit dan pengerasan lengkap ada di [server/KEAMANAN.md](server/KEAMANAN.md): ge
 ## SOP dapat disunting admin dengan PIN persetujuan (7 Sep 2026)
 
 Konsol admin → SOP & QC → "SOP layanan — dipakai aplikasi mitra": tiap SOP layanan (21) bisa disunting kapan pun (kode, judul, APD wajib, alat, chemical, langkah kerja berurutan dengan wajib foto). Menyimpan/menerbitkan, mengembalikan revisi lama, atau menarik revisi **wajib PIN persetujuan** 6 angka milik admin yang login (terpisah dari sandi masuk, dibuat pertama kali dengan konfirmasi sandi, salah 5 kali terkunci 15 menit). Revisi naik otomatis, riwayat lengkap tersimpan (`EXO_DB` tabel `sop`), dan aplikasi mitra memakai revisi terbit seketika lewat `exoclean_admin_pub.sop` (`js/exo-sop.js`, `sopMeta()` di exo-core).
+
+## Kendali perubahan pengaju–penyetuju (7 Sep 2026)
+
+Modul **Persetujuan** di konsol admin: perubahan diajukan (PIN pengaju) lalu disetujui supervisor dari sesinya sendiri (PIN atau passkey), bertingkat menurut risiko (rendah/sedang/tinggi; tinggi = 2 penyetuju + berlaku tertunda 30 menit + autentikasi ulang), dengan selisih sebelum–sesudah, log audit berantai hash yang bisa diverifikasi, penanda anomali, peran admin (staf/supervisor/super admin), dan mode satu admin yang ditandai jujur di log. Penerbitan SOP kini lewat jalur ini. Rincian: `server/KEAMANAN.md` bagian 5.

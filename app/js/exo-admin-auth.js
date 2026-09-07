@@ -50,6 +50,7 @@
   /* Sandi teks polos peninggalan data contoh → hash; teks polosnya dihapus. */
   function migrasi() {
     var d = db(); if (!d || !subtle) return Promise.resolve();
+    d.where('users', function (u) { return u.role === 'admin' && !u.peran; }).forEach(function (u) { d.update('users', u.id, { peran:'superadmin' }); });
     var polos = d.where('users', function (u) { return u.role === 'admin' && u.pass && !u.passHash; });
     return Promise.all(polos.map(function (u) {
       return buatHash(String(u.pass)).then(function (h) { d.update('users', u.id, { passHash:h, pass:null, sandiBawaan: String(u.pass) === '123456' }); });
@@ -59,7 +60,7 @@
 
   /* ---------------------------------------------------------- sesi */
   function sesi() { try { var s = JSON.parse(sessionStorage.getItem(KUNCI_SESI) || 'null'); return s && s.sampai > Date.now() ? s : null; } catch (e) { return null; } }
-  function buatSesi(u) { var s = { id:u.id, nama:u.nama, email:u.email, sampai:Date.now() + SESI_MENIT * 60000 }; sessionStorage.setItem(KUNCI_SESI, JSON.stringify(s)); return s; }
+  function buatSesi(u) { var s = { id:u.id, nama:u.nama, email:u.email, mulai:Date.now(), sampai:Date.now() + SESI_MENIT * 60000 }; sessionStorage.setItem(KUNCI_SESI, JSON.stringify(s)); return s; }
   function segarkan() { var s = sesi(); if (s) { s.sampai = Date.now() + SESI_MENIT * 60000; sessionStorage.setItem(KUNCI_SESI, JSON.stringify(s)); } }
   function hapusSesi() { sessionStorage.removeItem(KUNCI_SESI); }
   function gagal() { try { return JSON.parse(localStorage.getItem(KUNCI_GAGAL) || '{"n":0}'); } catch (e) { return { n:0 }; } }
@@ -125,7 +126,7 @@
     if (mode === 'bootstrap') {
       if (sandi.length < 10 || sandi !== f.ulang.value) { pesan = 'Sandi minimal 10 karakter dan harus sama dua kali.'; sibuk = false; gambar(); return; }
       janji = buatHash(sandi).then(function (h) {
-        var u = d.insert('users', { role:'admin', nama:String(f.nama.value).trim().slice(0, 80), jabatan:'Super Admin', email:email, passHash:h, aktif:true, sumber:'gerbang', createdAt:new Date().toISOString() });
+        var u = d.insert('users', { role:'admin', nama:String(f.nama.value).trim().slice(0, 80), jabatan:'Super Admin', peran:'superadmin', email:email, passHash:h, aktif:true, sumber:'gerbang', createdAt:new Date().toISOString() });
         catat('Akun admin pertama dibuat lewat gerbang', email, u.id); selesai(u);
       });
     } else if (mode === 'ganti') {
@@ -177,7 +178,8 @@
      admin, jadi berlaku di semua peramban yang memakai basis data ini). */
   var PIN_MAKS_GAGAL = 5, PIN_KUNCI_MENIT = 15;
   function adminKini() { var s = sesi(); if (!s) return null; var d = db(); return d ? d.find('users', s.id) : null; }
-  function mintaPin(alasan) {
+  function mintaPin(alasan, opsi) {
+    opsi = opsi || {};
     return new Promise(function (selesaiJanji) {
       var u = adminKini();
       if (!u) { selesaiJanji(false); return; }
@@ -185,7 +187,7 @@
       var kotak = document.createElement('div'); kotak.id = 'adm-pin';
       kotak.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(20,30,28,.45);display:flex;align-items:center;justify-content:center;padding:24px';
       document.body.appendChild(kotak);
-      var st = { mode: u.pinHash ? 'masuk' : 'buat', pesan:'', sibuk:false };
+      var st = { mode: u.pinHash ? 'masuk' : 'buat', pesan:'', sibuk:false, passkey: !!(u.passkey && window.PublicKeyCredential) };
       function tutup(hasil) { kotak.remove(); selesaiJanji(hasil); }
       function kunciSampai() { return u.pinKunciSampai && u.pinKunciSampai > Date.now() ? u.pinKunciSampai : 0; }
       function gambarPin() {
@@ -199,12 +201,15 @@
         if (st.mode === 'buat') h += '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">Sandi masuk</label><input class="input" name="sandi" type="password" required autocomplete="current-password"></div>' +
           '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">PIN baru (6 angka)</label><input class="input" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password"></div>' +
           '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">Ulangi PIN</label><input class="input" name="ulang" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password"></div>';
-        else h += '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">PIN 6 angka</label><input class="input" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password" autofocus style="letter-spacing:.4em;font-size:20px;text-align:center"></div>';
+        else h += (opsi.sandiJuga ? '<div style="background:#e6f5f3;color:#0b5e55;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.45">Sesi Anda sudah lebih dari 15 menit — aksi berdampak tinggi meminta sandi masuk lagi, bukan hanya PIN.</div><div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">Sandi masuk</label><input class="input" name="sandi" type="password" required autocomplete="current-password"></div>' : '') +
+          (st.passkey ? '<button type="button" class="btn btn-secondary" id="adm-pin-passkey" style="height:44px">🔐 Setujui dengan passkey (sidik jari / wajah)</button><div style="text-align:center;font-size:11.5px;opacity:.6">atau pakai PIN</div>' : '') +
+          '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">PIN 6 angka</label><input class="input" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password" autofocus style="letter-spacing:.4em;font-size:20px;text-align:center"></div>';
         h += '<div style="display:flex;gap:8px;margin-top:4px"><button type="button" class="btn btn-secondary" style="flex:1;height:44px" id="adm-pin-batal">Batal</button><button class="btn btn-primary" style="flex:2;height:44px"' + (st.sibuk || k ? ' disabled' : '') + '>' + (st.sibuk ? 'Memeriksa…' : st.mode === 'buat' ? 'Simpan PIN & setujui' : 'Setujui') + '</button></div>' +
           (st.mode === 'masuk' ? '<button type="button" class="tautan" id="adm-pin-ganti" style="background:none;border:0;color:var(--color-accent,#009183);font:inherit;font-size:12.5px;cursor:pointer">Lupa PIN? Buat ulang dengan sandi masuk</button>' : '') + '</form></div>';
         kotak.innerHTML = h;
         document.getElementById('adm-pin-batal').addEventListener('click', function () { tutup(false); });
         var g = document.getElementById('adm-pin-ganti'); if (g) g.addEventListener('click', function () { st.mode = 'buat'; st.pesan = ''; gambarPin(); });
+        var pk = document.getElementById('adm-pin-passkey'); if (pk) pk.addEventListener('click', function () { st.sibuk = true; gambarPin(); verifikasiPasskey(u).then(function (ok) { st.sibuk = false; if (ok) { catat('Persetujuan lewat passkey', alasan, u.id); tutup(true); } else { st.pesan = 'Passkey tidak terverifikasi — pakai PIN.'; gambarPin(); } }); });
         document.getElementById('adm-pin-form').addEventListener('submit', kirimPin);
         var f = kotak.querySelector('input'); if (f) f.focus();
       }
@@ -223,7 +228,12 @@
           });
         } else {
           if (kunciSampai()) { st.sibuk = false; gambarPin(); return; }
-          janji = periksaHash(pin, u.pinHash).then(function (ok) {
+          var cekSandi = opsi.sandiJuga ? periksaHash(String(f.sandi.value), u.passHash) : Promise.resolve(true);
+          janji = cekSandi.then(function (sandiOk) {
+            if (!sandiOk) { st.pesan = 'Sandi masuk salah.'; catat('Autentikasi ulang gagal', alasan, u.id); return false; }
+            return periksaHash(pin, u.pinHash);
+          }).then(function (ok) {
+            if (ok === false && st.pesan) return false;
             if (ok) { if (u.pinGagal) d.update('users', u.id, { pinGagal:0 }); return true; }
             var n = (u.pinGagal || 0) + 1, patch = { pinGagal:n }; if (n >= PIN_MAKS_GAGAL) patch.pinKunciSampai = Date.now() + PIN_KUNCI_MENIT * 60000;
             u = d.update('users', u.id, patch); catat('PIN persetujuan salah', alasan + ' · percobaan ' + n, u.id);
@@ -235,5 +245,50 @@
       gambarPin();
     });
   }
-  window.EXO_ADMIN_AUTH = { buatHash:buatHash, periksaHash:periksaHash, sesi:sesi, pengguna:adminKini, mintaPin:mintaPin, keluar:function () { hapusSesi(); location.reload(); } };
+  /* ---------------------------------------------------------- passkey (WebAuthn)
+     Sidik jari / wajah di perangkat penyetuju: tidak bisa diintip atau
+     dibagikan. Kunci publik (SPKI, ES256) disimpan di baris admin; tanda
+     tangan diverifikasi di peramban ini lewat WebCrypto atas
+     authenticatorData || SHA-256(clientDataJSON), dengan tantangan acak yang
+     dicocokkan kembali. Tanpa server, verifikasi ini melindungi dari orang di
+     depan layar, bukan dari orang yang memegang DevTools — sama seperti PIN. */
+  function acak(n) { return window.crypto.getRandomValues(new Uint8Array(n)); }
+  function b64u(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function dariB64u(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  function daftarPasskey() {
+    var u = adminKini(); if (!u) return Promise.resolve({ ok:false, pesan:'Belum masuk' });
+    if (!window.PublicKeyCredential) return Promise.resolve({ ok:false, pesan:'Peramban ini tidak mendukung passkey' });
+    var idPengguna = new TextEncoder().encode(u.id).slice(0, 64);
+    return navigator.credentials.create({ publicKey: { challenge:acak(32), rp:{ name:'EXOCLEAN Admin' }, user:{ id:idPengguna, name:u.email || u.nama, displayName:u.nama },
+      pubKeyCredParams:[{ type:'public-key', alg:-7 }], authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' }, timeout:60000, attestation:'none' } })
+      .then(function (cred) {
+        var resp = cred.response, spki = resp.getPublicKey ? resp.getPublicKey() : null;
+        if (!spki) throw new Error('Peramban tidak memberikan kunci publik');
+        var d = db(); d.update('users', u.id, { passkey:{ id:b64u(cred.rawId), spki:b64u(spki), alg:resp.getPublicKeyAlgorithm ? resp.getPublicKeyAlgorithm() : -7, at:new Date().toISOString() } });
+        catat('Passkey didaftarkan', '', u.id); return { ok:true };
+      }).catch(function (e) { return { ok:false, pesan:e && e.message || String(e) }; });
+  }
+  function verifikasiPasskey(u) {
+    if (!u.passkey || !window.PublicKeyCredential || !subtle) return Promise.resolve(false);
+    var tantangan = acak(32);
+    return navigator.credentials.get({ publicKey:{ challenge:tantangan, allowCredentials:[{ type:'public-key', id:dariB64u(u.passkey.id) }], userVerification:'required', timeout:60000 } }).then(function (cred) {
+      var r = cred.response, cd = JSON.parse(new TextDecoder().decode(r.clientDataJSON));
+      if (cd.type !== 'webauthn.get' || cd.challenge !== b64u(tantangan) || cd.origin !== location.origin) return false;
+      var authData = new Uint8Array(r.authenticatorData); if (!(authData[32] & 0x04)) return false;   /* UV: pengguna diverifikasi */
+      return subtle.digest('SHA-256', r.clientDataJSON).then(function (hashCd) {
+        var data = new Uint8Array(authData.length + 32); data.set(authData, 0); data.set(new Uint8Array(hashCd), authData.length);
+        return subtle.importKey('spki', dariB64u(u.passkey.spki), { name:'ECDSA', namedCurve:'P-256' }, false, ['verify']).then(function (kunci) {
+          return subtle.verify({ name:'ECDSA', hash:'SHA-256' }, kunci, derKeRaw(new Uint8Array(r.signature)), data);
+        });
+      });
+    }).catch(function () { return false; });
+  }
+  /* tanda tangan ECDSA dari WebAuthn berbentuk DER; WebCrypto minta r||s mentah */
+  function derKeRaw(der) {
+    var i = 2, rLen = der[i + 1], r = der.slice(i + 2, i + 2 + rLen); i = i + 2 + rLen; var sLen = der[i + 1], s = der.slice(i + 2, i + 2 + sLen);
+    function pad(x) { x = x[0] === 0 && x.length > 32 ? x.slice(1) : x; var o = new Uint8Array(32); o.set(x, 32 - x.length); return o; }
+    var out = new Uint8Array(64); out.set(pad(r), 0); out.set(pad(s), 32); return out;
+  }
+  function hapusPasskey() { var u = adminKini(); if (!u) return; db().update('users', u.id, { passkey:null }); catat('Passkey dihapus', '', u.id); }
+  window.EXO_ADMIN_AUTH = { buatHash:buatHash, periksaHash:periksaHash, sesi:sesi, pengguna:adminKini, mintaPin:mintaPin, daftarPasskey:daftarPasskey, hapusPasskey:hapusPasskey, keluar:function () { hapusSesi(); location.reload(); } };
 })();

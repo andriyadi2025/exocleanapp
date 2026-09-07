@@ -100,9 +100,9 @@
   }
   function pecahBaris(t) { return String(t || '').split(/\n/).map(function (b) { var p = b.split('|'); return [p[0].trim(), (p[1] || '').trim()]; }).filter(function (a) { return a[0]; }); }
   function siapaAdmin() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
-  function denganPin(alasan, kerja) {
+  function denganPin(alasan, kerja, opsi) {
     if (!window.EXO_ADMIN_AUTH || !EXO_ADMIN_AUTH.pengguna()) { A.sekilas('Masuk sebagai admin dulu.', 'err'); return; }
-    EXO_ADMIN_AUTH.mintaPin(alasan).then(function (ok) {
+    EXO_ADMIN_AUTH.mintaPin(alasan, opsi).then(function (ok) {
       if (!ok) { A.sekilas('Dibatalkan — PIN tidak disetujui, tidak ada yang berubah.', 'err'); A.gambar(); return; }
       try { kerja(siapaAdmin()); } catch (e) { A.sekilas('Gagal: ' + (e.message || e), 'err'); }
       A.gambar();
@@ -122,22 +122,39 @@
   AKSI.sopLangkahHapus = function (i) { var e = S.sopEdit; if (!e) return; e.steps.splice(+i, 1); e.kotor = true; };
   AKSI.sopLangkahFoto = function (i) { var e = S.sopEdit; if (!e || !e.steps[+i]) return; e.steps[+i][2] = !e.steps[+i][2]; e.kotor = true; };
   AKSI.sopLangkahGeser = function (v) { var e = S.sopEdit; if (!e) return; var p = v.split(':'), i = +p[0], j = i + (+p[1]); if (j < 0 || j >= e.steps.length) return; var t = e.steps[i]; e.steps[i] = e.steps[j]; e.steps[j] = t; e.kotor = true; };
+  /* Penerbitan SOP lewat kendali perubahan: PIN pengaju → usulan (tingkat
+     sedang: 1 penyetuju dari sesi lain). Penerap dipanggil saat disetujui. */
+  if (window.EXO_PERSETUJUAN) {
+    EXO_PERSETUJUAN.daftarkanPenerap('sop', function (u, oleh) {
+      var m = u.muatan; return EXO_SOP.terbitkan(m.jasa, m.isi, { id:oleh.id, nama:oleh.nama + (u.pengajuNama && u.pengajuNama !== oleh.nama ? ' (usulan ' + u.pengajuNama + ')' : '') }, m.isi.ringkasan);
+    });
+    EXO_PERSETUJUAN.daftarkanPenerap('sop-pulihkan', function (u, oleh) { var m = u.muatan; return EXO_SOP.pulihkan(m.jasa, m.rev, { id:oleh.id, nama:oleh.nama }); });
+    EXO_PERSETUJUAN.daftarkanPenerap('sop-tarik', function (u, oleh) { var m = u.muatan; return EXO_SOP.tarik(m.jasa, { id:oleh.id, nama:oleh.nama }); });
+    EXO_PERSETUJUAN.daftarkanPenerap('peran', function (u, oleh) { var m = u.muatan; EXO_DB.update('users', m.id, { peran:m.peran }); return true; });
+  }
+  function ringkasSop(x) { return { kode:x.code, judul:x.title, apd:x.ppe.slice(), alat:x.alat.map(function (a) { return a.join(' · '); }), chemical:x.chem.map(function (a) { return a.join(' · '); }), langkah:x.steps.map(function (a) { return a[0] + (a[1] ? ' — ' + a[1] : '') + (a[2] ? ' 📷' : ''); }) }; }
+  function laporUsulan(hasil, judul) {
+    if (hasil.langsung) A.sekilas(judul + ' diterapkan' + (hasil.usulan.cara === 'tanpa-pemeriksa-kedua' ? ' — mode satu admin, ditandai "tanpa pemeriksa kedua" di log.' : '.'));
+    else A.sekilas(judul + ' masuk antrean Persetujuan · butuh ' + hasil.usulan.butuh + ' penyetuju dari sesi lain.');
+  }
   AKSI.sopTerbitkan = function () {
     var e = S.sopEdit; if (!e) return;
     var galat = EXO_SOP.periksa(e); if (galat.length) { A.sekilas(galat[0], 'err'); return; }
-    var jasa = e.jasa, isi = JSON.parse(JSON.stringify(e));
-    denganPin('Terbitkan SOP ' + isi.code + ' ' + EXO_SOP.padRev(e.revKini + 1) + ' untuk ' + namaJasa(jasa) + '. Aplikasi mitra memakainya seketika.', function (oleh) {
-      var r = EXO_SOP.terbitkan(jasa, isi, oleh, isi.ringkasan);
-      S.sopEdit = baruEdit(jasa); A.sekilas('SOP ' + isi.code + ' ' + EXO_SOP.padRev(r.rev) + ' terbit · disetujui PIN ' + oleh.nama + '.');
+    var jasa = e.jasa, isi = JSON.parse(JSON.stringify(e)), judul = 'SOP ' + isi.code + ' ' + EXO_SOP.padRev(e.revKini + 1) + ' · ' + namaJasa(jasa);
+    denganPin('Ajukan ' + judul + '. Berlaku setelah disetujui supervisor dari sesinya sendiri.', function (oleh) {
+      var h = EXO_PERSETUJUAN.ajukan('sop', judul, isi.ringkasan, ringkasSop(EXO_SOP.berlaku(jasa)), ringkasSop(isi), { jasa:jasa, isi:isi }, oleh);
+      S.sopEdit = baruEdit(jasa); laporUsulan(h, judul);
     });
   };
   AKSI.sopPulihkan = function (rev) {
     var e = S.sopEdit; if (!e) return; var jasa = e.jasa;
-    denganPin('Kembalikan SOP ' + namaJasa(jasa) + ' ke ' + EXO_SOP.padRev(+rev) + ' (terbit sebagai revisi baru).', function (oleh) { var r = EXO_SOP.pulihkan(jasa, +rev, oleh); S.sopEdit = baruEdit(jasa); A.sekilas('Dikembalikan ke ' + EXO_SOP.padRev(+rev) + ' → terbit sebagai ' + EXO_SOP.padRev(r.rev) + '.'); });
+    var judulP = 'Kembalikan SOP ' + namaJasa(jasa) + ' ke ' + EXO_SOP.padRev(+rev);
+    denganPin('Ajukan: ' + judulP + '.', function (oleh) { var lama = EXO_SOP.riwayat(jasa).filter(function (x) { return x.rev === +rev; })[0]; var h = EXO_PERSETUJUAN.ajukan('sop-pulihkan', judulP, 'Pemulihan revisi', ringkasSop(EXO_SOP.berlaku(jasa)), lama ? ringkasSop(Object.assign({ ppe:[], alat:[], chem:[], steps:[] }, lama.isi)) : null, { jasa:jasa, rev:+rev }, oleh); S.sopEdit = baruEdit(jasa); laporUsulan(h, judulP); });
   };
   AKSI.sopTarik = function () {
     var e = S.sopEdit; if (!e) return; var jasa = e.jasa;
-    denganPin('Tarik semua revisi SOP ' + namaJasa(jasa) + ' — aplikasi mitra kembali ke bawaan rancangan.', function (oleh) { EXO_SOP.tarik(jasa, oleh); S.sopEdit = baruEdit(jasa); A.sekilas('Revisi ditarik · aplikasi memakai SOP bawaan.'); });
+    var judulT = 'Tarik revisi SOP ' + namaJasa(jasa) + ' (kembali ke bawaan)';
+    denganPin('Ajukan: ' + judulT + '.', function (oleh) { var h = EXO_PERSETUJUAN.ajukan('sop-tarik', judulT, 'Penarikan revisi', ringkasSop(EXO_SOP.berlaku(jasa)), ringkasSop(EXO_SOP.bawaan(jasa)), { jasa:jasa }, oleh); S.sopEdit = baruEdit(jasa); laporUsulan(h, judulT); });
   };
   VIEW.sop = function () {
     var h = '<div class="flex gap-8">';
@@ -197,6 +214,113 @@
     h += '</div><div class="card elev-sm gap-10"><div class="card-title">Rules that make it work</div>' + bullets(['Every complaint gets a named human and a dated deadline within 60 seconds — no queue number, no bot loop.','The clock is public: the customer sees the same countdown and owner that the desk sees.','Miss a deadline and the customer is credited automatically, before anyone apologises.','The agent who receives a complaint cannot approve their own compensation.','Every closed case is tagged with a root cause and a fix owner; causes that keep repeating become product work, not scripts.','A case only closes when the customer confirms — and reopening keeps the original owner.']) + '</div></div></div>';
     return h;
   };
+
+  /* ========================================================= PERSETUJUAN
+     Antrean usulan (dengan selisih sebelum–sesudah), yang dijadwalkan berlaku,
+     riwayat, dan log audit berantai hash dengan tombol verifikasi. */
+  function namaPeran(p) { return { staf:'Staf', supervisor:'Supervisor', superadmin:'Super admin' }[p] || p; }
+  function kartuUsulan(u, saya) {
+    var P = EXO_PERSETUJUAN, galat = saya ? P.bolehSetujui(u, saya) : 'Belum masuk';
+    var tone = u.tingkat === 'tinggi' ? 'accent' : u.tingkat === 'sedang' ? 'green' : 'flat';
+    var h = '<div class="card elev-sm gap-10"><div class="flex items-center gap-8">' + chip(tone, 'Tingkat ' + u.tingkat) + '<span class="chip" style="background:var(--color-surface);font-size:11px">' + esc(u.jenis) + '</span><div class="grow"></div><span class="t-115 o-6">' + esc(String(u.createdAt || '').slice(0, 16).replace('T', ' ')) + '</span></div>' +
+      '<div class="f-head t-16">' + esc(u.judul) + '</div><div class="t-125 o-75">' + esc(u.ringkasan || '—') + ' · diajukan <b>' + esc(u.pengajuNama) + '</b>' + (u.persetujuan && u.persetujuan.length ? ' · disetujui ' + u.persetujuan.map(function (x) { return esc(x.olehNama); }).join(', ') + ' (' + u.persetujuan.length + '/' + u.butuh + ')' : ' · 0/' + u.butuh + ' persetujuan') + '</div>';
+    var d = P.selisih(u.sebelum, u.sesudah);
+    if (d.length) {
+      h += '<div style="background:var(--color-surface);border-radius:14px;padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;max-height:220px;overflow:auto">';
+      d.slice(0, 60).forEach(function (b) { h += '<div style="color:' + (b[0] === '+' ? 'var(--color-accent-2-800,#0b5e55)' : '#9b1c1c') + '"><b>' + b[0] + '</b> ' + esc(b[1]) + ': ' + esc(b[2]) + '</div>'; });
+      if (d.length > 60) h += '<div class="o-6">… ' + (d.length - 60) + ' baris lagi</div>';
+      h += '</div>';
+    } else h += '<div class="t-115 o-6">Tidak ada selisih yang bisa ditampilkan.</div>';
+    if (u.status === 'menunggu') {
+      h += '<div class="flex gap-8 items-center wrap">' +
+        (galat ? '<span class="t-115 o-7">' + esc(galat) + '</span>' : '<button class="btn btn-primary" style="height:36px"' + aksi('usulanSetujui', u.id) + '>Setujui · PIN</button><button class="btn btn-secondary" style="height:36px"' + aksi('usulanTolak', u.id) + '>Tolak · PIN</button>') +
+        (saya && (u.pengajuId === saya.id || P.bolehMenyetujui(saya)) ? '<button class="btn btn-secondary" style="height:36px;margin-inline-start:auto"' + aksi('usulanBatal', u.id) + '>Batalkan</button>' : '') + '</div>';
+    } else if (u.status === 'disetujui') {
+      var sisa = Math.max(0, Math.round((new Date(u.berlakuAt).getTime() - Date.now()) / 60000));
+      h += '<div class="flex gap-8 items-center">' + chip('accent', 'Berlaku dalam ' + sisa + ' menit') + '<span class="t-115 o-7">' + esc(String(u.berlakuAt).slice(11, 16)) + ' UTC · masih bisa dibatalkan</span>' + (saya && P.bolehMenyetujui(saya) ? '<button class="btn btn-secondary" style="height:36px;margin-inline-start:auto"' + aksi('usulanBatal', u.id) + '>Batalkan · PIN</button>' : '') + '</div>';
+    } else {
+      h += '<div class="t-115 o-7">' + chip(u.status === 'berlaku' ? 'green' : 'flat', u.status) + ' ' + esc(u.status === 'berlaku' ? 'diterapkan ' + (u.diterapkanOleh || '') + ' · ' + String(u.diterapkanAt || '').slice(0, 16).replace('T', ' ') + (u.cara ? ' · ' + u.cara : '') : u.status === 'ditolak' ? 'oleh ' + (u.ditolakOleh || '') + ': ' + (u.alasanTolak || '') : 'oleh ' + (u.dibatalkanOleh || '')) + '</div>';
+    }
+    return h + '</div>';
+  }
+  VIEW.persetujuan = function () {
+    if (!window.EXO_PERSETUJUAN) return '<div class="card elev-sm">Modul kendali perubahan belum dimuat.</div>';
+    var P = EXO_PERSETUJUAN, saya = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(), tunggu = P.menunggu(), jadwal = P.dijadwalkan(), riwayat = P.semua().filter(function (u) { return u.status !== 'menunggu' && u.status !== 'disetujui'; }).slice(0, 12);
+    var penyetuju = P.penyetujuLain(saya ? saya.id : null);
+    var h = kpi([{label:'Menunggu persetujuan', value:String(tunggu.length), note:tunggu.length ? 'perlu supervisor dari sesi lain' : 'antrean kosong', good:!tunggu.length},{label:'Dijadwalkan berlaku', value:String(jadwal.length), note:'tingkat tinggi · tunda ' + P.ATURAN.tinggi.tundaMenit + ' menit'},{label:'Penyetuju tersedia', value:String(penyetuju.length + (saya && P.bolehMenyetujui(saya) ? 1 : 0)), note:saya ? 'Anda: ' + namaPeran(P.peranDari(saya)) + (P.modeSatuAdmin(saya) ? ' · MODE SATU ADMIN' : '') : '—', good:penyetuju.length > 0},{label:'Entri audit', value:String(P.daftarAudit(100000).length), note:S.rantai ? S.rantai.pesan || ('rantai utuh · ' + S.rantai.jumlah + ' entri') : 'belum diverifikasi', good:S.rantai ? S.rantai.ok : undefined}], true, 4);
+    h += '<div class="grid g3" style="gap:12px">';
+    [['rendah','PIN sendiri · langsung berlaku · tercatat · bisa dibatalkan','catatan, salah ketik'],['sedang','1 penyetuju dari sesi lain (supervisor / super admin)','SOP, tarif, promo, poin'],['tinggi','2 penyetuju berbeda · berlaku tertunda 30 menit · sesi > 15 menit minta sandi lagi','peran & akun admin, merek, pembayaran']].forEach(function (t) {
+      h += '<div class="card elev-sm gap-6"><div class="flex items-center gap-8">' + chip(t[0] === 'tinggi' ? 'accent' : t[0] === 'sedang' ? 'green' : 'flat', 'Tingkat ' + t[0]) + '</div><div class="t-125">' + t[1] + '</div><div class="t-115 o-6">' + t[2] + '</div></div>';
+    });
+    h += '</div>';
+    if (saya && P.modeSatuAdmin(saya)) h += '<div class="card card-clay t-125 lh-15">Hanya ada satu akun penyetuju di basis data ini, jadi usulan Anda diterapkan langsung dan <b>ditandai “tanpa pemeriksa kedua”</b> di log. Tambahkan supervisor di modul Admins supaya aturan dua orang berjalan.</div>';
+    h += '<div class="grid g2" style="gap:16px"><div class="stack gap-12"><div class="card-title">Menunggu persetujuan</div>' + (tunggu.length ? tunggu.map(function (u) { return kartuUsulan(u, saya); }).join('') : '<div class="card elev-sm t-125 o-7">Tidak ada usulan menunggu.</div>');
+    if (jadwal.length) h += '<div class="card-title" style="margin-top:6px">Dijadwalkan berlaku</div>' + jadwal.map(function (u) { return kartuUsulan(u, saya); }).join('');
+    h += '</div><div class="stack gap-12"><div class="flex items-center gap-8"><div class="grow card-title">Log audit berantai hash</div><button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('rantaiVerifikasi') + '>Verifikasi rantai</button></div>';
+    if (S.rantai) h += '<div class="card ' + (S.rantai.ok ? 'card-leaf' : 'card-clay') + ' t-125">' + esc(S.rantai.ok ? 'Rantai utuh: ' + S.rantai.jumlah + ' entri, tidak ada yang dihapus atau diubah.' : S.rantai.pesan) + '</div>';
+    var log = P.daftarAudit(25);
+    h += '<div class="card elev-sm table-card">' + tabel(['#','Waktu','Aktor','Aksi','Tanda'], log.length ? log.map(function (e) { return ['<span class="id">' + e.seq + '</span>', '<span class="t-12">' + esc(String(e.at).slice(0, 16).replace('T', ' ')) + '</span>', '<span class="t-12">' + esc(e.aktorNama || '—') + '</span>', '<span class="t-12"><b>' + esc(e.aksi) + '</b>' + (e.detail ? '<br><span class="o-65">' + esc(e.detail) + '</span>' : '') + '</span>', e.tanda && e.tanda.length ? chip('accent', e.tanda.join(' · ')) : '<span class="o-5">—</span>']; }) : [['<span class="o-6">Belum ada entri.</span>', '', '', '', '']]) + '</div>';
+    if (riwayat.length) { h += '<div class="card-title" style="margin-top:6px">Riwayat usulan</div>' + riwayat.map(function (u) { return kartuUsulan(u, saya); }).join(''); }
+    h += '</div></div>';
+    h += '<div class="t-115 o-6 lh-15">Pemeriksaan ini berjalan di peramban dengan data lokal: ia menahan kekeliruan dan kecerobohan. Penegakan terhadap niat jahat menuntut server yang mencatat dan memverifikasi usulan — struktur tabel usulan dan audit sudah disiapkan untuk itu.</div>';
+    return h;
+  };
+  function akuSaya() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
+  function opsiTinggi(u) { var s = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.sesi(); return { sandiJuga: EXO_PERSETUJUAN.butuhSesiUlang(s, u) }; }
+  AKSI.usulanSetujui = function (id) {
+    var u = EXO_DB.find('usulan', id); if (!u) return;
+    denganPin('Setujui: ' + u.judul + (u.tingkat === 'tinggi' ? ' (tingkat tinggi — berlaku tertunda ' + u.tundaMenit + ' menit)' : ''), function (oleh) {
+      var h = EXO_PERSETUJUAN.setujui(id, oleh, '');
+      A.sekilas(h.langsung ? u.judul + ' disetujui dan diterapkan.' : h.tertunda ? u.judul + ' disetujui · berlaku dalam ' + u.tundaMenit + ' menit, masih bisa dibatalkan.' : 'Persetujuan ' + h.usulan.persetujuan.length + '/' + u.butuh + ' tercatat · butuh penyetuju kedua.');
+    }, opsiTinggi(u));
+  };
+  AKSI.usulanTolak = function (id) {
+    var u = EXO_DB.find('usulan', id); if (!u) return;
+    var alasan = window.prompt('Alasan penolakan (tercatat di log):', ''); if (alasan === null) return;
+    denganPin('Tolak: ' + u.judul, function (oleh) { EXO_PERSETUJUAN.tolak(id, oleh, alasan); A.sekilas(u.judul + ' ditolak.'); });
+  };
+  AKSI.usulanBatal = function (id) {
+    var u = EXO_DB.find('usulan', id); if (!u) return;
+    denganPin('Batalkan: ' + u.judul, function (oleh) { EXO_PERSETUJUAN.batalkan(id, oleh); A.sekilas(u.judul + ' dibatalkan.'); });
+  };
+  AKSI.rantaiVerifikasi = function () { EXO_PERSETUJUAN.verifikasiRantai().then(function (r) { S.rantai = r; A.gambar(); }); };
+
+  /* ---- akun admin nyata: peran, PIN, passkey ---- */
+  function kartuAkunAdmin() {
+    if (!window.EXO_PERSETUJUAN || !window.EXO_DB) return '';
+    var P = EXO_PERSETUJUAN, saya = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna();
+    var akun = EXO_DB.where('users', function (u) { return u.role === 'admin'; });
+    var h = '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Akun admin di basis data ini</div><div class="t-115 o-6">Peran menentukan siapa boleh menyetujui: staf mengajukan, supervisor & super admin menyetujui. Mengubah peran = usulan tingkat tinggi (2 penyetuju, tunda 30 menit).</div></div>' +
+      (saya && P.peranDari(saya) === 'superadmin' ? '<button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('akunTambah') + '>+ Akun admin</button>' : '') + '</div>' +
+      tabel(['Nama','Email','Peran','PIN','Passkey','Status',''], akun.map(function (u) {
+        var pr = P.peranDari(u), me = saya && saya.id === u.id;
+        return ['<span class="t-125"><b>' + esc(u.nama) + '</b>' + (me ? ' <span class="o-6">(Anda)</span>' : '') + '</span>', '<span class="t-12">' + esc(u.email || '—') + '</span>', chip(pr === 'superadmin' ? 'accent' : pr === 'supervisor' ? 'green' : 'flat', namaPeran(pr)),
+          u.pinHash ? chip('green', 'ada') : chip('flat', 'belum'), u.passkey ? chip('green', 'terdaftar') : chip('flat', '—'), chip(u.aktif === false ? 'flat' : 'green', u.aktif === false ? 'nonaktif' : 'aktif'),
+          (me ? '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi(u.passkey ? 'passkeyHapus' : 'passkeyDaftar') + '>' + (u.passkey ? 'Hapus passkey' : 'Daftarkan passkey') + '</button> ' : '') +
+          (saya && P.peranDari(saya) === 'superadmin' && !me ? ['staf','supervisor','superadmin'].filter(function (x) { return x !== pr; }).map(function (x) { return '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('peranUsul', u.id + ':' + x) + '>→ ' + namaPeran(x) + '</button>'; }).join(' ') : '')];
+      })) + '</div>';
+    return h;
+  }
+  AKSI.akunTambah = function () {
+    var nama = window.prompt('Nama admin baru:'); if (!nama) return;
+    var email = window.prompt('Email (untuk masuk):'); if (!email) return;
+    var peran = window.prompt('Peran: staf / supervisor / superadmin', 'staf'); if (!peran || !/^(staf|supervisor|superadmin)$/.test(peran)) { A.sekilas('Peran tidak dikenal.', 'err'); return; }
+    var sandi = window.prompt('Sandi awal (minimal 10 karakter; minta pengguna menggantinya):'); if (!sandi || sandi.length < 10) { A.sekilas('Sandi minimal 10 karakter.', 'err'); return; }
+    denganPin('Buat akun admin ' + nama + ' (' + peran + ')', function (oleh) {
+      EXO_ADMIN_AUTH.buatHash(sandi).then(function (h) {
+        var u = EXO_DB.insert('users', { role:'admin', nama:String(nama).trim().slice(0, 80), email:String(email).trim().toLowerCase(), peran:peran, passHash:h, sandiBawaan:true, aktif:true, sumber:'admin', createdAt:new Date().toISOString() });
+        EXO_PERSETUJUAN.audit(oleh, 'Membuat akun admin ' + u.nama, u.id, 'peran ' + peran + ' · wajib ganti sandi saat masuk pertama');
+        A.sekilas('Akun ' + u.nama + ' dibuat · pengguna wajib mengganti sandi saat masuk pertama.'); A.gambar();
+      });
+    });
+  };
+  AKSI.peranUsul = function (v) {
+    var p = v.split(':'), u = EXO_DB.find('users', p[0]); if (!u) return;
+    var judul = 'Ubah peran ' + u.nama + ': ' + namaPeran(EXO_PERSETUJUAN.peranDari(u)) + ' → ' + namaPeran(p[1]);
+    denganPin('Ajukan: ' + judul + ' (tingkat tinggi)', function (oleh) { var h = EXO_PERSETUJUAN.ajukan('peran', judul, 'Perubahan hak persetujuan', { peran:EXO_PERSETUJUAN.peranDari(u) }, { peran:p[1] }, { id:u.id, peran:p[1] }, oleh); laporUsulan(h, judul); }, opsiTinggi({ tingkat:'tinggi' }));
+  };
+  AKSI.passkeyDaftar = function () { EXO_ADMIN_AUTH.daftarPasskey().then(function (r) { A.sekilas(r.ok ? 'Passkey terdaftar — persetujuan bisa lewat sidik jari/wajah.' : 'Passkey gagal: ' + r.pesan, r.ok ? 'ok' : 'err'); A.gambar(); }); };
+  AKSI.passkeyHapus = function () { denganPin('Hapus passkey Anda', function () { EXO_ADMIN_AUTH.hapusPasskey(); A.sekilas('Passkey dihapus.'); }); };
 
   /* ============================================================== REWARDS */
   function stepRow(label, note, value, key) {
@@ -300,8 +424,9 @@
 
   /* ================================================================= TEAM */
   VIEW.team = function () {
+    var kartuAkun = kartuAkunAdmin();
     var h = '<div class="card elev-sm table-card" style="max-width:900px">' + tabel(['Admin','Email','Role','Branding','Refunds','Last active'], [['Andriyadi N.','andriyadi@exoclean.id','Super admin','Edit','Approve','now','accent'],['Rahma Putri','rahma@exoclean.id','Claims lead','View','Approve','12 min ago','flat'],['Bagas Setiawan','bagas@exoclean.id','Ops manager','View','Request','1h ago','flat'],['Nadia Rahmi','nadia@exoclean.id','Support','None','Request','yesterday','flat']].map(function (t) { return ['<b>' + t[0] + '</b>', t[1], chip(t[6], t[2]), t[3], t[4], t[5]]; })) + '</div>';
-    return h + '<div class="t-115 o-6">Two-factor is mandatory for Super admin. Every branding publish, refund and manual credit is written to the audit log.</div>';
+    return kartuAkun + h + '<div class="t-115 o-6">Two-factor is mandatory for Super admin. Every branding publish, refund and manual credit is written to the audit log.</div>';
   };
 
   document.addEventListener('DOMContentLoaded', A.pasang);
