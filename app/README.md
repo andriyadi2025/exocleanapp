@@ -183,3 +183,16 @@ Modul **Persetujuan** di konsol admin: perubahan diajukan (PIN pengaju) lalu dis
 ## Accounting & Finance (7 Sep 2026)
 
 Modul **Accounting & Finance** di konsol admin (`js/exo-keuangan.js` model, `js/exo-admin-keuangan.js` tampilan), 10 tab: Ringkasan (GMV vs pendapatan platform, kewajiban upah mitra, dana ditahan di luar neraca, saldo dompet sebagai liabilitas, arus kas), Piutang & invoice kontrak B2B dengan umur piutang, Rekonsiliasi per kanal + penahanan > 24 jam, Payout mitra (upah bersih setelah PPh 21, batch lewat persetujuan; ≥ ambang = tingkat tinggi), Dompet & dana ditahan (kewajiban ke pelanggan, rasio escrow), Pajak (PPN atas fee platform & kontrak, PPh 21/23 dipotong, ekspor e-Faktur/e-Bupot), Jurnal & buku besar (bagan akun, jurnal otomatis dari peristiwa pesanan, jurnal manual lewat persetujuan, neraca saldo), Biaya & anggaran, Laporan (laba rugi, neraca, arus kas, ekspor CSV), Tutup buku & setelan (periode terkunci, tarif pajak/fee/ambang lewat usulan tingkat tinggi). Semua yang menggerakkan uang atau mengubah buku lewat modul Persetujuan. Bila basis data belum punya cukup pesanan tertangkap, deretan contoh ditambahkan dan selalu ditandai "contoh".
+
+## Pengelompokan menu konsol admin (7 Sep 2026)
+
+Bilah samping dikelompokkan mengikuti pola aplikasi sejenis (Jobber/Housecall Pro/ZenMaid, Swept/Connecteam, Urban Company, konsol perusahaan):
+
+| Kelompok | Menu |
+|---|---|
+| **Operasional** | Dashboard, Live ops, Orders, Services & pricing, SOP & QC, **Inventaris & perlengkapan** (baru), CRM, Complaint desk, Promos & vouchers, Poin & cashback, **Komunikasi tim** (baru: pengumuman ke aplikasi mitra) |
+| **Accounting & Finance** | Accounting & Finance, Claims & refunds |
+| **HRD** | Cleaners & rekrutmen, **Absensi & timesheet** (baru), **Jadwal & cuti** (baru), **Pelatihan & sertifikasi** (baru), **Kinerja & sanksi** (baru), **Penggajian karyawan** (baru) |
+| **IT** | Persetujuan & audit, **Keamanan** (baru), Roles & permissions, Admins & akun, **Integrasi & kunci** (baru), **Cadangan & data** (baru), Appearance |
+
+Modul baru ada di `js/exo-admin-modul.js`; semua tindakan berdampak (cuti, sanksi, PO, pengumuman, payroll, impor/reset data) lewat Persetujuan. Pengumuman yang disetujui tampil di beranda job aplikasi mitra.

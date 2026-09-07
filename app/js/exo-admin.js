@@ -59,12 +59,17 @@ var ADMIN = (function () {
   ];
   if (pub.promos) PROMOS.forEach(function (p) { if (pub.promos[p.code] && pub.promos[p.code].live != null) p.live = pub.promos[p.code].live; });
 
-  var NAV = [
-    ['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['cleaners','Cleaners','7'],
-    ['services','Services & pricing',''], ['crm','CRM','3'], ['sop','SOP & QC','8'], ['desk','Complaint desk','9'], ['claims','Claims & refunds','12'],
-    ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['brand','Appearance',''],
-    ['keuangan','Accounting & Finance',''], ['persetujuan','Persetujuan',''], ['roles','Roles & permissions','8'], ['team','Admins','9']
+  /* Menu dikelompokkan mengikuti pola aplikasi sejenis (Jobber/Housecall Pro/
+     ZenMaid untuk operasional & keuangan, Swept/Connecteam untuk tenaga kerja,
+     konsol perusahaan untuk IT). NAV tetap daftar datar untuk lencana; KELOMPOK
+     menentukan judul bagian di bilah samping. */
+  var KELOMPOK = [
+    ['Operasional', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback',''], ['komunikasi','Komunikasi tim','']]],
+    ['Accounting & Finance', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
+    ['HRD', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['pelatihan','Pelatihan & sertifikasi',''], ['kinerja','Kinerja & sanksi',''], ['penggajian','Penggajian karyawan','']]],
+    ['IT', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
   ];
+  var NAV = []; KELOMPOK.forEach(function (g) { g[1].forEach(function (n) { NAV.push(n); }); });
   var META = {
     dash:['Dashboard','Jabodetabek · today, ' + new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),'New booking'],
     live:['Live ops','24 petugas di lapangan · peta armada dan status real time','Reassign job'],
@@ -78,6 +83,16 @@ var ADMIN = (function () {
     promos:['Promos & vouchers','5 codes · 2 live','Create code'],
     rewards:['Poin & cashback','Aturan poin, tier dan cashback yang berlaku di aplikasi pelanggan','Simulasi'],
     brand:['Appearance','Logo, colour and app name across every surface','Preview apps'],
+    absensi:['Absensi & timesheet','Clock-in/out ber-GPS dari aplikasi mitra · dasar upah & lembur','Ekspor'],
+    jadwal:['Jadwal & cuti','Ketersediaan mingguan mitra · cuti/izin disetujui lewat Persetujuan','Cuti baru'],
+    pelatihan:['Pelatihan & sertifikasi','Kurikulum wajib per fungsi · sertifikat & dokumen kepatuhan · pengingat kedaluwarsa','Kursus baru'],
+    kinerja:['Kinerja & sanksi','Rating, keluhan, inspeksi, ketepatan · poin pelanggaran 90 hari · penghargaan','Catat'],
+    penggajian:['Penggajian karyawan','Gaji kantor · BPJS · PPh 21 · payroll bulanan lewat Persetujuan (tinggi)','Jalankan'],
+    inventaris:['Inventaris & perlengkapan','Stok chemical, alat, APD · permintaan dari lapangan (H-005) · PO lewat Persetujuan','PO baru'],
+    komunikasi:['Komunikasi tim','Pengumuman ke aplikasi mitra · target per fungsi/kota · disetujui sebelum tayang','Pengumuman'],
+    keamanan:['Keamanan','Konteks aman, login & PIN gagal, passkey, kontrol yang aktif · peristiwa autentikasi','Uji'],
+    integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
+    data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
     keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],
@@ -370,7 +385,10 @@ var ADMIN = (function () {
     var side = document.getElementById('adm-side'), top = document.getElementById('adm-top'), body = document.getElementById('adm-body'), lapis = document.getElementById('adm-lapis');
     var b = S.brand;
     var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">Backend console</div></div></div><div class="adm-nav">';
-    NAV.forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
+    KELOMPOK.forEach(function (g) {
+      h += '<div class="adm-grup">' + esc(g[0]) + '</div>';
+      g[1].forEach(function (n) { h += '<button class="' + (S.view === n[0] ? 'on' : '') + '"' + aksi('view', n[0]) + '><span class="lbl">' + n[1] + '</span>' + (n[2] ? '<span class="bd">' + n[2] + '</span>' : '') + '</button>'; });
+    });
     h += '</div><div class="adm-me">' + av('AN', 34) + '<div class="grow"><div class="t-125 bold">Andriyadi N.</div><div class="t-105 o-6">Super admin' + (adaDB() ? ' · DB connected' : ' · sample data') + '</div></div></div>';
     side.innerHTML = h;
     var m = META[S.view];
@@ -397,5 +415,5 @@ var ADMIN = (function () {
     gambar();
   }
 
-  return { S:S, VIEW:VIEW, AKSI:AKSI, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
+  return { S:S, VIEW:VIEW, AKSI:AKSI, KELOMPOK:KELOMPOK, SERVICES:SERVICES, PROMOS:PROMOS, rp:rp, esc:esc, aksi:aksi, chip:chip, chipBtn:chipBtn, pill:pill, kpi:kpi, tabel:tabel, meter:meter, av:av, sekilas:sekilas, bacaPub:bacaPub, tulisPub:tulisPub, gambar:gambar, pasang:pasang };
 })();

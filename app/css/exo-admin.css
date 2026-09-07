@@ -19,6 +19,8 @@ body { background: var(--color-bg); }
 .adm-nav button:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .adm-nav button.on { background: var(--color-accent); color: var(--color-bg); }
 .adm-nav button .lbl { flex:1; text-align:start; }
+.adm-grup { font-size:10px; letter-spacing:.14em; text-transform:uppercase; opacity:.5; padding:14px 14px 4px; }
+.adm-grup:first-child { padding-top:0; }
 .adm-nav .bd { font-size:11px; padding:2px 9px; border-radius:999px; background: var(--color-bg); opacity:.7; }
 .adm-nav button.on .bd { background: rgba(255,255,255,.25); opacity:1; }
 .adm-me { margin-top:auto; display:flex; align-items:center; gap:10px; padding:12px; border-radius:20px; background: var(--color-bg); }

@@ -11,6 +11,18 @@
   function aku() { return X.daftarJuru()[0] || X.JURU_KOSONG; }
 
   /* =============================================================== PJOBS */
+  /* Pengumuman dari konsol admin (Komunikasi tim) — diterbitkan setelah disetujui. */
+  function pengumumanKonsol() {
+    var p = []; try { p = (JSON.parse(localStorage.getItem('exoclean_admin_pub') || '{}') || {}).pengumuman || []; } catch (e) { p = []; }
+    var hari = new Date().toISOString().slice(0, 10);
+    return p.filter(function (x) { return x.aktif !== false && (!x.sampai || x.sampai >= hari); }).slice(-3).reverse();
+  }
+  function kartuPengumuman() {
+    var d = pengumumanKonsol(); if (!d.length) return '';
+    var h = '';
+    d.forEach(function (x) { h += '<div class="card card-leaf gap-4"><div class="flex items-center gap-8"><span class="tag tag-accent">Pengumuman</span><span class="t-11 o-6">' + esc(String(x.at || '').slice(0, 10)) + (x.target && x.target !== 'semua' ? ' · ' + esc(x.target) : '') + '</span></div><div class="f-head t-15">' + esc(x.judul) + '</div><div class="t-125 lh-15 o-85">' + esc(x.isi) + '</div></div>'; });
+    return h;
+  }
   X.LAYAR.pjobs = function () {
     var a = aku(), nd = X.namaDepan(a);
     var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) +
@@ -18,6 +30,7 @@
       '<button class="' + kelas('pill', K.daring) + '" style="padding:8px 14px"' + aksi('daring') + '>' + (K.daring ? 'Aktif' : 'Nonaktif') + '</button></div>' +
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div></div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
+    h += kartuPengumuman();
     h += '<div class="card elev-md gap-11"><div class="flex items-center gap-8"><span class="tag tag-accent">Mulai 24 menit lagi</span><span style="margin-inline-start:auto" class="t-115 o-6">EXO-4471</span></div>' +
       '<div><div class="f-head t-16">Cleaning per jam · 3 jam</div><div class="t-12 o-7">Kemang Residence 12B · 2,1 km · Dewi A.</div></div>' +
       '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'proute') + '>Mulai rute</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'obrol') + '>Chat</button></div></div>';
