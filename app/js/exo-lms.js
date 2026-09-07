@@ -24,7 +24,7 @@ var EXO_LMS = (function () {
   'use strict';
   var KUNCI_PUB = 'exoclean_admin_pub';
   var LEVEL = [['dasar','Dasar'],['menengah','Menengah'],['lanjutan','Lanjutan']];
-  var FUNGSI = [['semua','Semua'],['cleaner','Cleaner'],['teknisi','Teknisi AC'],['pengasuh','Pengasuh'],['jurumasak','Juru masak'],['supervisor','Supervisor'],['staf','Staf kantor']];
+  var FUNGSI = [['semua','Semua'],['cleaner','Cleaner'],['teknisi','Teknisi AC'],['pengasuh','Pengasuh'],['jurumasak','Juru masak'],['terapis','Terapis pijat'],['supervisor','Supervisor'],['staf','Staf kantor']];
   function db() { try { return window.EXO_DB && EXO_DB.init() ? EXO_DB : null; } catch (e) { return null; } }
   function kini() { return new Date().toISOString(); }
   function uid(p) { return (window.EXO_UTIL && EXO_UTIL.uid) ? EXO_UTIL.uid(p) : p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -37,7 +37,7 @@ var EXO_LMS = (function () {
   function fungsiDari(u) {
     if (!u) return 'cleaner'; if (u.role === 'admin') return 'staf';
     var j = String(u.jabatan || '').toLowerCase();
-    if (/ac|teknisi/.test(j)) return 'teknisi'; if (/supervisor|senior/.test(j)) return 'supervisor'; if (/pengasuh|perawat/.test(j)) return 'pengasuh'; if (/masak|koki/.test(j)) return 'jurumasak';
+    if (/ac|teknisi/.test(j)) return 'teknisi'; if (/supervisor|senior/.test(j)) return 'supervisor'; if (/pengasuh|perawat/.test(j)) return 'pengasuh'; if (/masak|koki/.test(j)) return 'jurumasak'; if (/pijat|terapis|massage/.test(j)) return 'terapis';
     return 'cleaner';
   }
 
@@ -107,11 +107,21 @@ var EXO_LMS = (function () {
     return true;
   }
 
+  /* ------------------------------------------------------------ SOP → kursus wajib (exo-lms-sop.js) */
+  var sopSinkronKunci = '';
+  function sinkronSop(paksa) {
+    var d = db(); if (!d || !window.EXO_LMS_SOP || !window.EXO_SOP) return 0;
+    var kunci = EXO_SOP.semua().map(function (s) { return s.code + ':' + (s.rev || 0); }).join(',');
+    if (!paksa && kunci === sopSinkronKunci) return 0;
+    var n = EXO_LMS_SOP.sinkron({ bahan:{ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal } }, d);
+    sopSinkronKunci = kunci; if (n) terbitkanSemua(); return n;
+  }
+
   /* ------------------------------------------------------------ katalog */
-  function semuaKursus() { var d = db(); if (d) { semai(); perbaruiKatalog(); } return d ? d.all('kursus') : []; }
+  function semuaKursus() { var d = db(); if (d) { semai(); perbaruiKatalog(); sinkronSop(); } return d ? d.all('kursus') : []; }
   function kursus(id) { var d = db(); return d ? d.find('kursus', id) : null; }
   function kursusKode(kode) { return semuaKursus().filter(function (k) { return k.kode === kode; })[0] || null; }
-  function jalur() { var d = db(); if (d) { semai(); perbaruiKatalog(); } return d ? d.all('jalur') : []; }
+  function jalur() { var d = db(); if (d) { semai(); perbaruiKatalog(); sinkronSop(); } return d ? d.all('jalur') : []; }
   /* yang tayang ke peserta: terbitan (pub) bila ada, kalau tidak kursus berstatus terbit */
   function katalog() { var p = bacaPub().lms; if (p && p.kursus) return p.kursus; return semuaKursus().filter(function (k) { return k.status === 'terbit'; }); }
   function terbitkanSemua() { var p = bacaPub(); p.lms = { kursus:semuaKursus().filter(function (k) { return k.status === 'terbit'; }).map(salin), jalur:jalur().map(salin), at:kini() }; tulisPub(p); }
@@ -120,7 +130,7 @@ var EXO_LMS = (function () {
   function simpan(isi) { var d = db(); if (isi.id && d.find('kursus', isi.id)) return d.update('kursus', isi.id, Object.assign({}, isi, { status:d.find('kursus', isi.id).status === 'terbit' ? 'terbit-draf' : 'draf' })); return d.insert('kursus', Object.assign({ status:'draf', rev:0 }, isi)); }
   function periksa(k) {
     var g = [];
-    if (!k.kode || !/^[A-Z]{2,5}-\d{3}$/.test(k.kode)) g.push('Kode berpola LMS-001.');
+    if (!k.kode || !/^(SOP-)?[A-Z]{1,5}-\d{3}$/.test(k.kode)) g.push('Kode berpola LMS-001 atau SOP-D-001.');
     if (!k.judul || k.judul.trim().length < 5) g.push('Judul minimal 5 karakter.');
     if (!k.modul || !k.modul.length) g.push('Minimal satu modul.');
     (k.modul || []).forEach(function (m, i) {
@@ -185,6 +195,6 @@ var EXO_LMS = (function () {
   }
   function pesertaSemua() { var d = db(); if (!d) return []; var byUser = {}; d.all('pendaftaran').forEach(function (p) { var u = d.find('users', p.userId); var k = d.find('kursus', p.kursusId); var s = byUser[p.userId] = byUser[p.userId] || { userId:p.userId, nama:u ? u.nama : p.userId, fungsi:namaFungsi(fungsiDari(u)), kursus:[] }; s.kursus.push({ kode:k ? k.kode : '?', judul:k ? k.judul : '?', status:p.status, persen:k ? hitung(k, p).persen : 0, nilai:p.nilaiAkhir }); }); return Object.keys(byUser).map(function (k) { return byUser[k]; }); }
 
-  return { LEVEL:LEVEL, FUNGSI:FUNGSI, namaLevel:namaLevel, namaFungsi:namaFungsi, fungsiDari:fungsiDari, semai:semai, perbaruiKatalog:perbaruiKatalog, bahan:{ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal }, semuaKursus:semuaKursus, kursus:kursus, kursusKode:kursusKode, jalur:jalur, katalog:katalog, terbitkanSemua:terbitkanSemua, terbitkan:terbitkan, tarik:tarik, simpan:simpan, periksa:periksa,
+  return { LEVEL:LEVEL, FUNGSI:FUNGSI, namaLevel:namaLevel, namaFungsi:namaFungsi, fungsiDari:fungsiDari, semai:semai, perbaruiKatalog:perbaruiKatalog, sinkronSop:sinkronSop, bahan:{ video:video, bacaan:bacaan, tautan:tautan, modul:modul, soal:soal }, semuaKursus:semuaKursus, kursus:kursus, kursusKode:kursusKode, jalur:jalur, katalog:katalog, terbitkanSemua:terbitkanSemua, terbitkan:terbitkan, tarik:tarik, simpan:simpan, periksa:periksa,
     pendaftaran:pendaftaran, daftar:daftar, progres:progres, terkunci:terkunci, tandaiMateri:tandaiMateri, nilaiKuis:nilaiKuis, untukPeserta:untukPeserta, jalurUntuk:jalurUntuk, wajibBelum:wajibBelum, sertifikatPeserta:sertifikatPeserta, statistik:statistik, pesertaSemua:pesertaSemua, uid:uid };
 })();

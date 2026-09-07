@@ -70,6 +70,7 @@ var EXO_SOP = (function () {
     pub.sop[jasa] = Object.assign({ rev:rev, at:kini }, salin(bersih));
     tulisPub(pub);
     if (d.log) d.log(oleh.id, 'Menerbitkan SOP ' + bersih.code + ' rev.' + String(rev).padStart(2, '0') + ' (' + jasa + ') — PIN diverifikasi', 'sop', r.id, catatan.ringkasan);
+    try { if (window.EXO_LMS && EXO_LMS.sinkronSop) EXO_LMS.sinkronSop(true); } catch (e) { /* kursus disinkronkan saat LMS dibuka */ }
     return r;
   }
   /* Kembalikan ke isi revisi lama = terbitkan revisi baru dengan isi lama (jejak tetap utuh). */
