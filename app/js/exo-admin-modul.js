@@ -98,8 +98,8 @@
     denganPin('Ajukan ' + judul, function (oleh) { var r = db().insert('cuti', { mitraId:m.id, mitra:m.nama, jenis:isi.jenis, mulai:isi.mulai, selesai:isi.selesai, alasan:isi.alasan, status:'menunggu', pengaju:oleh.nama }); var h = EXO_PERSETUJUAN.ajukan('cuti', judul, isi.alasan, { status:'bekerja' }, { status:isi.jenis }, { id:r.id }, oleh); if (h.langsung) db().update('cuti', r.id, { status:'disetujui' }); S.cutiForm = null; lapor(h, judul); });
   };
 
-  /* ---- pelatihan & sertifikasi ---- */
-  VIEW.pelatihan = function () {
+  /* ---- sertifikasi & kepatuhan — digabung ke Pembelajaran (LMS) sebagai tab; A.tabSertifikasi dipanggil exo-admin-lms.js ---- */
+  A.tabSertifikasi = function () {
     var d = db(), sert = d ? d.all('sertifikat') : [], m = mitra(), hari = new Date(hariIni() + 'T00:00:00');
     var kadaluarsa = sert.filter(function (s) { return s.berlakuHingga && (new Date(s.berlakuHingga + 'T00:00:00') - hari) / 86400000 < 60; });
     var WAJIB = [['K3 & APD dasar','wajib semua'],['Kode etik & privasi pelanggan','wajib semua'],['SOP general cleaning D-001','cleaner'],['Penanganan chemical B-006','cleaner'],['Servis AC D-014','teknisi AC'],['P3K & perawatan dasar','pengasuh'],['Higiene pangan','juru masak']];

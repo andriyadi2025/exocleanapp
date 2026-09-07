@@ -26,9 +26,9 @@
     if (!window.EXO_LMS) return '<div class="card elev-sm">Modul LMS (js/exo-lms.js) belum dimuat.</div>';
     L().semai();
     var h = '<div class="flex gap-8 wrap">';
-    [['ringkasan','Ringkasan'],['kursus','Kursus & materi'],['jalur','Jalur pembelajaran'],['peserta','Peserta & progres']].forEach(function (t) { h += pill(S.lmsTab === t[0], t[1], 'lmsTab', t[0], true); });
+    [['ringkasan','Ringkasan'],['kursus','Kursus & materi'],['jalur','Jalur pembelajaran'],['peserta','Peserta & progres'],['sertifikasi','Sertifikasi & kepatuhan']].forEach(function (t) { h += pill(S.lmsTab === t[0], t[1], 'lmsTab', t[0], true); });
     h += '</div>';
-    return h + ({ ringkasan:tabRingkasan, kursus:tabKursus, jalur:tabJalur, peserta:tabPeserta }[S.lmsTab] || tabRingkasan)();
+    return h + ({ ringkasan:tabRingkasan, kursus:tabKursus, jalur:tabJalur, peserta:tabPeserta, sertifikasi:function () { return A.tabSertifikasi ? A.tabSertifikasi() : '<div class="card elev-sm">Modul sertifikasi belum dimuat.</div>'; } }[S.lmsTab] || tabRingkasan)();
   };
   AKSI.lmsTab = function (v) { S.lmsTab = v; };
 

@@ -65,7 +65,7 @@ var ADMIN = (function () {
      menentukan judul bagian di bilah samping. */
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
-    ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['pelatihan','Pelatihan & sertifikasi',''], ['lms','Pembelajaran (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
+    ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran & sertifikasi (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
     ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan',''], ['ppob','Bayar & isi ulang (PPOB)','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
@@ -125,7 +125,7 @@ var ADMIN = (function () {
     pelatihan:['Pelatihan & sertifikasi','Kurikulum wajib per fungsi · sertifikat & dokumen kepatuhan · pengingat kedaluwarsa','Kursus baru'],
     kinerja:['Kinerja & sanksi','Rating, keluhan, inspeksi, ketepatan · poin pelanggaran 90 hari · penghargaan','Catat'],
     payoutmitra:['Payout mitra','Upah terhutang per mitra · batch pencairan lewat Persetujuan (dari Accounting & Finance)','Ajukan batch'],
-    lms:['Pembelajaran (LMS)','Kursus → modul → materi + kuis · level & prasyarat · jalur per fungsi · sertifikat otomatis · ala Coursera','Kursus baru'],
+    lms:['Pembelajaran & sertifikasi (LMS)','Kursus → modul → materi + kuis · level & prasyarat · jalur per fungsi · sertifikat otomatis · kurikulum wajib, dokumen kepatuhan & pengingat kedaluwarsa (tab Sertifikasi) · ala Coursera','Kursus baru'],
     belajar:['Belajar saya','Akademi EXOCLEAN untuk staf kantor — kursus, kuis, sertifikat','Lanjutkan'],
     penggajian:['Penggajian karyawan','Gaji kantor · BPJS · PPh 21 · payroll bulanan lewat Persetujuan (tinggi)','Jalankan'],
     inventaris:['Inventaris & perlengkapan','Stok chemical, alat, APD · permintaan dari lapangan (H-005) · PO lewat Persetujuan','PO baru'],
@@ -424,6 +424,7 @@ var ADMIN = (function () {
 
   /* ============================================================== GAMBAR */
   function gambar() {
+    if (S.view === 'pelatihan') { S.view = 'lms'; S.lmsTab = 'sertifikasi'; }
     if (!VIEW[S.view]) S.view = 'dash';
     if (!bolehLihat(S.view)) { var awal = menuPertama(); if (S.view !== awal) { S.view = awal; if (location.hash.slice(1) !== awal) location.hash = awal; } }
     /* usulan tingkat tinggi yang sudah lewat masa tunda → diterapkan; lencana antrean */

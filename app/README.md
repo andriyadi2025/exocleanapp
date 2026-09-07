@@ -256,3 +256,6 @@ Server baru `server/dwi-server.js` (port 4400, `npm run start:dwi`, pengaman `ke
 - **Admin → Marketplace → Bayar & isi ulang (PPOB)** `js/exo-admin-ppob.js`: status server (uat/produksi/simulasi), deposit agen (uang perusahaan, dipisah dari dompet pelanggan), transaksi pelanggan dengan Cocokkan · PIN, catatan idempotensi server, setelan biaya admin & margin (PIN + audit). Kartu "Server Darmawisata" di IT → Integrasi.
 - **Akuntansi**: akun 1400 Deposit agen Darmawisata dan 4130 Pendapatan biaya admin PPOB; jurnal otomatis per transaksi selesai (Dr 2200 dompet · Cr 1400 harga penyedia · Cr 4130 fee).
 - Rumpun perjalanan (pesawat, hotel, kereta, …) hanya jalur baca di daftar putih; Booking/Issued sengaja belum dibuka. sw `exoclean-v25`. Catatan `.env` New App: `DWI_PORT` masih 4300 (bentrok dengan kurir) → ganti 4400.
+
+## Pelatihan & sertifikasi digabung ke Pembelajaran (LMS) (7 Sep 2026)
+Menu "Pelatihan & sertifikasi" dihapus dari sidebar; isinya (sertifikat mitra, kurikulum wajib per fungsi, dokumen kepatuhan, pengingat kedaluwarsa < 60 hari) menjadi tab **Sertifikasi & kepatuhan** di menu **Pembelajaran & sertifikasi (LMS)**, satu tempat dengan kursus, jalur, dan progres peserta. Tautan lama ke view `pelatihan` dialihkan otomatis ke tab tersebut.
