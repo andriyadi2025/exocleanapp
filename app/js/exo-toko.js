@@ -127,7 +127,8 @@ var EXO_TOKO = (function () {
   }
   function produk(id) { var d = db(); var p = d ? d.find('produk', id) : null; if (!p) return null; return Object.assign({ toko:toko(p.tokoId) }, p); }
   function hargaSetelahDiskon(p, v) { var dasar = v ? v.harga : p.harga; return p.diskonPct ? Math.round(dasar * (100 - p.diskonPct) / 100 / 100) * 100 : dasar; }
-  function ulasan(produkId) { var d = db(); return d ? d.all('ulasanProduk').filter(function (u) { return u.produkId === produkId; }).slice().reverse() : []; }
+  function ulasan(produkId) { var d = db(); return d ? d.all('ulasanProduk').filter(function (u) { return u.produkId === produkId && !u.disembunyikan; }).slice().reverse() : []; }
+  function hitungUlangRating(produkId) { var d = db(), semua = ulasan(produkId); if (!d) return; d.update('produk', produkId, { rating:semua.length ? Math.round(semua.reduce(function (n, x) { return n + x.bintang; }, 0) / semua.length * 10) / 10 : 0 }); }
 
   /* ------------------------------------------------------------ keranjang & checkout */
   /* Opsi kurir untuk satu toko: tarif langsung dari kirim-server (Biteship)
@@ -274,7 +275,7 @@ var EXO_TOKO = (function () {
     return { toko:tk.length, tokoAktif:tk.filter(function (t) { return t.status === 'aktif'; }).length, tokoMenunggu:tk.filter(function (t) { return t.status === 'menunggu'; }), produk:pr.length, produkModerasi:pr.filter(function (p) { return p.status === 'moderasi'; }), pesanan:ps.length, gmv:gmv, komisi:komisi, komplain:d ? d.all('komplainToko').filter(function (k) { return k.status !== 'selesai'; }) : [], penarikan:d ? d.all('penarikanToko').filter(function (p) { return p.status === 'menunggu'; }) : [], tertahan:ps.filter(function (o) { return ['baru','diproses','dikirim','komplain'].indexOf(o.status) >= 0; }).reduce(function (n, o) { return n + o.total; }, 0) };
   }
 
-  return { BIAYA_LAYANAN:BIAYA_LAYANAN, KATEGORI:KATEGORI, KURIR:KURIR, ALUR_STATUS:ALUR_STATUS, rp:rp, namaKategori:namaKategori, kurir:kurir, labelStatus:labelStatus, semai:semai, semuaToko:semuaToko, toko:toko, produkToko:produkToko, katalog:katalog, produk:produk, hargaSetelahDiskon:hargaSetelahDiskon, ulasan:ulasan,
+  return { BIAYA_LAYANAN:BIAYA_LAYANAN, KATEGORI:KATEGORI, KURIR:KURIR, ALUR_STATUS:ALUR_STATUS, rp:rp, namaKategori:namaKategori, kurir:kurir, labelStatus:labelStatus, semai:semai, semuaToko:semuaToko, toko:toko, produkToko:produkToko, katalog:katalog, produk:produk, hargaSetelahDiskon:hargaSetelahDiskon, ulasan:ulasan, hitungUlangRating:hitungUlangRating,
     ATURAN:ATURAN, katalogFilter:katalogFilter, infoFilter:infoFilter, rekomendasi:rekomendasi, jarakKm:jarakKm, hitungKeranjang:hitungKeranjang, opsiKurir:opsiKurir, checkout:checkout, konfirmasiBayar:konfirmasiBayar, batalMenungguBayar:batalMenungguBayar, simpanPengiriman:simpanPengiriman, terapkanStatusKurir:terapkanStatusKurir, pesananPembeli:pesananPembeli, pesanan:pesanan, proses:proses, kirim:kirim, tolak:tolak, terima:terima, batalPembeli:batalPembeli, komplain:komplain, selesaikanKomplain:selesaikanKomplain, ulas:ulas, balasUlasan:balasUlasan, selesaikanOtomatis:selesaikanOtomatis,
     simpanProduk:simpanProduk, ubahStatusProduk:ubahStatusProduk, kuponToko:kuponToko, simpanKupon:simpanKupon, chatToko:chatToko, balasChat:balasChat, kirimChatPembeli:kirimChatPembeli, keuanganToko:keuanganToko, ajukanPenarikan:ajukanPenarikan, putusPenarikan:putusPenarikan, skorToko:skorToko, statistikToko:statistikToko, simpanPengaturan:simpanPengaturan, daftarToko:daftarToko, verifikasiToko:verifikasiToko, penalti:penalti, ringkasanAdmin:ringkasanAdmin, uid:uid };
 })();

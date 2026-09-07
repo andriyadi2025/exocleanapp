@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- web.html — landing page publik EXOCLEAN. Isinya (hero, layanan, keunggulan,
+     testimoni, kontak, tautan) disunting di konsol admin → IT → Halaman & konten
+     dan dibaca dari terbitan EXO_KONTEN. ?pratinjau=1 membaca rancangan.
+     Di produksi konten diterbitkan server sebagai JSON statis. -->
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'">
+<meta name="referrer" content="no-referrer"><title>EXOCLEAN — Kami bersihkan segalanya</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<style>
+:root{--aksen:#009183;--tinta:#10221d;--muted:#5b6b66;--latar:#f6faf8;--kartu:#ffffff}
+*{box-sizing:border-box}body{margin:0;font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tinta);background:var(--latar);line-height:1.5}
+a{color:inherit}.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;background:rgba(246,250,248,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e3ebe7;z-index:5}
+header .wrap{display:flex;align-items:center;gap:14px;height:64px}header img{height:34px}header nav{margin-inline-start:auto;display:flex;gap:18px;font-size:14px}header nav a{text-decoration:none;color:var(--muted)}
+.btn{display:inline-block;padding:12px 22px;border-radius:999px;font-weight:800;text-decoration:none;font-size:15px}.btn-p{background:var(--aksen);color:#fff}.btn-s{background:#fff;color:var(--aksen);border:2px solid var(--aksen)}
+.hero{padding:64px 0 48px;display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}.hero h1{font-size:44px;line-height:1.08;margin:0 0 14px;letter-spacing:-.5px}.hero p{font-size:18px;color:var(--muted);margin:0 0 24px;max-width:520px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}.hero .visual{background:linear-gradient(135deg,var(--aksen),#12b981);border-radius:28px;min-height:300px;display:grid;place-items:center;color:#fff;font-size:88px;box-shadow:0 20px 60px rgba(0,145,131,.25)}
+.jaminan{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.jaminan span{background:#fff;border:1px solid #dfe9e5;border-radius:999px;padding:7px 14px;font-size:13px}
+section{padding:40px 0}h2{font-size:28px;margin:0 0 6px}.sub{color:var(--muted);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.kartu{background:var(--kartu);border-radius:20px;padding:20px;box-shadow:0 2px 10px rgba(16,34,29,.05)}.kartu .ikon{font-size:34px;margin-bottom:8px}.kartu h3{margin:0 0 6px;font-size:17px}.kartu p{margin:0;color:var(--muted);font-size:14px}
+.testi .kartu{font-size:15px}.testi .bintang{color:#f59e0b;margin-bottom:6px}.testi .nama{margin-top:10px;font-weight:700;font-size:13px;color:var(--muted)}
+.kontak{background:var(--aksen);color:#fff;border-radius:28px;padding:34px;display:grid;grid-template-columns:1fr 1fr;gap:20px}.kontak h2{color:#fff}.kontak a{color:#fff}.kontak .btn-s{background:#fff;color:var(--aksen);border-color:#fff}
+footer{padding:26px 0 40px;color:var(--muted);font-size:13px}
+.pratinjau{background:#fff4d6;color:#7a5200;text-align:center;font-size:13px;padding:6px}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:36px}.hero h1{font-size:34px}.kontak{grid-template-columns:1fr}header nav{display:none}}
+</style></head>
+<body>
+<div id="pratinjau" class="pratinjau" hidden>Mode pratinjau — menampilkan rancangan yang belum diterbitkan.</div>
+<header><div class="wrap"><img src="assets/exoclean-wordmark.png" alt="EXOCLEAN"><nav><a href="#layanan">Layanan</a><a href="#keunggulan">Keunggulan</a><a href="#testimoni">Testimoni</a><a href="#kontak">Kontak</a></nav><a id="btnHeader" class="btn btn-p" style="padding:9px 16px;font-size:13px" href="exo.html">Buka aplikasi</a></div></header>
+<main class="wrap">
+  <div class="hero"><div><h1 id="heroJudul"></h1><p id="heroSub"></p><div class="cta"><a id="cta1" class="btn btn-p" href="exo.html"></a><a id="cta2" class="btn btn-s" href="exo.html"></a></div><div id="jaminan" class="jaminan"></div></div><div class="visual" id="visual">🧹</div></div>
+  <section id="layanan"><h2>Layanan</h2><p class="sub">Pilih juru bersih Anda sendiri — profil, rating, dan tarif nyata.</p><div id="daftarLayanan" class="grid"></div></section>
+  <section id="keunggulan"><h2>Kenapa EXOCLEAN</h2><div id="daftarKeunggulan" class="grid"></div></section>
+  <section id="testimoni" class="testi"><h2>Kata pelanggan</h2><div id="daftarTestimoni" class="grid"></div></section>
+  <section id="kontak"><div class="kontak"><div><h2>Hubungi kami</h2><p id="kontakIsi"></p></div><div style="display:flex;flex-direction:column;gap:10px;justify-content:center"><a id="tautanApp" class="btn btn-s" href="exo.html">Buka aplikasi pelanggan</a><a id="tautanMitra" class="btn btn-s" href="exo.html">Daftar jadi mitra</a><a id="tautanPlay" class="btn btn-s" href="#" hidden>Google Play</a><a id="tautanApk" class="btn btn-s" href="#" hidden>Unduh APK</a></div></div></section>
+</main>
+<footer class="wrap">© <span id="tahun"></span> PT EXO POINT · EXOCLEAN. Konten halaman ini dikelola dari konsol admin → Halaman & konten.</footer>
+<script src="js/exo-util.js"></script><script src="js/exo-db.js"></script><script src="js/exo-konten.js"></script>
+<script src="js/exo-web.js"></script>
+</body></html>

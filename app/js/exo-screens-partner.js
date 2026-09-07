@@ -39,9 +39,9 @@
     return '<div class="card card-clay gap-4" style="padding:10px 12px"><div class="t-125 bold">🔒 Lulus SOP dulu: ' + esc(b.kursus.kode) + '</div><div class="t-115 lh-145 o-85">' + esc(b.kursus.judul) + ' · ' + (b.kursus.jam || 1) + ' jam. Job layanan ini terbuka setelah kuisnya lulus; job layanan lain tidak terpengaruh.</div><button class="btn btn-primary" style="height:36px;align-self:flex-start"' + aksi('lmsBuka', b.kursus.id) + '>Buka kursus di Akademi</button></div>';
   }
   X.LAYAR.pjobs = function () {
-    var a = aku(), nd = X.namaDepan(a);
+    var a = aku(), nd = X.namaDepan(a), KM = (window.EXO_KONTEN ? EXO_KONTEN.baca('mitra') : null) || {};
     var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) +
-      '<div class="grow"><div class="f-head t-17">Selamat pagi, ' + esc(nd) + '</div><div class="t-115 o-7">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · area Kemang</div></div>' +
+      '<div class="grow"><div class="f-head t-17">' + esc(KM.sapaan || 'Selamat pagi') + ', ' + esc(nd) + '</div><div class="t-115 o-7">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · ' + esc(KM.area || 'area Kemang') + '</div></div>' +
       X.tombolBahasa() + '<button class="' + kelas('pill', K.daring) + '" style="padding:8px 14px"' + aksi('daring') + '>' + (K.daring ? 'Aktif' : 'Nonaktif') + '</button></div>' +
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div></div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
@@ -58,8 +58,8 @@
         '<div class="flex gap-7"><span class="tag tag-neutral">' + j.distance + '</span><span class="tag tag-neutral">' + j.when + '</span><span class="tag tag-accent-2 tag-xs">' + esc(j.repeat) + '</span></div>' +
         gerbangSop(j, i) + '</div>';
     }
-    h += '<div class="card card-clay gap-7"><div class="f-head t-15">Jadwal Anda, keputusan Anda</div><div class="t-125 lh-15">Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.</div></div>';
-    h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('ke', 'preg') + '>Formulir pendaftaran mitra baru</button><div class="spacer-14"></div></div>';
+    h += '<div class="card card-clay gap-7"><div class="f-head t-15">' + esc(KM.kartuJudul || 'Jadwal Anda, keputusan Anda') + '</div><div class="t-125 lh-15">' + esc(KM.kartuTeks || 'Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.') + '</div></div>';
+    h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('ke', 'preg') + '>' + esc(KM.tombolDaftar || 'Formulir pendaftaran mitra baru') + '</button><div class="spacer-14"></div></div>';
     return h + '</div>';
   };
 
@@ -211,6 +211,18 @@
   };
 
   /* =============================================================== PEARN */
+  /* Usulan layanan/tarif/area ke admin (Moderasi) */
+  K.usulanForm = K.usulanForm || null;
+  function kartuUsulan() {
+    var a = aku(), U = window.EXO_USULAN, daftar = U.milik(a.id), f = K.usulanForm, h = '<div class="card elev-sm gap-8"><div class="flex items-center gap-8"><div class="f-head t-15 grow">Ajukan layanan / tarif</div>' + (f ? '' : '<button class="btn btn-secondary" style="height:32px"' + aksi('usulanBuka') + '>+ Usulan</button>') + '</div><div class="t-115 o-7 lh-145">Ingin menawarkan paket baru, tarif di luar rentang, atau area lain? Admin meninjau di Moderasi dan menjawab di sini.</div>';
+    if (f) h += '<div class="flex gap-6 wrap">' + U.JENIS.map(function (j) { return '<button class="' + kelas('pill pill-sm', f.jenis === j[0]) + '"' + aksi('usulanJenis', j[0]) + '>' + esc(j[1]) + '</button>'; }).join('') + '</div><input class="input" data-simpan="usulanForm.judul" value="' + esc(f.judul) + '" placeholder="Judul, mis. Paket deep cleaning dapur 4 jam"><textarea class="input" style="min-height:64px" data-simpan="usulanForm.keterangan" placeholder="Jelaskan: apa yang dikerjakan, alat/chemical, alasan tarif">' + esc(f.keterangan) + '</textarea><div class="flex gap-6"><input class="input" style="flex:1" inputmode="numeric" data-simpan="usulanForm.harga" value="' + esc(f.harga) + '" placeholder="Harga (Rp)"><input class="input" style="width:100px" data-simpan="usulanForm.satuan" value="' + esc(f.satuan) + '" placeholder="per jam/unit"></div><div class="flex gap-8"><button class="btn btn-primary" style="height:36px;flex:1"' + aksi('usulanKirim') + '>Kirim ke admin</button><button class="btn btn-secondary" style="height:36px"' + aksi('usulanBatal') + '>Batal</button></div>';
+    if (daftar.length) h += '<div class="stack gap-6">' + daftar.slice(0, 5).map(function (u) { return '<div class="flex items-start gap-8 t-115"><span class="tag ' + (u.status === 'disetujui' ? 'tag-accent' : u.status === 'ditolak' ? 'tag-neutral' : 'tag-accent-2') + '" style="font-size:10px">' + esc(u.status) + '</span><div class="grow"><b>' + esc(u.judul) + '</b> · ' + esc(U.namaJenis(u.jenis)) + (u.harga ? ' · ' + rp(u.harga) : '') + (u.catatan ? '<div class="t-11 o-7">Admin: ' + esc(u.catatan) + '</div>' : '') + '</div></div>'; }).join('') + '</div>';
+    return h + '</div>';
+  }
+  X.AKSI.usulanBuka = function () { K.usulanForm = { jenis:'layanan', judul:'', keterangan:'', harga:'', satuan:'' }; };
+  X.AKSI.usulanBatal = function () { K.usulanForm = null; };
+  X.AKSI.usulanJenis = function (j) { if (K.usulanForm) K.usulanForm.jenis = j; };
+  X.AKSI.usulanKirim = function () { var a = aku(), f = K.usulanForm; if (!f) return; try { EXO_USULAN.ajukan({ id:a.id, nama:a.name }, f); K.usulanForm = null; X.sekilas('Usulan terkirim · admin meninjau dalam 1–2 hari kerja.'); } catch (e) { X.sekilas(e.message, 'err'); } };
   X.LAYAR.pearn = function () {
     var h = '<div class="screen"><div class="flex items-center gap-8" style="padding:18px 20px 0"><h3 class="grow" style="margin:0">Penghasilan</h3>' + X.tombolBahasa() + '</div><div class="stack gap-14" style="padding:16px 20px 0">';
     h += '<div class="card elev-md gap-11"><div class="t-12 o-65">Tersedia sekarang</div><div class="f-head t-34" style="line-height:1">' + rp(K.saldoMitra) + '</div>' +
@@ -218,6 +230,7 @@
     h += '<div class="card elev-sm gap-11"><div class="f-head t-15">7 hari terakhir</div><div class="bars">';
     for (var i = 0; i < D.BARS.length; i++) h += '<div><i class="' + (D.BARS[i][1] === 100 ? 'peak' : '') + '" style="height:' + D.BARS[i][1] + '%" title="' + D.BARS[i][0] + ' · ' + rp(X.upahHari(D.BARS[i][1])) + '"></i><span>' + D.BARS[i][0] + '</span></div>';
     h += '</div></div>';
+    if (window.EXO_USULAN) h += kartuUsulan();
     h += '<div class="card elev-sm gap-10"><div class="f-head t-15">Status kinerja Anda</div>';
     for (var p = 0; p < D.STANDING.length; p++) h += '<div class="flex items-center gap-10 t-13"><span class="grow o-8">' + esc(D.STANDING[p].label) + '</span><span class="bold">' + D.STANDING[p].value + '</span></div>';
     h += '<div class="t-115 o-7 lh-15">Rating di bawah 4,6 memicu pelatihan ulang berbayar, bukan penonaktifan.</div></div>';
