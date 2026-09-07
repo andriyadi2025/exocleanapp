@@ -17,6 +17,10 @@ var EXO_KONTEN = (function () {
   var BAWAAN = {
     klien:{
       cariPlaceholder:'Cari jasa, produk, tagihan…',
+      /* Teks berjalan di bawah alamat. teks kosong = memakai running text dari Appearance (merek). */
+      teksBerjalan:{ aktif:true, label:'Promo', teks:'', kecepatan:22 },
+      /* Ikon pengganti per layanan/menu: { jenis:'emoji'|'gambar', nilai }. Dipakai menu ikon beranda, hasil cari, dan katalog. */
+      ikonLayanan:{},
       banner:[
         { id:'b1', judul:'Gratis ongkir', sub:'belanja perlengkapan ≥ Rp150.000 per toko', cta:'Belanja', ke:'toko', warna:'hijau', ikon:'🚚', aktif:true },
         { id:'b2', judul:'Langganan mingguan −10%', sub:'harga terkunci 3 bulan, jadwal tetap', cta:'Pilih paket', ke:'catalog', warna:'teal', ikon:'📅', aktif:true },
@@ -32,8 +36,8 @@ var EXO_KONTEN = (function () {
       judulFlash:'⚡ Flash Sale', judulToko:'Toko pilihan', judulRekomendasi:'Rekomendasi untuk kamu',
       jaminan:'Setelah dikonfirmasi, hanya Anda yang bisa memindahkan jadwal. Bila kami yang menggeser, Rp100.000 masuk ke dompet Anda menit itu juga — tanpa tiket, tanpa mengejar.'
     },
-    toko:{ sapaan:'Seller Center', flashJudul:'Flash sale EXOCLEAN', flashTeks:'Slot flash sale mingguan dibuka admin (Marketplace → Promo). Produk berdiskon ≥ 15% dan stok ≥ 20 bisa diajukan lewat chat admin.', tips:['Proses pesanan baru dalam 1×24 jam dan input resi di hari yang sama.', 'Balas chat dalam 1 jam pada jam buka.', 'Lengkapi foto produk (≥ 3) dan deskripsi agar tampil lebih atas.'] },
-    mitra:{ sapaan:'Selamat pagi', area:'area Kemang', kartuJudul:'Jadwal Anda, keputusan Anda', kartuTeks:'Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.', tombolDaftar:'Formulir pendaftaran mitra baru' },
+    toko:{ teksBerjalan:{ aktif:false, label:'Info', teks:'Flash sale mingguan dibuka tiap Senin · proses pesanan < 24 jam agar skor toko naik', kecepatan:22 }, sapaan:'Seller Center', flashJudul:'Flash sale EXOCLEAN', flashTeks:'Slot flash sale mingguan dibuka admin (Marketplace → Promo). Produk berdiskon ≥ 15% dan stok ≥ 20 bisa diajukan lewat chat admin.', tips:['Proses pesanan baru dalam 1×24 jam dan input resi di hari yang sama.', 'Balas chat dalam 1 jam pada jam buka.', 'Lengkapi foto produk (≥ 3) dan deskripsi agar tampil lebih atas.'] },
+    mitra:{ teksBerjalan:{ aktif:false, label:'Info', teks:'Selesaikan SOP wajib di Akademi sebelum ambil job baru · bonus tepat waktu minggu ini', kecepatan:22 }, sapaan:'Selamat pagi', area:'area Kemang', kartuJudul:'Jadwal Anda, keputusan Anda', kartuTeks:'Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.', tombolDaftar:'Formulir pendaftaran mitra baru' },
     web:{
       hero:{ judul:'Kami bersihkan segalanya.', sub:'Profil nyata, tarif nyata, jadwal yang hanya bisa Anda ubah — dan janji Rp100.000 bila kami melanggarnya.', cta:'Pesan sekarang', cta2:'Jadi mitra' },
       layanan:[{ ikon:'🧹', judul:'Cleaning per jam', teks:'Mulai Rp78.000/jam, juru bersih pilihan Anda.' }, { ikon:'✨', judul:'Deep cleaning', teks:'Degreaser dapur, kerak kamar mandi, plafon & ventilasi.' }, { ikon:'❄️', judul:'Cuci & servis AC', teks:'Indoor, outdoor, cek suhu & tekanan, garansi 30 hari.' }, { ikon:'🛒', judul:'Toko perlengkapan', teks:'Chemical, alat & APD standar SOP dari toko mitra.' }],
@@ -65,7 +69,22 @@ var EXO_KONTEN = (function () {
   function riwayat() { var d = db(); return d && d.setting ? (d.setting('kontenRiwayat') || []).slice().reverse() : []; }
   function pulihkan(rev) { var r = riwayat().filter(function (x) { return x.rev === rev; })[0]; if (!r) return false; var d = db(); var s = d.setting('konten') || {}; ['klien', 'toko', 'mitra', 'web'].forEach(function (k) { s[k] = salin(r.isi[k]); }); s.diubahAt = new Date().toISOString(); d.setting('konten', s); return true; }
   var WARNA = { hijau:'linear-gradient(135deg,#0a8f5c,#12b981)', teal:'linear-gradient(135deg,#0b5f52,#1a9a86)', ungu:'linear-gradient(135deg,#7a3e9d,#b15ad9)', biru:'linear-gradient(135deg,#1d4ed8,#3b82f6)', merah:'linear-gradient(135deg,#9f1239,#e11d48)', oranye:'linear-gradient(135deg,#b45309,#f59e0b)', abu:'linear-gradient(135deg,#374151,#6b7280)' };
+  /* Palet emoji untuk pemilih ikon di konsol admin. */
+  var EMOJI = [['Kebersihan', '🧹 🧽 🧼 🪣 🧴 🫧 🚿 🛁 🧺 🪥 🧻 🗑️ ♻️ 🪟 🧯'], ['Rumah & ruang', '🏠 🏢 🏬 🛋️ 🛏️ 🪑 🚪 🪴 🌿 🧊 ❄️ 🔥 💡 🔌 🪞'], ['Belanja & bayar', '🛒 🛍️ 🧾 💳 💰 🪙 ⭐ 🎁 🏷️ 🎉 📦 🚚 🏪 💵 📊'], ['Perjalanan', '✈️ 🚆 🚌 🚗 🏨 🕌 🗺️ 🧳 🎫 ⛱️ 🚕 🛵 🚢 📍 🧭'], ['Umum', '✨ ▦ 📅 ⏰ 🔔 📞 💬 👤 👥 🛠️ 🔧 🧰 ✅ ❓ ➕']].map(function (g) { return { nama:g[0], daftar:g[1].split(' ') }; });
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  /* Ikon pengganti untuk layanan/menu `id` di halaman `halaman` (null = pakai bawaan aplikasi). */
+  function ikonLayanan(halaman, id) { var k = baca(halaman || 'klien'); var o = k && k.ikonLayanan ? k.ikonLayanan[id] : null; return o && o.nilai ? o : null; }
+  /* HTML ikon dari objek pengganti: emoji → teks; gambar → <img> dari EXO_FOTO. */
+  function ikonHtml(o, px) { px = px || 24; if (!o || !o.nilai) return ''; if (o.jenis === 'gambar') { var src = window.EXO_FOTO ? EXO_FOTO.ambil(o.nilai) : null; return src ? '<img src="' + src + '" alt="" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;border-radius:' + Math.round(px / 4) + 'px;display:block">' : ''; } return '<span style="font-size:' + px + 'px;line-height:1">' + esc(o.nilai) + '</span>'; }
+  /* Teks berjalan (running text) untuk halaman: dari konten; di beranda klien teks kosong memakai running text Appearance. */
+  /* sumber (opsional): objek konten halaman — konsol admin mengirim rancangan agar pratinjau memakai teks yang sedang disunting. */
+  function tiket(halaman, sumber) {
+    var k = sumber || baca(halaman || 'klien') || {}, tb = k.teksBerjalan; if (!tb) return null;
+    if (halaman === 'klien' && !String(tb.teks || '').trim() && window.EXO_BRAND) { var b = EXO_BRAND.baca(); if (!b.tickerOn || !b.tickerText) return null; return { label:tb.label || b.tickerBadge, teks:b.tickerText, kecepatan:tb.kecepatan || b.tickerSpeed || 22, aktif:tb.aktif !== false }; }
+    if (tb.aktif === false || !String(tb.teks || '').trim()) return null; return { label:tb.label || '', teks:tb.teks, kecepatan:tb.kecepatan || 22, aktif:true };
+  }
+  function tiketHtml(halaman, gaya) { var t = tiket(halaman); if (!t) return ''; return '<div class="ticker"' + (gaya ? ' style="' + gaya + '"' : '') + '>' + (t.label ? '<div class="ticker-badge"><i></i>' + esc(t.label) + '</div>' : '') + '<div class="ticker-win"><div class="ticker-track" style="--ticker-speed:' + Number(t.kecepatan) + 's"><span>' + esc(t.teks) + '</span><span>' + esc(t.teks) + '</span></div></div></div>'; }
   var TUJUAN = [['toko','Toko perlengkapan'],['catalog','Semua layanan'],['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['wallet','Dompet'],['prepaid','Paket prabayar'],['pbelajar','Akademi mitra']];
   if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.TINGKAT.konten = 'sedang'; EXO_PERSETUJUAN.daftarkanPenerap('konten', function (u, oleh) { return terbitkan(oleh, u.ringkasan); }); } catch (e) { /* konsol admin saja */ } }
-  return { BAWAAN:BAWAAN, WARNA:WARNA, TUJUAN:TUJUAN, rancangan:rancangan, simpanRancangan:simpanRancangan, baca:baca, terbitan:terbitan, adaTerbitan:adaTerbitan, terbitkan:terbitkan, riwayat:riwayat, pulihkan:pulihkan, pratinjau:pratinjau, gabung:gabung };
+  return { BAWAAN:BAWAAN, WARNA:WARNA, TUJUAN:TUJUAN, EMOJI:EMOJI, ikonLayanan:ikonLayanan, ikonHtml:ikonHtml, tiket:tiket, tiketHtml:tiketHtml, rancangan:rancangan, simpanRancangan:simpanRancangan, baca:baca, terbitan:terbitan, adaTerbitan:adaTerbitan, terbitkan:terbitkan, riwayat:riwayat, pulihkan:pulihkan, pratinjau:pratinjau, gabung:gabung };
 })();

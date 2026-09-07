@@ -43,7 +43,7 @@
     var h = '<div class="screen"><div class="hero hero--leaf"><div class="flex items-center gap-11">' + X.logoMark(36) +
       '<div class="grow"><div class="f-head t-17">' + esc(KM.sapaan || 'Selamat pagi') + ', ' + esc(nd) + '</div><div class="t-115 o-7">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · ' + esc(KM.area || 'area Kemang') + '</div></div>' +
       X.tombolBahasa() + '<button class="' + kelas('pill', K.daring) + '" style="padding:8px 14px"' + aksi('daring') + '>' + (K.daring ? 'Aktif' : 'Nonaktif') + '</button></div>' +
-      '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div></div>';
+      '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div>' + (window.EXO_KONTEN ? EXO_KONTEN.tiketHtml('mitra', 'margin-top:12px') : '') + '</div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
     h += kartuPengumuman();
     h += kartuAkademi();

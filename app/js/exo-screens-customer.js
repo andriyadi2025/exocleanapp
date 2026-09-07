@@ -118,7 +118,8 @@
     } else {
       h += '<div class="svc-grid">';
       for (var i = 0; i < tiles.length; i++) {
-        h += '<button class="svc' + (tiles[i].daun ? ' leaf' : '') + '"' + aksi('pilihJasa', tiles[i].id) + '><i>' + ikon(tiles[i].d, 20) + '</i><b>' + esc(I.svcName(tiles[i].id)) + '</b></button>';
+        var ovk = window.EXO_KONTEN ? EXO_KONTEN.ikonLayanan('klien', tiles[i].id) : null;
+        h += '<button class="svc' + (tiles[i].daun ? ' leaf' : '') + '"' + aksi('pilihJasa', tiles[i].id) + '><i>' + (ovk ? EXO_KONTEN.ikonHtml(ovk, 22) : ikon(tiles[i].d, 20)) + '</i><b>' + esc(I.svcName(tiles[i].id)) + '</b></button>';
       }
       h += '</div>';
     }

@@ -793,6 +793,8 @@ var ExoApp = (function () {
     });
     KEADAAN.posisi = bacaPosisi();
     wilayahSiapkan();
+    /* ?layar=<nama> membuka layar tertentu saat dimuat — dipakai pratinjau Studio beranda di konsol admin dan tautan web. Diabaikan bila layar tidak dikenal. */
+    try { var qLayar = new URLSearchParams(location.search).get('layar'); if (qLayar && LAYAR[qLayar]) KEADAAN.layar = qLayar; } catch (e) { /* abaikan */ }
     gambar();
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () { /* file:// atau ditolak — tetap jalan, hanya tidak luring */ });
