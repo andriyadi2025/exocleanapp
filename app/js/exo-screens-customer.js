@@ -343,6 +343,7 @@
     }
     var tagih = X.tagihanSekarang();
     var lbl = K.gatewaySibuk ? 'Contacting payment gateway…' : !K.payPinOpen ? tx(am.cta) + (tagih ? ' · ' + rp(tagih) : '') : K.payPin.length < 6 ? tx(X.ditahanDulu() ? 'Enter PIN to hold' : 'Enter PIN to pay') : tx(X.ditahanDulu() ? 'Confirm hold' : 'Confirm payment') + ' · ' + rp(X.totalN());
+    if (window.EXO_TOKO && X.alurKini() === 'langsung' && !K.payPinOpen && !K.gatewaySibuk) h += '<button class="btn btn-secondary btn-block" style="margin:0 0 8px"' + aksi('jasaKeKeranjang') + '>🛒 Tambah produk perlengkapan & bayar bersama</button>';
     h += '<button class="btn btn-primary btn-block" style="height:50px;font-size:15px;margin:0"' + (K.gatewaySibuk ? ' disabled' : aksi('konfirmasi')) + '>' + esc(lbl) + '</button></div>';
     return h + '</div>';
   };

@@ -293,6 +293,7 @@
       X.gambar();
     });
   };
+  X.selesaiBayarJasa = function () { selesaiBayar(); };
   /* Gateway selesai: pembayaran biasa → sukses; penahanan → catat hold
      bermode gateway; penangkapan (kanal tertunda) → hold ditangkap. */
   function gatewaySukses() {

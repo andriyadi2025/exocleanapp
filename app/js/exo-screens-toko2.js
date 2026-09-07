@@ -102,4 +102,32 @@
   A.keranjangHapusTerpilih = function () { var n = terpilih().length; K.keranjang = K.keranjang.filter(function (it) { return it.pilih === false; }); X.sekilas(n + ' produk dihapus dari keranjang.'); };
   A.keranjangHapusItem = function (kunci) { var p = kunci.split('|'); K.keranjang = K.keranjang.filter(function (it) { return !(it.produkId === p[0] && it.varian === p[1]); }); };
   A.keranjangVarian = function (kunci, v) { var p = kunci.split('|'), it = K.keranjang.filter(function (x) { return x.produkId === p[0] && x.varian === p[1]; })[0]; if (!it) return; var lain = K.keranjang.filter(function (x) { return x !== it && x.produkId === p[0] && x.varian === v; })[0]; if (lain) { lain.qty += it.qty; K.keranjang = K.keranjang.filter(function (x) { return x !== it; }); } else it.varian = v; X.gambar(); };
+  /* ---- checkout gabungan: jasa kebersihan + produk ---- */
+  A.jasaKeKeranjang = function () {
+    var I = X.I; K.keranjangJasa = { jasa:K.jasa, jam:K.jam, regu:K.regu, hari:K.hari, mulai:K.mulai, tambahan:JSON.parse(JSON.stringify(K.tambahan || {})), juru:K.juru, alamatId:K.alamat, total:X.totalN(), tahan:X.ditahanDulu(), nama:I.svcName(K.jasa), slot:X.ringkasSlot(), juruNama:X.juruKini().name, dibuat:Date.now() };
+    K.payPinOpen = false; K.payPin = ''; K.layar = K.keranjang.length ? 'keranjang' : 'toko';
+    X.sekilas('Jasa ' + K.keranjangJasa.nama + ' masuk keranjang · pilih produk, lalu bayar sekaligus.');
+  };
+  A.jasaGabunganHapus = function () { K.keranjangJasa = null; X.sekilas('Jasa dikeluarkan dari checkout gabungan — pesan terpisah lewat alur jasa.'); };
+  A.jasaAlamat = function (id) { if (K.keranjangJasa) K.keranjangJasa.alamatId = id; };
+  A.tokoAlamatToko = function (v) { var p = v.split('|'); K.tokoOpsi.alamatToko = K.tokoOpsi.alamatToko || {}; K.tokoOpsi.alamatToko[p[0]] = p[1]; K.tokoKurir = K.tokoKurir || {}; delete K.tokoKurir[p[0]]; };
+  /* Dipanggil tokoBayar setelah pesanan produk dibuat: pulihkan snapshot jasa,
+     tahan/potong dompet untuk jasa, lalu jalankan penyelesaian jasa yang sama
+     dengan alur pesan biasa (tulis orders, langganan, layar sukses). */
+  A.jasaGabunganSelesai = function (hasil) {
+    var Jk = K.keranjangJasa; if (!Jk) return; var metode = (hasil && hasil.metode) || 'wallet';
+    K.jasa = Jk.jasa; K.jam = Jk.jam; K.regu = Jk.regu; K.hari = Jk.hari; K.mulai = Jk.mulai; K.tambahan = Jk.tambahan; K.juru = Jk.juru; K.alamat = Jk.alamatId; K.bayar = metode;
+    var n = Jk.total;
+    if (Jk.tahan) X.tahanDana(n, metode, metode === 'wallet' ? undefined : { mode:'tunda', orderId:'EXO-' + Date.now().toString().slice(-6) });
+    else if (metode === 'wallet') { K.saldo -= n; K.mutasi.unshift({ label:Jk.nama + ' · ' + Jk.juruNama, date:'today · checkout gabungan', amount:-n }); }
+    K.gabunganTerakhir = { pesanan:(hasil && hasil.pesanan || []).map(function (o) { return o.no; }), metode:metode, at:Date.now() };
+    K.keranjangJasa = null;
+    if (X.selesaiBayarJasa) X.selesaiBayarJasa();
+  };
+  var _successLama = X.LAYAR.success;
+  X.LAYAR.success = function () {
+    var h = _successLama(); var g = K.gabunganTerakhir; if (!g || !g.pesanan.length || Date.now() - g.at > 600000) return h;
+    var kartu = '<button class="card card-leaf gap-3" style="text-align:start;cursor:pointer;width:100%;margin-top:12px"' + aksi('ke', 'pesananToko') + '><div class="flex items-center gap-8"><span class="tag tag-accent">Checkout gabungan</span><span class="t-11 o-6" style="margin-inline-start:auto">Lihat →</span></div><div class="t-125">' + g.pesanan.length + ' pesanan produk juga dibuat (' + esc(g.pesanan.join(', ')) + ')' + (g.metode === 'wallet' ? '' : ' · selesaikan pembayaran ' + esc(String(g.metode).toUpperCase()) + ' di Pesanan toko') + '.</div></button>';
+    var i = h.lastIndexOf('</div></div>'); return i > 0 ? h.slice(0, i) + kartu + h.slice(i) : h + kartu;
+  };
 })(ExoApp);
