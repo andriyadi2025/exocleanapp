@@ -658,11 +658,11 @@ var ExoApp = (function () {
   function selaraskanSisi() {
     var l = KEADAAN.layar;
     if (LAYAR_NETRAL.indexOf(l) >= 0) return;
-    KEADAAN.sisi = D.PARTNER_SCREENS.indexOf(l) >= 0 ? 'partner' : 'customer';
+    KEADAAN.sisi = D.TOKO_SCREENS && D.TOKO_SCREENS.indexOf(l) >= 0 ? 'toko' : D.PARTNER_SCREENS.indexOf(l) >= 0 ? 'partner' : 'customer';
   }
   function bilahTab() {
     if (D.TAB_SCREENS.indexOf(KEADAAN.layar) < 0) return '';
-    var mitra = KEADAAN.sisi === 'partner', daftar = mitra ? D.TABS_PARTNER : D.TABS_CUSTOMER;
+    var mitra = KEADAAN.sisi === 'partner' || KEADAAN.sisi === 'toko', daftar = KEADAAN.sisi === 'toko' ? D.TABS_TOKO : mitra ? D.TABS_PARTNER : D.TABS_CUSTOMER;
     var h = '<nav class="tabbar">';
     for (var i = 0; i < daftar.length; i++) {
       var t = daftar[i], on = KEADAAN.layar === t.id;
@@ -680,7 +680,7 @@ var ExoApp = (function () {
         h += '<button class="' + (KEADAAN.layar === daftar[i][0] ? 'on' : '') + '"' + aksi('lompat', daftar[i][0]) + '>' + esc(daftar[i][1]) + '</button>';
       }
     }
-    deret(D.JUMP_CUSTOMER); h += '<span class="sep"></span>'; deret(D.JUMP_PARTNER);
+    deret(D.JUMP_CUSTOMER); h += '<span class="sep"></span>'; deret(D.JUMP_PARTNER); if (D.JUMP_TOKO) { h += '<span class="sep"></span>'; deret(D.JUMP_TOKO); }
     el.innerHTML = h;
   }
   /* ============================================== PENERJEMAH PASCA-RENDER
@@ -745,7 +745,7 @@ var ExoApp = (function () {
     if (KEADAAN.lembar === 'obrol') { var b = lapis.querySelector('.sheet-body'); if (b) b.scrollTop = b.scrollHeight; }
     bilahLompat();
     EXO_BRAND.terapkan();
-    document.title = EXO_BRAND.baca().appName + ' — ' + (KEADAAN.sisi === 'partner' ? 'Partner' : 'App');
+    document.title = EXO_BRAND.baca().appName + ' — ' + (KEADAAN.sisi === 'partner' ? 'Partner' : KEADAAN.sisi === 'toko' ? 'Seller Center' : 'App');
     /* Kait sesudah gambar: widget pihak ketiga (captcha), pemantauan posisi. */
     var hooks = ExoApp && ExoApp.hooks ? ExoApp.hooks : [];
     for (var hk = 0; hk < hooks.length; hk++) { try { hooks[hk](); } catch (e) { /* satu kait gagal tidak boleh menjatuhkan layar */ } }

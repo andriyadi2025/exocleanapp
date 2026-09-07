@@ -124,6 +124,7 @@
     }
     h += '</div>';
 
+    if (window.EXO_TOKO) h += '<div style="padding:18px 20px 0"><button class="card card-leaf gap-4" style="text-align:start;cursor:pointer;width:100%"' + aksi('ke', 'toko') + '><div class="flex items-center gap-8"><span class="tag tag-accent">Toko perlengkapan</span><span class="t-11 o-6">' + EXO_TOKO.katalog('', 'semua').length + ' produk · ' + EXO_TOKO.semuaToko().filter(function (x) { return x.status === 'aktif'; }).length + ' toko mitra</span></div><div class="f-head t-15">Chemical, alat & APD sesuai SOP — bayar EXO Wallet, dana ditahan sampai diterima</div></button></div>';
     h += '<div style="padding:18px 20px 0" class="flex gap-10">' +
       '<button class="quick solid"' + aksi('pesanCepat') + '><b>' + esc(t('quickBook')) + '</b><span>' + esc(t('quickNote')) + '</span></button>' +
       '<button class="quick"' + aksi('ke', 'prepaid') + '><b>' + esc(t('prepaidTtl')) + '</b><span>' + esc(t('prepaidSave')) + '</span></button></div>';

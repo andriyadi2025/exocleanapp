@@ -218,7 +218,7 @@
   /* ================================================================= AKSI */
   var A = X.AKSI;
   A.ke = function (v) { K.layar = v; };
-  A.lompat = function (v) { K.layar = v; K.sisi = D.PARTNER_SCREENS.indexOf(v) >= 0 ? 'partner' : 'customer'; };
+  A.lompat = function (v) { K.layar = v; K.sisi = D.TOKO_SCREENS && D.TOKO_SCREENS.indexOf(v) >= 0 ? 'toko' : D.PARTNER_SCREENS.indexOf(v) >= 0 ? 'partner' : 'customer'; };
   A.pilihJasa = function (v) {
     K.jasa = v; K.layar = 'svc'; K.kit = {}; K.sopDone = {}; K.ppe = {}; K.sopFoto = {}; K.tambahan = {};
     K.jam = D.MIN_QTY[v] || D.DEFAULT_QTY[D.SERVICES[v].unit] || 1;

@@ -37,6 +37,7 @@
     h += '<div class="flex gap-8 pad-x"><button class="' + kelas('pill', K.tabPesanan === 'up') + '"' + aksi('tabPesanan', 'up') + '>' + esc(t('upcoming')) + '</button>' +
       '<button class="' + kelas('pill', K.tabPesanan === 'past') + '"' + aksi('tabPesanan', 'past') + '>' + esc(t('past')) + '</button></div>';
     h += '<div class="stack gap-12" style="padding:16px 20px 0">';
+    if (window.EXO_TOKO) { var nToko = EXO_TOKO.pesananPembeli('Dewi Anggraini', K.pelangganId).filter(function (o) { return ['baru','diproses','dikirim','komplain'].indexOf(o.status) >= 0; }).length; h += '<button class="card elev-sm gap-3" style="text-align:start;cursor:pointer;width:100%"' + aksi('ke', 'pesananToko') + '><div class="flex items-center gap-8"><span class="tag tag-accent-2">Pesanan toko</span><span class="t-11 o-6">' + nToko + ' berjalan</span><span class="t-11 o-6" style="margin-inline-start:auto">Lihat →</span></div><div class="t-125">Perlengkapan dari toko mitra · lacak, terima, ulas, komplain</div></button>'; }
     if (K.tabPesanan === 'up') {
       h += '<div class="card elev-md gap-12"><div class="flex items-center gap-10"><span class="tag tag-accent-2">' + esc(tx('Today')) + '</span><span class="t-115 o-6">EXO-4471</span><span style="margin-inline-start:auto" class="t-115 c-leaf-800">' + esc(K.dibatalkan ? tx('Cancelled') : tx(X.tahapAlur()[Math.min(K.tahap, X.tahapAlur().length - 1)].title)) + '</span></div>' +
         '<div class="flex items-center gap-11">' + X.avJuru(j, 44) + '<div class="grow"><div class="f-head t-15">' + esc(j.name) + '</div><div class="t-115 o-65">' + esc(I.svcName(K.jasa)) + ' · ' + esc(X.ringkasSlot()) + '</div></div></div>' +
@@ -254,6 +255,7 @@
     }
     h += '</div>';
     h += '<div class="card card-clay elev-sm gap-10"><div class="flex items-center gap-10"><div class="grow"><div class="f-head t-15">Invite friends · code DEWI50</div><div class="t-115 o-7">Rp50.000 each, both sides, after their first visit</div></div><button class="btn btn-primary" style="height:36px;padding:0 16px;font-size:12.5px"' + aksi('ke', 'share') + '>' + esc(tx('Share')) + '</button></div></div>';
+    if (window.EXO_TOKO) h += '<button class="btn btn-secondary btn-block" style="margin:0 0 8px"' + aksi('keToko') + '>Buka Seller Center (mitra toko) →</button>';
     h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('keMitra') + '>' + esc(tx('Open the partner app →')) + '</button><div class="spacer-14"></div></div>';
     return h + '</div>';
   };

@@ -48,9 +48,9 @@ var EXO_KEUANGAN = (function () {
   var COA = [
     ['1100','Kas & bank','aset'], ['1110','Piutang gateway (settlement)','aset'], ['1200','Piutang usaha (kontrak)','aset'], ['1300','Uang muka & deposit','aset'],
     ['2100','Utang upah mitra','liabilitas'], ['2200','Saldo dompet pelanggan','liabilitas'], ['2210','Kredit jaminan pelanggan','liabilitas'], ['2220','Cashback & poin belum ditukar','liabilitas'],
-    ['2300','PPN keluaran','liabilitas'], ['2310','PPh 21/23 dipotong','liabilitas'], ['2400','Pendapatan diterima di muka (prabayar)','liabilitas'],
+    ['2300','PPN keluaran','liabilitas'], ['2310','PPh 21/23 dipotong','liabilitas'], ['2400','Pendapatan diterima di muka (prabayar)','liabilitas'], ['2500','Dana pembeli marketplace ditahan','liabilitas'], ['2510','Utang ke mitra toko (marketplace)','liabilitas'],
     ['3100','Modal','ekuitas'], ['3200','Laba ditahan','ekuitas'],
-    ['4100','Pendapatan fee platform — pelanggan','pendapatan'], ['4110','Pendapatan fee platform — mitra','pendapatan'], ['4200','Pendapatan kontrak B2B','pendapatan'], ['4300','Pendapatan langganan & prabayar','pendapatan'],
+    ['4100','Pendapatan fee platform — pelanggan','pendapatan'], ['4110','Pendapatan fee platform — mitra','pendapatan'], ['4200','Pendapatan kontrak B2B','pendapatan'], ['4300','Pendapatan langganan & prabayar','pendapatan'], ['4120','Pendapatan biaya layanan marketplace','pendapatan'],
     ['5100','Beban refund & kompensasi jaminan','beban'], ['5200','Beban voucher & cashback','beban'], ['5300','Beban gateway pembayaran','beban'], ['5400','Beban SMS/OTP & server','beban'],
     ['6100','Gaji & tunjangan kantor','beban'], ['6200','Chemical, alat & APD','beban'], ['6300','Pemasaran','beban'], ['6400','Sewa, utilitas & operasional','beban'], ['6500','Pelatihan & sertifikasi mitra','beban'], ['6900','Beban lain-lain','beban']
   ].map(function (a) { return { kode:a[0], nama:a[1], tipe:a[2], normal:(a[2] === 'aset' || a[2] === 'beban') ? 'debit' : 'kredit' }; });
@@ -124,6 +124,19 @@ var EXO_KEUANGAN = (function () {
         out.push({ id:'j_' + e.id, tgl:e.tgl, ref:e.orderNo, ket:'Pelunasan invoice kontrak · ' + e.klien, sumber:e.contoh ? 'contoh' : 'otomatis', baris:[{ akun:'1100', debit:e.nilai, kredit:0 }, { akun:'1200', debit:0, kredit:e.nilai }] });
       }
     });
+    /* Marketplace perlengkapan (EXO_TOKO): dana pembeli ditahan (2500) saat bayar,
+       diakui saat pesanan selesai: biaya layanan 5% → 4120, sisanya utang ke
+       toko (2510); refund mengembalikan ke dompet; pencairan menutup 2510. */
+    if (window.EXO_TOKO && window.EXO_DB) {
+      var contohOk = pakaiContoh(), dlm = function (t) { return String(t || '').slice(0, 7) === bulan; };
+      EXO_DB.all('pesananToko').forEach(function (o) {
+        if (o.contoh && !contohOk) return; var src = o.contoh ? 'contoh' : 'otomatis', fee = o.biayaLayanan || 0;
+        if (dlm(o.at)) out.push({ id:'jt_' + o.id, tgl:String(o.at).slice(0, 10), ref:o.no, ket:'Marketplace · pembayaran ditahan · ' + o.pembeliNama, sumber:src, baris:[{ akun:'2200', debit:o.total, kredit:0 }, { akun:'2500', debit:0, kredit:o.total }] });
+        if (o.status === 'selesai' && dlm(o.selesaiAt)) { var keToko = o.total - (o.refund || 0) - fee; out.push({ id:'jts_' + o.id, tgl:String(o.selesaiAt).slice(0, 10), ref:o.no, ket:'Marketplace · pesanan selesai → biaya layanan & utang toko', sumber:src, baris:[{ akun:'2500', debit:o.total, kredit:0 }, { akun:'4120', debit:0, kredit:fee }, { akun:'2510', debit:0, kredit:keToko }].concat(o.refund ? [{ akun:'2200', debit:0, kredit:o.refund }] : []) }); }
+        if (o.status === 'dibatalkan' && o.refund && dlm(o.dibatalkanAt || o.selesaiAt)) out.push({ id:'jtb_' + o.id, tgl:String(o.dibatalkanAt || o.selesaiAt).slice(0, 10), ref:o.no, ket:'Marketplace · refund ke dompet pembeli', sumber:src, baris:[{ akun:'2500', debit:o.refund, kredit:0 }, { akun:'2200', debit:0, kredit:o.refund }] });
+      });
+      EXO_DB.all('penarikanToko').forEach(function (p) { if (p.status === 'dibayar' && dlm(p.putusAt)) out.push({ id:'jtp_' + p.id, tgl:String(p.putusAt).slice(0, 10), ref:'Pencairan toko', ket:'Marketplace · pencairan saldo mitra toko', sumber:'otomatis', baris:[{ akun:'2510', debit:p.jumlah, kredit:0 }, { akun:'1100', debit:0, kredit:p.jumlah }] }); });
+    }
     /* Saldo awal (hanya mode contoh): kas escrow menutup kewajiban dompet,
        jaminan, poin, dan prabayar — tanpa ini mutasi dompet bulan berjalan
        membuat liabilitas 2200 tampak negatif. */

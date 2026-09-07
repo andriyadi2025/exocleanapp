@@ -213,6 +213,7 @@
     h += '<div class="card elev-sm gap-10"><div class="f-head t-15">Status kinerja Anda</div>';
     for (var p = 0; p < D.STANDING.length; p++) h += '<div class="flex items-center gap-10 t-13"><span class="grow o-8">' + esc(D.STANDING[p].label) + '</span><span class="bold">' + D.STANDING[p].value + '</span></div>';
     h += '<div class="t-115 o-7 lh-15">Rating di bawah 4,6 memicu pelatihan ulang berbayar, bukan penonaktifan.</div></div>';
+    if (window.EXO_TOKO) h += '<button class="btn btn-secondary btn-block" style="margin:0 0 8px"' + aksi('keToko') + '>🏪 Seller Center — jual perlengkapan (mitra toko) →</button>';
     h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('kePelanggan') + '>← Kembali ke aplikasi pelanggan</button><div class="spacer-14"></div></div>';
     return h + '</div>';
   };

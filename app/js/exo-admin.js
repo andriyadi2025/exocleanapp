@@ -66,13 +66,14 @@ var ADMIN = (function () {
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['pelatihan','Pelatihan & sertifikasi',''], ['lms','Pembelajaran (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
+    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance','']]]
   ];
   var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
-  var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
-  var UNIT_URUT = ['ops', 'mitra', 'keuangan', 'hrd', 'it'];
+  var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', pasar:'Marketplace', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
+  var UNIT_URUT = ['ops', 'mitra', 'pasar', 'keuangan', 'hrd', 'it'];
   /* ------------------------------------------------------------ HAK AKSES MENU
      Menu yang tampil mengikuti PERAN (staf · supervisor · superadmin) dan UNIT
      kerja yang ditugaskan ke akun (ops · keuangan · hrd · it):
@@ -92,7 +93,7 @@ var ADMIN = (function () {
     u = u || penggunaKini(); var pr = peranKini(u);
     if (pr === 'superadmin') return UNIT_URUT.slice();
     if (u && Array.isArray(u.unit) && u.unit.length) return u.unit.slice();
-    return pr === 'supervisor' ? ['ops', 'mitra', 'keuangan', 'hrd'] : ['ops'];
+    return pr === 'supervisor' ? ['ops', 'mitra', 'pasar', 'keuangan', 'hrd'] : ['ops'];
   }
   function unitMenu(id) { for (var i = 0; i < KELOMPOK.length; i++) for (var j = 0; j < KELOMPOK[i][2].length; j++) if (KELOMPOK[i][2][j][0] === id) return KELOMPOK[i][1]; return null; }
   function bolehLihat(id, u) {
@@ -132,6 +133,7 @@ var ADMIN = (function () {
     keamanan:['Keamanan','Konteks aman, login & PIN gagal, passkey, kontrol yang aktif · peristiwa autentikasi','Uji'],
     integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
     data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
+    pasar:['Marketplace perlengkapan','Mitra toko · produk & moderasi · pesanan · komisi 5% & pencairan · komplain · flash sale — pola Tokopedia','Verifikasi'],
     keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],
