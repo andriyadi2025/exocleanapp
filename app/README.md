@@ -216,3 +216,7 @@ Menu yang berkaitan dengan mitra dipisah dari HRD ke kelompok **Mitra**: Cleaner
 ## Dasbor admin diperkaya (7 Sep 2026)
 
 `js/exo-admin-dash.js` menambah panel analitik 30 hari di bawah KPI bawaan, semuanya SVG inline tanpa pustaka (sesuai CSP): tren GMV vs pendapatan platform, bauran layanan (donat), sales per daerah (kabupaten/kota dari alamat pesanan), top mitra (job, GMV, upah bersih, rating), kanal pembayaran, corong dana ditahan → ditangkap → dilepas, peta panas jam booking (hari × jam), dan log aktivitas terbaru (audit berantai + aktivitas aplikasi). Sumber: `EXO_KEUANGAN.peristiwa()`; peristiwa kini membawa `kota` dan `jam`. Data contoh selalu berlabel.
+
+## Pemilih rentang waktu di dasbor (7 Sep 2026)
+
+Analitik dasbor mengikuti rentang yang dipilih lewat pemilih bergaya Google Ads/Analytics: preset (Kustom, Hari ini, Kemarin, Minggu ini, 7 hari terakhir, Minggu lalu, 14 hari terakhir, Bulan ini, 30 hari terakhir, Bulan lalu, Sepanjang waktu, N hari sampai hari ini / kemarin), tanggal mulai–selesai, kalender bulanan dengan sorotan rentang (klik dua tanggal), dan sakelar **Bandingkan** yang menampilkan selisih GMV, pendapatan, dan kunjungan terhadap periode sebelumnya yang sama panjang. Tren diagregasi per hari (≤ 62 hari), per minggu (≤ 400 hari), atau per bulan.

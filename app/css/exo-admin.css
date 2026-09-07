@@ -99,3 +99,28 @@ body { background: var(--color-bg); }
 .seg-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:18px; background: var(--color-surface); }
 .adm-toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:30; background: var(--color-accent-2-700); color:#fff; border-radius:999px; padding:11px 20px; font-size:13px; box-shadow: var(--shadow-lg); }
 .adm-toast.err { background: var(--color-accent-800); }
+
+/* ---- pemilih rentang waktu (dasbor) — pola Google Ads/Analytics ---- */
+.adm-rentang-wrap { position:relative; }
+.adm-rentang { position:absolute; top:40px; left:0; z-index:40; display:flex; width:560px; max-width:calc(100vw - 300px); background:var(--color-surface); border-radius:20px; box-shadow:var(--shadow-lg); overflow:hidden; border:1px solid var(--color-divider); }
+.adm-rentang .kiri { width:210px; flex:none; border-right:1px solid var(--color-divider); padding:10px 0; display:flex; flex-direction:column; }
+.adm-rentang .kiri button { text-align:start; background:none; border:0; font:inherit; font-size:13px; padding:9px 18px; cursor:pointer; color:inherit; }
+.adm-rentang .kiri button:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+.adm-rentang .kiri button.on { background: color-mix(in srgb, var(--color-accent) 12%, transparent); color: var(--color-accent-800, #00594f); font-weight:600; }
+.adm-rentang .kiri .garis { height:1px; background:var(--color-divider); margin:6px 0; }
+.adm-rentang .kiri .baris-n { display:flex; align-items:center; gap:8px; padding:5px 18px; font-size:12.5px; }
+.adm-rentang .kiri .baris-n.on { color: var(--color-accent-800, #00594f); font-weight:600; }
+.adm-rentang .kiri .baris-n .input { width:58px; height:32px; padding:0 8px; font-size:13px; }
+.adm-rentang .kiri .banding { display:flex; align-items:center; gap:8px; }
+.adm-rentang .sakelar { width:34px; height:18px; border-radius:999px; background: color-mix(in srgb, var(--color-text) 20%, transparent); position:relative; flex:none; }
+.adm-rentang .sakelar i { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .15s; }
+.adm-rentang .sakelar.on { background: var(--color-accent); } .adm-rentang .sakelar.on i { left:18px; }
+.adm-rentang .kanan { flex:1; padding:14px 16px; }
+.adm-rentang .kanan .field .input { height:38px; }
+.adm-kal { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.adm-kal .hd { font-size:11px; opacity:.55; text-align:center; padding:4px 0; }
+.adm-kal button { height:32px; border:0; background:none; border-radius:999px; font:inherit; font-size:12.5px; cursor:pointer; color:inherit; }
+.adm-kal button:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.adm-kal button.dalam { background: color-mix(in srgb, var(--color-accent) 14%, transparent); border-radius:0; }
+.adm-kal button.ujung { background: var(--color-accent); color:#fff; font-weight:700; }
+.adm-kal button.depan { opacity:.3; cursor:default; }
