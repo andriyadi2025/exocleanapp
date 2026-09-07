@@ -66,7 +66,7 @@ var ADMIN = (function () {
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['moderasi','Moderasi',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran & sertifikasi (LMS)',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
-    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan',''], ['biaya','Biaya & asuransi','']]],
+    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan',''], ['biaya','Biaya & asuransi',''], ['iklan','Iklan toko (Ads)','']]],
     ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata',''], ['perjalanan','Perjalanan — Darmawisata','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
@@ -137,6 +137,7 @@ var ADMIN = (function () {
     integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
     data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
     pasar:['Marketplace perlengkapan','Mitra toko · produk & moderasi · pesanan · komisi per tingkat toko & pencairan · komplain · flash sale — pola Tokopedia','Verifikasi'],
+    iklan:['Iklan toko (Ads)','Iklan produk & iklan toko mitra ala TopAds · bayar per klik · moderasi · slot cari/beranda/produk · pendapatan iklan 4150','PIN'],
     biaya:['Biaya & asuransi','Biaya jasa aplikasi & biaya layanan pembeli · asuransi pengiriman & proteksi produk · biaya layanan penjual per tingkat · Gratis Ongkir · biaya aplikasi jasa — pola Tokopedia','PIN + Persetujuan'],
     kurir:['Kurir — Biteship','Status server kurir · pesanan kirim & resi · uji tarif · panduan sambung; dipakai marketplace perlengkapan','Segarkan'],
     perjalanan:['Perjalanan — Darmawisata H2H','Permintaan pemesanan pesawat/hotel/kereta/bus/kapal/sewa mobil/tur/umroh/kargo: konfirmasi harga & kode booking (PIN) · pembayaran EXO Wallet · terbit tiket · akses rumpun · biaya layanan','PIN'],

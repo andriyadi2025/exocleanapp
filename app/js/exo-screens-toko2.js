@@ -45,7 +45,7 @@
     /* Buat kamu: rekomendasi */
     if (!K.tokoCari && K.tokoKategori === 'semua' && !jumlahFilter()) { var rek = T().rekomendasi(K.tokoDilihat, K.keranjang, 6); h += '<div><div class="f-head t-16" style="margin-bottom:2px;color:#0a8f5c">Buat kamu</div><div style="width:64px;height:2px;background:#0a8f5c;margin-bottom:8px"></div><div class="grid-2">' + rek.map(function (p) { return kartuProduk(Object.assign({ adaKupon:hasil.kuponToko[p.tokoId] }, p)); }).join('') + '</div></div><div class="f-head t-16">Semua produk · ' + daftar.length + '</div>'; }
     else h += '<div class="t-115 o-6">' + daftar.length + ' produk' + (K.tokoCari ? ' untuk "' + esc(K.tokoCari) + '"' : '') + '</div>';
-    h += '<div class="grid-2">' + daftar.map(function (p) { return kartuProduk(p); }).join('') + (daftar.length ? '' : '<div class="card elev-sm t-125 o-7" style="grid-column:1/-1">Tidak ada produk yang cocok. Coba longgarkan filter.</div>') + '</div>';
+    h += '<div class="grid-2">' + (X.kartuIklanDaftar ? X.kartuIklanDaftar('cari', { cari:K.tokoCari, kategori:K.tokoKategori }) : '') + daftar.map(function (p) { return kartuProduk(p); }).join('') + (daftar.length ? '' : '<div class="card elev-sm t-125 o-7" style="grid-column:1/-1">Tidak ada produk yang cocok. Coba longgarkan filter.</div>') + '</div>';
     h += '<div class="t-11 o-6" style="margin-top:4px">Toko mitra: ' + toko.map(function (t) { return '<button class="btn btn-ghost t-11"' + aksi('tokoLihat', t.id) + '>' + esc(t.nama) + '</button>'; }).join(' · ') + '</div><div class="spacer-14"></div></div></div>';
     return h;
   };

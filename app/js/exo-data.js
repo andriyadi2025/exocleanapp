@@ -738,13 +738,13 @@ var EXO_DATA = (function () {
     { id:'tchat',     label:'Chat',     d:'M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z' },
     { id:'tkeuangan', label:'Keuangan', d:'M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z' }
   ];
-  var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar'];
+  var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tiklan','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar'];
   var TAB_SCREENS = ['home','orders','wallet','profile','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
   var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
   var JUMP_PPOB = [['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['perjalananPesanan','Permintaan perjalanan']];
-  var JUMP_TOKO = [['tberanda','Seller Center'],['tpesanan','Pesanan toko'],['tproduk','Produk'],['tpromosi','Promosi'],['tchat','Chat & ulasan'],['tkeuangan','Keuangan toko'],['keranjangDaftar','Keranjang'],['tstatistik','Statistik'],['tskor','Skor toko'],['tpengaturan','Pengaturan toko'],['tdaftar','Buka toko']];
+  var JUMP_TOKO = [['tberanda','Seller Center'],['tpesanan','Pesanan toko'],['tproduk','Produk'],['tpromosi','Promosi'],['tiklan','Iklan toko'],['tchat','Chat & ulasan'],['tkeuangan','Keuangan toko'],['keranjangDaftar','Keranjang'],['tstatistik','Statistik'],['tskor','Skor toko'],['tpengaturan','Pengaturan toko'],['tdaftar','Buka toko']];
   var JUMP_PARTNER  = [['preg','Daftar mitra'],['pjobs','Job feed'],['pjob','Active job'],['proute','Route'],['psop','SOP checklist'],['preport','Before-after'],['pearn','Earnings'],['pwallet','Dompet mitra']];
 
   return {
