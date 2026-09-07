@@ -228,3 +228,7 @@ Header kanan atas konsol admin punya sakelar **ID / EN** (`js/exo-admin-teks.js`
 ## Tombol bahasa di semua layar (7 Sep 2026)
 
 Aplikasi pelanggan & mitra: setiap layar punya tombol bahasa (kode ID/EN/…) — di header untuk layar berjudul, atau mengambang di kanan atas untuk layar tanpa header (beranda, pesanan, dompet, pelacakan, job mitra, Akademi, dst.). Menekannya membuka layar 12 bahasa; tombol kembali mengarah ke layar asal. Konsol admin (staf): sakelar ID/EN di header kanan atas. Catatan: layar mitra ditulis dalam bahasa Indonesia; pilihan bahasa di sisi mitra memengaruhi bagian yang sudah berkamus (label umum, ketentuan), penerjemahan penuh layar mitra menyusul.
+
+## Bagan perbandingan tiga sisi (7 Sep 2026)
+
+Halaman analisa (`exo-analisa.html#perbandingan`) memuat bagan perbandingan EXOCLEAN vs pemain sejenis untuk aplikasi pelanggan (Helpling, Urban Company, bTaskee, KliknClean, Handy), aplikasi mitra (Helpling Partner, UC Partner, bTaskee Tasker, Handy Pro), dan konsol admin (Jobber, Housecall Pro, ZenMaid, Swept, Connecteam, BookingKoala): 52 fitur dengan nilai Ada/Sebagian/Tidak, skor cakupan per aplikasi, kekuatan khas, kesenjangan, dan sumber. Penilaian dari materi publik dan dapat berubah.
