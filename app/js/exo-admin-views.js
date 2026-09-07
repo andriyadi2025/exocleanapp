@@ -34,11 +34,117 @@
   };
 
   /* ================================================================== SOP */
+  /* SOP layanan yang dipakai aplikasi mitra — bisa disunting admin kapan pun,
+     tiap penerbitan/pemulihan/penarikan wajib PIN persetujuan admin yang login
+     (EXO_ADMIN_AUTH.mintaPin). Revisi naik otomatis, riwayat tersimpan utuh. */
+  var PPE_SEMUA = ['gloves','mask','shoes','goggles','coverall','respirator','earmuff','apron','boots','harness','helmet','gasdetect'];
+  function ppeLabel(k) { return (window.EXO_DATA && EXO_DATA.PPE_LABELS && EXO_DATA.PPE_LABELS[k]) || k; }
+  function namaJasa(j) { var d = window.EXO_DATA && EXO_DATA.SERVICES && EXO_DATA.SERVICES[j]; return d && d.name ? d.name : j; }
+  function adaSop() { return !!(window.EXO_SOP && window.EXO_DATA); }
+  function sopLayanan() {
+    if (!adaSop()) return '<div class="card elev-sm t-125 o-7">Modul SOP layanan (js/exo-sop.js, js/exo-data.js) belum dimuat.</div>';
+    var semua = EXO_SOP.semua(), diubah = semua.filter(function (x) { return x.status === 'berlaku'; }).length;
+    var h = '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">SOP layanan — dipakai aplikasi mitra</div><div class="t-115 o-6">' + semua.length + ' SOP · ' + diubah + ' sudah direvisi admin · setiap penerbitan wajib PIN persetujuan · riwayat revisi tersimpan dan bisa dikembalikan</div></div>' +
+      (S.sopEdit ? '' : '<span class="chip" style="background:var(--color-surface);font-size:11px">Klik “Sunting” pada baris</span>') + '</div>' +
+      tabel(['Kode','Layanan · judul SOP','Rev','Langkah','APD','Status','Diubah oleh',''], semua.map(function (x) {
+        var st = x.status === 'berlaku' ? chip('green', 'Berlaku · revisi admin') : x.status === 'ditarik' ? chip('accent', 'Ditarik · pakai bawaan') : chip('flat', 'Bawaan rancangan');
+        return ['<span class="id" style="font-size:12.5px">' + esc(x.code) + '</span>', '<span class="t-125"><b>' + esc(namaJasa(x.jasa)) + '</b><br><span class="o-7">' + esc(x.title) + '</span></span>', EXO_SOP.padRev(x.rev), String(x.steps.length), String(x.ppe.length), st,
+          '<span class="t-12 o-75">' + (x.olehNama ? esc(x.olehNama) + '<br>' + esc(String(x.diubahAt || '').slice(0, 10)) : '—') + '</span>',
+          '<button class="btn btn-secondary" style="height:30px;padding:0 12px;font-size:12px"' + aksi('sopSunting', x.jasa) + '>Sunting</button>'];
+      })) + '</div>';
+    if (S.sopEdit) h += sopEditor();
+    return h;
+  }
+  function sopEditor() {
+    var e = S.sopEdit, rw = EXO_SOP.riwayat(e.jasa), galat = EXO_SOP.periksa(e);
+    function inp(nama, nilai, ph, arg) { return '<input class="input" value="' + esc(nilai == null ? '' : nilai) + '" placeholder="' + esc(ph || '') + '" data-ubah="sopUbah" data-arg="' + esc(arg || nama) + '">'; }
+    var h = '<div class="card elev-sm gap-14" id="sop-editor"><div class="flex items-center gap-10"><div class="grow"><div class="card-title">Sunting SOP · ' + esc(namaJasa(e.jasa)) + '</div><div class="t-115 o-6">Sekarang ' + EXO_SOP.padRev(e.revKini) + ' → akan terbit sebagai ' + EXO_SOP.padRev(e.revKini + 1) + ' setelah PIN disetujui. Aplikasi mitra memakai revisi terbit seketika.</div></div>' + chip(e.kotor ? 'accent' : 'flat', e.kotor ? 'Belum disimpan' : 'Belum ada perubahan') + '</div>';
+    h += '<div class="grid g2" style="gap:12px"><div class="field"><label>Kode dokumen</label>' + inp('code', e.code, 'D-001') + '</div><div class="field"><label>Judul SOP</label>' + inp('title', e.title, 'Nama SOP') + '</div></div>';
+    h += '<div><div class="t-115 up o-6" style="margin-bottom:8px">APD wajib sebelum mulai</div><div class="flex wrap gap-6">';
+    PPE_SEMUA.forEach(function (k) { h += pill(e.ppe.indexOf(k) >= 0, ppeLabel(k), 'sopPpe', k, true); });
+    h += '</div></div>';
+    h += '<div class="grid g2" style="gap:12px">';
+    [['alat','Alat (satu per baris: nama | catatan)'],['chem','Chemical (satu per baris: nama | takaran)']].forEach(function (g) {
+      h += '<div class="field"><label>' + g[1] + '</label><textarea class="input" style="min-height:110px;font-size:12.5px" data-ubah="sopUbah" data-arg="' + g[0] + '">' + esc(e[g[0]].map(function (a) { return a[1] ? a[0] + ' | ' + a[1] : a[0]; }).join('\n')) + '</textarea></div>';
+    });
+    h += '</div>';
+    h += '<div><div class="flex items-center" style="margin-bottom:8px"><div class="grow t-115 up o-6">Langkah kerja · urut · ' + e.steps.length + ' langkah</div><button class="btn btn-secondary" style="height:30px;padding:0 12px;font-size:12px"' + aksi('sopLangkahTambah') + '>+ Langkah</button></div><div class="stack gap-8">';
+    e.steps.forEach(function (st, i) {
+      h += '<div class="flex items-center gap-8" style="background:var(--color-surface);border-radius:16px;padding:8px 10px"><span class="f-head t-14" style="width:26px;text-align:center">' + (i + 1) + '</span>' +
+        '<div class="grow grid g2" style="gap:8px">' + inp('l', st[0], 'Judul langkah', i + ':0') + inp('n', st[1], 'Catatan (opsional)', i + ':1') + '</div>' +
+        '<button class="pill pill-sm' + (st[2] ? ' on' : '') + '"' + aksi('sopLangkahFoto', i) + ' title="Wajib foto sebelum–sesudah">' + (st[2] ? '📷 wajib' : 'tanpa foto') + '</button>' +
+        '<button class="btn btn-secondary" style="height:30px;padding:0 9px"' + (i ? aksi('sopLangkahGeser', i + ':-1') : ' disabled') + ' aria-label="Naik">↑</button>' +
+        '<button class="btn btn-secondary" style="height:30px;padding:0 9px"' + (i < e.steps.length - 1 ? aksi('sopLangkahGeser', i + ':1') : ' disabled') + ' aria-label="Turun">↓</button>' +
+        '<button class="btn btn-secondary" style="height:30px;padding:0 9px;color:var(--color-accent-800)"' + aksi('sopLangkahHapus', i) + ' aria-label="Hapus">✕</button></div>';
+    });
+    h += '</div></div>';
+    h += '<div class="field"><label>Catatan revisi (tercatat di riwayat)</label>' + inp('ringkasan', e.ringkasan, 'Apa yang berubah dan mengapa') + '</div>';
+    if (galat.length) h += '<div class="t-12" style="background:#fdecec;color:#9b1c1c;border-radius:12px;padding:10px 12px">' + esc(galat.join(' ')) + '</div>';
+    h += '<div class="flex gap-10 items-center"><button class="btn btn-primary" style="height:40px"' + (galat.length || !e.kotor ? ' disabled' : aksi('sopTerbitkan')) + '>Simpan & terbitkan · minta PIN</button>' +
+      '<button class="btn btn-secondary" style="height:40px"' + aksi('sopBatal') + '>Tutup tanpa menyimpan</button>' +
+      (e.revKini > 0 ? '<button class="btn btn-secondary" style="height:40px;margin-inline-start:auto"' + aksi('sopTarik') + '>Tarik semua revisi · PIN</button>' : '') + '</div>';
+    if (rw.length) {
+      h += '<div><div class="t-115 up o-6" style="margin-bottom:8px">Riwayat revisi</div><div class="stack gap-6">';
+      rw.forEach(function (r) {
+        h += '<div class="flex items-center gap-10 t-12" style="padding:6px 0;border-bottom:1px solid var(--color-divider)"><span class="f-head" style="width:64px">' + EXO_SOP.padRev(r.rev) + '</span><span class="grow"><b>' + esc(r.ringkasan) + '</b><span class="o-65"> · ' + esc(r.olehNama || '—') + ' · ' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + ' · ' + (r.isi && r.isi.steps ? r.isi.steps.length : 0) + ' langkah</span></span>' +
+          (r.rev !== e.revKini ? '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('sopPulihkan', r.rev) + '>Kembalikan · PIN</button>' : chip('green', 'berlaku')) + '</div>';
+      });
+      h += '</div></div>';
+    }
+    h += '<div class="t-115 o-6 lh-15">Setiap penerbitan dicatat: siapa, kapan, catatan revisi, dan isi lengkapnya. PIN persetujuan terpisah dari sandi masuk; salah 5 kali mengunci PIN 15 menit.</div></div>';
+    return h;
+  }
+  function baruEdit(jasa) {
+    var b = EXO_SOP.berlaku(jasa);
+    return { jasa:jasa, revKini:b.status === 'berlaku' ? b.rev : 0, code:b.code, title:b.title, ppe:b.ppe.slice(), alat:b.alat.map(function (a) { return a.slice(); }), chem:b.chem.map(function (a) { return a.slice(); }), steps:b.steps.map(function (a) { return a.slice(); }), ringkasan:'', kotor:false };
+  }
+  function pecahBaris(t) { return String(t || '').split(/\n/).map(function (b) { var p = b.split('|'); return [p[0].trim(), (p[1] || '').trim()]; }).filter(function (a) { return a[0]; }); }
+  function siapaAdmin() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
+  function denganPin(alasan, kerja) {
+    if (!window.EXO_ADMIN_AUTH || !EXO_ADMIN_AUTH.pengguna()) { A.sekilas('Masuk sebagai admin dulu.', 'err'); return; }
+    EXO_ADMIN_AUTH.mintaPin(alasan).then(function (ok) {
+      if (!ok) { A.sekilas('Dibatalkan — PIN tidak disetujui, tidak ada yang berubah.', 'err'); A.gambar(); return; }
+      try { kerja(siapaAdmin()); } catch (e) { A.sekilas('Gagal: ' + (e.message || e), 'err'); }
+      A.gambar();
+    });
+  }
+  AKSI.sopSunting = function (jasa) { S.sopEdit = baruEdit(jasa); setTimeout(function () { var el = document.getElementById('sop-editor'); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 50); };
+  AKSI.sopBatal = function () { S.sopEdit = null; };
+  AKSI.sopUbah = function (arg, v) {
+    var e = S.sopEdit; if (!e) return; e.kotor = true;
+    if (arg === 'alat' || arg === 'chem') { e[arg] = pecahBaris(v); return; }
+    if (/^\d+:[01]$/.test(arg)) { var p = arg.split(':'); if (e.steps[+p[0]]) e.steps[+p[0]][+p[1]] = v; return; }
+    if (arg === 'code') v = String(v || '').toUpperCase().trim();
+    e[arg] = v;
+  };
+  AKSI.sopPpe = function (k) { var e = S.sopEdit; if (!e) return; var i = e.ppe.indexOf(k); if (i >= 0) e.ppe.splice(i, 1); else e.ppe.push(k); e.kotor = true; };
+  AKSI.sopLangkahTambah = function () { var e = S.sopEdit; if (!e) return; e.steps.push(['', '', false]); e.kotor = true; };
+  AKSI.sopLangkahHapus = function (i) { var e = S.sopEdit; if (!e) return; e.steps.splice(+i, 1); e.kotor = true; };
+  AKSI.sopLangkahFoto = function (i) { var e = S.sopEdit; if (!e || !e.steps[+i]) return; e.steps[+i][2] = !e.steps[+i][2]; e.kotor = true; };
+  AKSI.sopLangkahGeser = function (v) { var e = S.sopEdit; if (!e) return; var p = v.split(':'), i = +p[0], j = i + (+p[1]); if (j < 0 || j >= e.steps.length) return; var t = e.steps[i]; e.steps[i] = e.steps[j]; e.steps[j] = t; e.kotor = true; };
+  AKSI.sopTerbitkan = function () {
+    var e = S.sopEdit; if (!e) return;
+    var galat = EXO_SOP.periksa(e); if (galat.length) { A.sekilas(galat[0], 'err'); return; }
+    var jasa = e.jasa, isi = JSON.parse(JSON.stringify(e));
+    denganPin('Terbitkan SOP ' + isi.code + ' ' + EXO_SOP.padRev(e.revKini + 1) + ' untuk ' + namaJasa(jasa) + '. Aplikasi mitra memakainya seketika.', function (oleh) {
+      var r = EXO_SOP.terbitkan(jasa, isi, oleh, isi.ringkasan);
+      S.sopEdit = baruEdit(jasa); A.sekilas('SOP ' + isi.code + ' ' + EXO_SOP.padRev(r.rev) + ' terbit · disetujui PIN ' + oleh.nama + '.');
+    });
+  };
+  AKSI.sopPulihkan = function (rev) {
+    var e = S.sopEdit; if (!e) return; var jasa = e.jasa;
+    denganPin('Kembalikan SOP ' + namaJasa(jasa) + ' ke ' + EXO_SOP.padRev(+rev) + ' (terbit sebagai revisi baru).', function (oleh) { var r = EXO_SOP.pulihkan(jasa, +rev, oleh); S.sopEdit = baruEdit(jasa); A.sekilas('Dikembalikan ke ' + EXO_SOP.padRev(+rev) + ' → terbit sebagai ' + EXO_SOP.padRev(r.rev) + '.'); });
+  };
+  AKSI.sopTarik = function () {
+    var e = S.sopEdit; if (!e) return; var jasa = e.jasa;
+    denganPin('Tarik semua revisi SOP ' + namaJasa(jasa) + ' — aplikasi mitra kembali ke bawaan rancangan.', function (oleh) { EXO_SOP.tarik(jasa, oleh); S.sopEdit = baruEdit(jasa); A.sekilas('Revisi ditarik · aplikasi memakai SOP bawaan.'); });
+  };
   VIEW.sop = function () {
     var h = '<div class="flex gap-8">';
     [['lib','Document register'],['assign','Assigned to contracts'],['qc','QC & evidence']].forEach(function (t) { h += pill(S.sopTab === t[0], t[1], 'sopTab', t[0]); });
     h += '</div>';
     if (S.sopTab === 'lib') {
+      h += sopLayanan();
       h += kpi([{label:'Dokumen terkontrol', value:'87', note:'66 SOP · 11 checklist · 10 formulir'},{label:'Menunggu persetujuan', value:'8', note:'7 SOP layanan baru + rev.01 A-011'},{label:'Jatuh tempo tinjau', value:'6', note:'dalam 30 hari'},{label:'Dipakai di lapangan', value:'92%', note:'7 SOP layanan baru belum berlaku'}], true, 4);
       var docs = [['A-008','Penanganan Keluhan Kebersihan','Administrasi','00','1 Jul 2026','Semua kontrak','1 Jul 2027','Berlaku','green'],['A-011','Inspeksi Kualitas oleh Supervisor','Administrasi','01','menunggu','Semua kontrak','—','Diperiksa','accent'],['D-005','Pembersihan Lobby Utama','Area','00','1 Jul 2026','12 gedung','1 Jul 2027','Berlaku','green'],['D-012','Pembersihan Toilet & Urinal','Area','00','1 Jul 2026','Semua kontrak','1 Jul 2027','Berlaku','green'],['D-021','Pembersihan Kaca & Jendela Eksterior','Area · risiko tinggi','00','1 Jul 2026','7 gedung','1 Jan 2027','Berlaku','green'],['B-003','Pengelolaan Limbah B3','K3 & lingkungan','00','1 Jul 2026','Semua kontrak','1 Jan 2027','Berlaku','green'],['B-006','Penanganan Tumpahan Bahan Kimia','K3 & lingkungan','01','draf','—','—','Disusun','flat'],['D-031','Hydro Cleaning (Vakum Tungau)','Area · layanan baru','00','draf','—','—','Disusun','flat'],['D-032','Poles Lantai & Kristalisasi Marmer','Area · layanan baru','00','draf','—','—','Disusun','flat'],['B-009','Pest Control & Penggunaan Pestisida Berizin','K3 & lingkungan','00','draf','—','—','Diperiksa','accent'],['D-033','Perawatan Kolam Renang & Log Kimia','Area · layanan baru','00','draf','—','—','Disusun','flat'],['D-034','Pembersihan Toren & Tangki Air','Area · layanan baru','00','draf','—','—','Diperiksa','accent'],['D-035','Pembersihan Pasca Renovasi','Area · layanan baru','00','draf','—','—','Disusun','flat'],['B-010','Kerja di Ruang Terbatas (Tangki & Reservoir Gedung)','K3 & lingkungan','00','draf','—','—','Diperiksa','accent'],['C-021','Checklist Alat, Chemical & APD per Layanan','Checklist','00','draf','—','—','Disusun','flat'],['H-002','Formulir Laporan Kerja Harian Petugas','Formulir','00','1 Jul 2026','Semua petugas','1 Jul 2027','Berlaku','green'],['H-006','Formulir Penanganan Keluhan','Formulir','00','1 Jul 2026','Supervisor','1 Jul 2027','Berlaku','green'],['H-008','Formulir Tindakan Koreksi & Pencegahan','Formulir','00','1 Jul 2026','Supervisor','1 Jul 2027','Berlaku','green']];
       h += '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Controlled document register</div><div class="t-115 o-6">Kode A/D/H · setiap revisi butuh Disusun → Diperiksa → Disetujui</div></div><button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('toast', 'Upload revision — file picker opens in the full build.') + '>Upload revision</button></div>' +

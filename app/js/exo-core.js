@@ -356,7 +356,13 @@ var ExoApp = (function () {
     for (var i = 0; i < D.ADDRESSES.length; i++) if (D.ADDRESSES[i].id === KEADAAN.alamat) return D.ADDRESSES[i];
     return D.ADDRESSES[0];
   }
-  function sopMeta() { return D.SOP_META[KEADAAN.jasa] || D.SOP_META['default']; }
+  /* SOP yang dipakai di lapangan: revisi yang DITERBITKAN konsol admin (lewat
+     PIN persetujuan) menimpa bawaan rancangan; tanpa terbitan, bawaan. */
+  function sopMeta() {
+    var pub = terbitan().sop, t = pub && pub[KEADAAN.jasa];
+    if (t && t.steps && t.steps.length) return Object.assign({ rev:0 }, D.SOP_META[KEADAAN.jasa] || D.SOP_META['default'], t);
+    return Object.assign({ rev:0 }, D.SOP_META[KEADAAN.jasa] || D.SOP_META['default']);
+  }
   function ppeComplete() { var p = sopMeta().ppe; for (var i = 0; i < p.length; i++) if (!KEADAAN.ppe[p[i]]) return false; return true; }
   function sopSelesai() { var n = 0; for (var k in KEADAAN.sopDone) if (KEADAAN.sopDone[k]) n++; return n; }
   function coverage() { var c = D.COVERAGE[KEADAAN.addr.kecamatan]; return c ? (c[KEADAAN.radius] || []) : []; }

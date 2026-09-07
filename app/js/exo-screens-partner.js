@@ -110,7 +110,7 @@
   /* ================================================================ PSOP */
   X.LAYAR.psop = function () {
     var m = X.sopMeta(), ppeOk = X.ppeComplete(), selesai = X.sopSelesai(), semua = selesai >= m.steps.length;
-    var h = '<div class="screen">' + X.kepala(esc(m.title), esc(m.code) + ' · Rev.00 · ' + m.ppe.length + ' APD wajib', 'pjob', '<span class="tag tag-accent">' + selesai + '/' + m.steps.length + '</span>');
+    var h = '<div class="screen">' + X.kepala(esc(m.title), esc(m.code) + ' · Rev.' + String(m.rev || 0).padStart(2, '0') + (m.at ? ' · ' + esc(String(m.at).slice(0, 10)) : '') + ' · ' + m.ppe.length + ' APD wajib', 'pjob', '<span class="tag tag-accent">' + selesai + '/' + m.steps.length + '</span>');
     h += '<div class="stack gap-14 pad-x18">';
     h += '<div class="card card-clay elev-sm gap-10"><div class="flex items-center gap-9"><span class="av av-solid" style="--s:26px;font-family:var(--font-body);font-size:12px">!</span><div class="grow f-head t-15">APD wajib sebelum mulai</div></div><div class="flex wrap gap-7">';
     for (var p = 0; p < m.ppe.length; p++) h += '<button class="' + kelas('pill pill-sm', !!K.ppe[m.ppe[p]]) + '"' + aksi('ppe', m.ppe[p]) + '>' + (K.ppe[m.ppe[p]] ? '✓' : '○') + ' ' + esc(D.PPE_LABELS[m.ppe[p]] || m.ppe[p]) + '</button>';

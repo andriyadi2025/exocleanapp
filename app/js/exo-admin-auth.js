@@ -169,5 +169,71 @@
     migrasi().then(function () { mode = admins().length ? 'masuk' : 'bootstrap'; gambar(); jagaSesi(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulai); else mulai();
-  window.EXO_ADMIN_AUTH = { buatHash:buatHash, periksaHash:periksaHash, sesi:sesi, keluar:function () { hapusSesi(); location.reload(); } };
+  /* ---------------------------------------------------------- PIN transaksi
+     Enam angka, terpisah dari sandi masuk, disimpan sebagai PBKDF2 di baris
+     admin (pinHash). Dipakai untuk menyetujui perubahan yang berdampak ke
+     lapangan (menerbitkan SOP, dsb.). Membuat/mengganti PIN wajib memasukkan
+     sandi masuk. Lima kali salah → terkunci 15 menit (dicatat di baris
+     admin, jadi berlaku di semua peramban yang memakai basis data ini). */
+  var PIN_MAKS_GAGAL = 5, PIN_KUNCI_MENIT = 15;
+  function adminKini() { var s = sesi(); if (!s) return null; var d = db(); return d ? d.find('users', s.id) : null; }
+  function mintaPin(alasan) {
+    return new Promise(function (selesaiJanji) {
+      var u = adminKini();
+      if (!u) { selesaiJanji(false); return; }
+      if (!subtle) { alert('PIN butuh HTTPS atau localhost.'); selesaiJanji(false); return; }
+      var kotak = document.createElement('div'); kotak.id = 'adm-pin';
+      kotak.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(20,30,28,.45);display:flex;align-items:center;justify-content:center;padding:24px';
+      document.body.appendChild(kotak);
+      var st = { mode: u.pinHash ? 'masuk' : 'buat', pesan:'', sibuk:false };
+      function tutup(hasil) { kotak.remove(); selesaiJanji(hasil); }
+      function kunciSampai() { return u.pinKunciSampai && u.pinKunciSampai > Date.now() ? u.pinKunciSampai : 0; }
+      function gambarPin() {
+        var k = kunciSampai();
+        var h = '<div class="kotak" style="width:100%;max-width:380px;background:#fff;border-radius:24px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:12px">' +
+          '<div><h2 style="margin:0;font-size:20px">' + (st.mode === 'masuk' ? 'PIN persetujuan' : 'Buat PIN persetujuan') + '</h2><div style="font-size:13px;opacity:.7;line-height:1.45;margin-top:4px">' + esc(alasan || 'Perubahan ini butuh persetujuan PIN Anda.') +
+          (st.mode === 'buat' ? ' Anda belum punya PIN — buat 6 angka, dikonfirmasi dengan sandi masuk.' : '') + '</div></div>';
+        if (st.pesan) h += '<div style="background:#fdecec;color:#9b1c1c;border-radius:12px;padding:10px 12px;font-size:13px">' + esc(st.pesan) + '</div>';
+        if (k) h += '<div style="background:#fdecec;color:#9b1c1c;border-radius:12px;padding:10px 12px;font-size:13px">PIN terkunci sampai ' + new Date(k).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }) + ' setelah ' + PIN_MAKS_GAGAL + ' kali salah.</div>';
+        h += '<form id="adm-pin-form" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">';
+        if (st.mode === 'buat') h += '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">Sandi masuk</label><input class="input" name="sandi" type="password" required autocomplete="current-password"></div>' +
+          '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">PIN baru (6 angka)</label><input class="input" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password"></div>' +
+          '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">Ulangi PIN</label><input class="input" name="ulang" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password"></div>';
+        else h += '<div><label style="display:block;font-size:11.5px;text-transform:uppercase;opacity:.6;margin-bottom:6px">PIN 6 angka</label><input class="input" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required type="password" autofocus style="letter-spacing:.4em;font-size:20px;text-align:center"></div>';
+        h += '<div style="display:flex;gap:8px;margin-top:4px"><button type="button" class="btn btn-secondary" style="flex:1;height:44px" id="adm-pin-batal">Batal</button><button class="btn btn-primary" style="flex:2;height:44px"' + (st.sibuk || k ? ' disabled' : '') + '>' + (st.sibuk ? 'Memeriksa…' : st.mode === 'buat' ? 'Simpan PIN & setujui' : 'Setujui') + '</button></div>' +
+          (st.mode === 'masuk' ? '<button type="button" class="tautan" id="adm-pin-ganti" style="background:none;border:0;color:var(--color-accent,#009183);font:inherit;font-size:12.5px;cursor:pointer">Lupa PIN? Buat ulang dengan sandi masuk</button>' : '') + '</form></div>';
+        kotak.innerHTML = h;
+        document.getElementById('adm-pin-batal').addEventListener('click', function () { tutup(false); });
+        var g = document.getElementById('adm-pin-ganti'); if (g) g.addEventListener('click', function () { st.mode = 'buat'; st.pesan = ''; gambarPin(); });
+        document.getElementById('adm-pin-form').addEventListener('submit', kirimPin);
+        var f = kotak.querySelector('input'); if (f) f.focus();
+      }
+      function kirimPin(ev) {
+        ev.preventDefault(); if (st.sibuk) return;
+        var f = ev.target, d = db(), pin = String(f.pin.value).replace(/\D/g, '');
+        if (pin.length !== 6) { st.pesan = 'PIN harus 6 angka.'; gambarPin(); return; }
+        st.sibuk = true; st.pesan = ''; gambarPin();
+        var janji;
+        if (st.mode === 'buat') {
+          if (pin !== String(f.ulang.value)) { st.pesan = 'PIN tidak sama dua kali.'; st.sibuk = false; gambarPin(); return; }
+          if (/^(\d)\1{5}$/.test(pin) || pin === '123456' || pin === '654321') { st.pesan = 'PIN terlalu mudah ditebak.'; st.sibuk = false; gambarPin(); return; }
+          janji = periksaHash(String(f.sandi.value), u.passHash).then(function (ok) {
+            if (!ok) { st.pesan = 'Sandi masuk salah.'; return false; }
+            return buatHash(pin).then(function (h) { u = d.update('users', u.id, { pinHash:h, pinGagal:0, pinKunciSampai:0, pinDibuatAt:new Date().toISOString() }); catat('PIN persetujuan dibuat/diganti', '', u.id); return true; });
+          });
+        } else {
+          if (kunciSampai()) { st.sibuk = false; gambarPin(); return; }
+          janji = periksaHash(pin, u.pinHash).then(function (ok) {
+            if (ok) { if (u.pinGagal) d.update('users', u.id, { pinGagal:0 }); return true; }
+            var n = (u.pinGagal || 0) + 1, patch = { pinGagal:n }; if (n >= PIN_MAKS_GAGAL) patch.pinKunciSampai = Date.now() + PIN_KUNCI_MENIT * 60000;
+            u = d.update('users', u.id, patch); catat('PIN persetujuan salah', alasan + ' · percobaan ' + n, u.id);
+            st.pesan = 'PIN salah.' + (n >= PIN_MAKS_GAGAL ? '' : ' Sisa ' + (PIN_MAKS_GAGAL - n) + ' percobaan.'); return false;
+          });
+        }
+        janji.catch(function (e) { st.pesan = 'Gagal: ' + (e && e.message || e); return false; }).then(function (ok) { st.sibuk = false; if (ok) { catat('PIN persetujuan diverifikasi', alasan, u.id); tutup(true); } else gambarPin(); });
+      }
+      gambarPin();
+    });
+  }
+  window.EXO_ADMIN_AUTH = { buatHash:buatHash, periksaHash:periksaHash, sesi:sesi, pengguna:adminKini, mintaPin:mintaPin, keluar:function () { hapusSesi(); location.reload(); } };
 })();

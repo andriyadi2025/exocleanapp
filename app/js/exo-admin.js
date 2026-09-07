@@ -18,7 +18,7 @@ var ADMIN = (function () {
 
   var pub = bacaPub();
   var S = {
-    view: (location.hash || '#dash').slice(1), orderFilter:'all', deskFilter:'all', sopTab:'lib', mapFilter:'all',
+    view: (location.hash || '#dash').slice(1), orderFilter:'all', deskFilter:'all', sopTab:'lib', sopEdit:null, mapFilter:'all',
     svcEdits:{}, svcOff: pub.svcOff || {}, svcDirty:false, promoEdits:{}, promoOff:{}, promoDirty:false, approved:{}, requested:{},
     pointsPerRp:1000, pointRupiah:10, cashbackPct:3, cashbackCap:25000, tierBoost:true, cbWalletOnly:true, rewardDirty:false,
     brand: EXO_BRAND.baca(), brandDirty:false, sekilas:null

@@ -171,3 +171,7 @@ membuat basis data adalah konsol admin `exo-admin.html` saat pertama dibuka.
 ## Keamanan (4 Sep 2026)
 
 Audit dan pengerasan lengkap ada di [server/KEAMANAN.md](server/KEAMANAN.md): gerbang login konsol admin (PBKDF2, kunci percobaan, sesi idle), token per transaksi untuk status/capture/cancel, token tulis/baca server posisi, pembatas laju per IP, verifikasi Turnstile di server, header pengaman + CSP, validasi masukan, dan panduan server produksi (nginx, systemd, firewall, rahasia, cadangan, pemantauan). Uji otomatis: `node server/alat/uji-keamanan.js`.
+
+## SOP dapat disunting admin dengan PIN persetujuan (7 Sep 2026)
+
+Konsol admin → SOP & QC → "SOP layanan — dipakai aplikasi mitra": tiap SOP layanan (21) bisa disunting kapan pun (kode, judul, APD wajib, alat, chemical, langkah kerja berurutan dengan wajib foto). Menyimpan/menerbitkan, mengembalikan revisi lama, atau menarik revisi **wajib PIN persetujuan** 6 angka milik admin yang login (terpisah dari sandi masuk, dibuat pertama kali dengan konfirmasi sandi, salah 5 kali terkunci 15 menit). Revisi naik otomatis, riwayat lengkap tersimpan (`EXO_DB` tabel `sop`), dan aplikasi mitra memakai revisi terbit seketika lewat `exoclean_admin_pub.sop` (`js/exo-sop.js`, `sopMeta()` di exo-core).
