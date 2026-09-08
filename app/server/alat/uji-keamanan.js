@@ -7,6 +7,8 @@ const os = require('os');
 const PIN_UJI = path.join(os.tmpdir(), 'exo-uji-pin-' + process.pid + '.json');
 const SV = path.join(__dirname, '..');
 const SESI = require('../sesi');
+const DUA = require('../duafaktor');
+const DUA_UJI = path.join(require('os').tmpdir(), 'exo-uji-2fa-' + process.pid + '.json');
 const RAHASIA_HEX = SESI.buatKunci(), RAHASIA = Buffer.from(RAHASIA_HEX, 'hex');
 const tokenKlien = SESI.terbitkan(RAHASIA, { sub: 'klienA', sisi: 'klien' }), tokenKlienB = SESI.terbitkan(RAHASIA, { sub: 'klienB', sisi: 'klien' }), tokenMitra = SESI.terbitkan(RAHASIA, { sub: 'mitraA', sisi: 'mitra' }), tokenAdmin = SESI.terbitkan(RAHASIA, { sub: 'adminA', sisi: 'admin' });
 const H = (t, lagi) => Object.assign({ 'Content-Type': 'application/json' }, t ? { Authorization: 'Bearer ' + t } : {}, lagi || {});
@@ -20,7 +22,7 @@ function jalankan(berkas, env) {
 const tidur = ms => new Promise(r => setTimeout(r, ms));
 async function json(url, opsi) { const r = await fetch(url, opsi); let j = null; try { j = await r.json(); } catch (e) { j = null; } return { status: r.status, h: r.headers, j }; }
 (async () => {
-  const ENV = { ALLOWED_ORIGINS: 'http://localhost:8081,*', EXO_TLS_CERT: '', EXO_TLS_KEY: '', SMS_PROVIDER: 'log', EMAIL_PROVIDER: 'log', OTP_JEDA_DETIK: '1', LAJU_OTP_KIRIM_PER_JAM_IP: '3', LAJU_POSISI_PER_MENIT: '5', SESI_SECRET: RAHASIA_HEX, ADMIN_TELP: '081200000009', PIN_BERKAS: PIN_UJI };
+  const ENV = { ALLOWED_ORIGINS: 'http://localhost:8081,*', EXO_TLS_CERT: '', EXO_TLS_KEY: '', SMS_PROVIDER: 'log', EMAIL_PROVIDER: 'log', OTP_JEDA_DETIK: '1', LAJU_OTP_KIRIM_PER_JAM_IP: '3', LAJU_POSISI_PER_MENIT: '5', SESI_SECRET: RAHASIA_HEX, ADMIN_TELP: '081200000009', PIN_BERKAS: PIN_UJI, DUA_BERKAS: DUA_UJI, DUA_RP_ID: 'localhost' };
   const auth = jalankan('auth-server.js', Object.assign({ AUTH_PORT: '4171' }, ENV));
   const pos = jalankan('posisi-server.js', Object.assign({ POSISI_PORT: '4272' }, ENV));
   const pay = jalankan('payment-server.js', Object.assign({ PORT: '4073', MIDTRANS_SERVER_KEY: 'SB-Mid-server-uji' }, ENV));
@@ -52,9 +54,53 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     ok('OTP benar diterima', r.status === 200 && r.j.ok);
     ok('OTP benar → sesi bertanda tangan (sub pseudonim, sisi klien)', !!r.j.sesi && r.j.sisi === 'klien' && SESI.verifikasi(RAHASIA, r.j.sesi).ok && !String(r.j.sesi).includes('081200000001'));
     ok('sesi berisi sub yang sama untuk nomor yang sama', SESI.verifikasi(RAHASIA, r.j.sesi).klaim.sub === SESI.subDari(RAHASIA, 'telp', '081200000001'));
+    const sesiKlien = r.j.sesi;
+    /* 2FA: TOTP */
+    r = await json(A + '/api/auth/2fa/totp/daftar', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    ok('2fa daftar tanpa sesi → 401', r.status === 401);
+    r = await json(A + '/api/auth/2fa/totp/daftar', { method: 'POST', headers: H(sesiKlien) });
+    ok('2fa totp daftar → rahasia + QR svg', r.status === 200 && /^[A-Z2-7]{32}$/.test(r.j.rahasia) && /<svg/.test(r.j.qrSvg), r.j && r.j.error);
+    const rahasiaTotp = r.j.rahasia;
+    r = await json(A + '/api/auth/2fa/totp/aktifkan', { method: 'POST', headers: H(sesiKlien), body: JSON.stringify({ kode: '000000' }) });
+    ok('2fa aktifkan dengan kode salah → 400', r.status === 400);
+    r = await json(A + '/api/auth/2fa/totp/aktifkan', { method: 'POST', headers: H(sesiKlien), body: JSON.stringify({ kode: DUA.totpKode(DUA.base32Decode(rahasiaTotp), DUA.totpLangkah(), 6) }) });
+    ok('2fa aktifkan dengan kode benar → ok + 8 kode pemulihan', r.status === 200 && r.j.ok && r.j.pemulihan && r.j.pemulihan.length === 8, r.j && r.j.error);
+    const pemulihan = r.j.pemulihan;
+    r = await json(A + '/api/auth/2fa/status', { method: 'POST', headers: H(sesiKlien) });
+    ok('2fa status aktif', r.status === 200 && r.j.aktif && r.j.totp && r.j.pemulihanSisa === 8);
+    /* masuk ulang: OTP → sesi sementara → verifikasi */
+    await tidur(1100); r = await kirim(); const kode2 = (auth.keluaran().match(/Kode verifikasi EXOCLEAN Anda: (\d{6})/g) || []).pop().match(/(\d{6})$/)[1];
+    r = await json(A + '/api/auth/otp/periksa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'telp', tujuan: '081200000001', kode: kode2 }) });
+    ok('OTP pada akun ber-2FA → perlu2fa + sesiSementara (bukan sesi penuh)', r.status === 200 && r.j.perlu2fa === true && r.j.sesiSementara && !r.j.sesi && r.j.metode.totp === true, JSON.stringify(r.j).slice(0, 120));
+    const sementara = r.j.sesiSementara;
+    r = await json(Y + '/api/pay/status', { method: 'POST', headers: H(sementara), body: JSON.stringify({ orderId: 'EXO-000001' }) });
+    ok('sesi sementara ditolak server lain → 401 perlu2fa', r.status === 401 && r.j.perlu2fa === true);
+    r = await json(A + '/api/auth/2fa/verifikasi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, kode: '123456' }) });
+    ok('2fa verifikasi kode salah → 400', r.status === 400);
+    r = await json(A + '/api/auth/2fa/verifikasi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, kode: DUA.totpKode(DUA.base32Decode(rahasiaTotp), DUA.totpLangkah() + 1, 6) }) });
+    ok('2fa verifikasi kode autentikator (langkah berikutnya, belum dipakai) → sesi penuh', r.status === 200 && r.j.sesi && SESI.verifikasi(RAHASIA, r.j.sesi).ok && !SESI.verifikasi(RAHASIA, r.j.sesi).klaim.tahap, r.j && r.j.error);
+    r = await json(A + '/api/auth/2fa/verifikasi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, pemulihan: pemulihan[0] }) });
+    ok('2fa kode pemulihan → sesi penuh', r.status === 200 && r.j.sesi);
+    r = await json(A + '/api/auth/2fa/verifikasi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, pemulihan: pemulihan[0] }) });
+    ok('kode pemulihan yang sama tidak bisa dipakai lagi', r.status === 400);
+    /* 2FA: passkey (autentikator tiruan) */
+    const autentikator = DUA.simulasiAutentikator('localhost');
+    r = await json(A + '/api/auth/2fa/passkey/tantangan', { method: 'POST', headers: H(sesiKlien), body: JSON.stringify({ jenis: 'daftar' }) });
+    ok('passkey tantangan daftar', r.status === 200 && r.j.tantangan && r.j.rpId === 'localhost');
+    r = await json(A + '/api/auth/2fa/passkey/daftar', { method: 'POST', headers: H(sesiKlien), body: JSON.stringify({ kredensial: autentikator.daftar(r.j.tantangan, 'http://localhost:8081'), nama: 'Uji' }) });
+    ok('passkey daftar → ok', r.status === 200 && r.j.ok && r.j.id === autentikator.id, r.j && r.j.error);
+    r = await json(A + '/api/auth/2fa/passkey/tantangan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'masuk', sesiSementara: sementara }) });
+    ok('passkey tantangan masuk (sesi sementara)', r.status === 200 && r.j.izinkan.includes(autentikator.id));
+    r = await json(A + '/api/auth/2fa/passkey/masuk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, kredensial: autentikator.masuk(r.j.tantangan, 'http://localhost:8081') }) });
+    ok('passkey masuk → sesi penuh', r.status === 200 && r.j.sesi, r.j && r.j.error);
+    r = await json(A + '/api/auth/2fa/passkey/tantangan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'masuk', sesiSementara: sementara }) });
+    const lain = DUA.simulasiAutentikator('localhost');
+    r = await json(A + '/api/auth/2fa/passkey/masuk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sesiSementara: sementara, kredensial: lain.masuk(r.j.tantangan, 'http://localhost:8081') }) });
+    ok('passkey asing ditolak', r.status === 400);
+    r = await json(A + '/api/auth/2fa/nonaktif', { method: 'POST', headers: H(sesiKlien), body: JSON.stringify({ kode: pemulihan[1] }) });
+    ok('2fa nonaktif dengan kode pemulihan → ok', r.status === 200 && r.j.ok, r.j && r.j.error);
     await tidur(1100); await json(A + '/api/auth/otp/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'telp', tujuan: '081200000002' }) });
-    await tidur(1100); await json(A + '/api/auth/otp/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'telp', tujuan: '081200000003' }) });
-    await tidur(1100); r = await json(A + '/api/auth/otp/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'telp', tujuan: '081200000004' }) });
+    await tidur(1100); r = await json(A + '/api/auth/otp/kirim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'telp', tujuan: '081200000003' }) });
     ok('batas OTP per IP (3/jam) → 429', r.status === 429 && r.h.get('retry-after'), 'status ' + r.status);
     /* posisi: sesi + token */
     r = await json(P + '/api/posisi/ORD-1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat: -6.2, lng: 106.8, akurasi: 12 }) });
@@ -73,7 +119,6 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     let terakhir = 0; for (let i = 0; i < 6; i++) { r = await json(P + '/api/posisi/ORD-1', { method: 'POST', headers: H(tokenMitra, { 'X-Exo-Token': tulis }), body: JSON.stringify({ lat: -6.3, lng: 106.8 }) }); terakhir = r.status; }
     ok('batas laju posisi (5/menit) → 429', terakhir === 429);
     /* PIN transaksi (auth-server) */
-    const sesiKlien = r.j && r.j.sesi;
     r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: '482913' }) });
     ok('pin atur tanpa sesi → 401', r.status === 401);
     r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '123456' }) });
@@ -140,7 +185,7 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     const tls = [auth, pos, pay].map(s => /127\.0\.0\.1|loopback/i.test(s.keluaran()));
     ok('tanpa sertifikat: hanya loopback (ketiga server)', tls.every(Boolean), tls.join(','));
   } catch (e) { hasil.push('GALAT: ' + e.stack); }
-  finally { auth.p.kill(); pos.p.kill(); pay.p.kill(); kir.p.kill(); dwi.p.kill(); try { require('fs').unlinkSync(PIN_UJI); } catch (e) { /* sudah tidak ada */ } }
+  finally { auth.p.kill(); pos.p.kill(); pay.p.kill(); kir.p.kill(); dwi.p.kill(); try { require('fs').unlinkSync(PIN_UJI); } catch (e) { /* sudah tidak ada */ } try { require('fs').unlinkSync(DUA_UJI); } catch (e) { /* sudah tidak ada */ } }
   console.log(hasil.join('\n'));
   const gagal = hasil.filter(h => !h.startsWith('LULUS')).length;
   if (gagal) { console.log('\n--- keluaran auth ---\n' + auth.keluaran().slice(-1500) + '\n--- keluaran pos ---\n' + pos.keluaran().slice(-800) + '\n--- keluaran pay ---\n' + pay.keluaran().slice(-800) + '\n--- keluaran kirim ---\n' + kir.keluaran().slice(-800) + '\n--- keluaran dwi ---\n' + dwi.keluaran().slice(-800)); }

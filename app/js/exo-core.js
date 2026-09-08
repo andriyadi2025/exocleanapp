@@ -655,7 +655,7 @@ var ExoApp = (function () {
   /* Layar netral dipakai kedua sisi dan tidak boleh mengubah sisi — tanpa
      ini, mitra yang membuka Ketentuan lalu kembali mendarat di profil
      PELANGGAN. */
-  var LAYAR_NETRAL = ['profile', 'terms', 'lang', 'cs', 'privasi', 'pinKelola'];
+  var LAYAR_NETRAL = ['profile', 'terms', 'lang', 'cs', 'privasi', 'pinKelola', 'duaFaktor'];
   function selaraskanSisi() {
     var l = KEADAAN.layar;
     if (LAYAR_NETRAL.indexOf(l) >= 0) return;

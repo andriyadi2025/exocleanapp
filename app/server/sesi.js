@@ -62,6 +62,7 @@ function wajibSesi(rahasia, opsi) {
     if (!token) return res.status(401).json({ error: 'Perlu sesi. Masuk lewat OTP dulu.' });
     const v = verifikasi(rahasia, token);
     if (!v.ok) return res.status(401).json({ error: 'Sesi tidak sah (' + v.sebab + '). Masuk lagi.' });
+    if (v.klaim.tahap || v.klaim.pin) return res.status(401).json({ error: v.klaim.tahap ? 'Selesaikan verifikasi dua langkah dulu.' : 'Token ini bukan sesi.', perlu2fa: !!v.klaim.tahap });
     if (opsi.sisi && opsi.sisi.indexOf(v.klaim.sisi) < 0) return res.status(403).json({ error: 'Sesi ini tidak berhak untuk operasi ini.' });
     req.sesi = v.klaim;
     next();

@@ -239,3 +239,18 @@ Pola Tokopedia/GoPay: masuk dengan OTP, tetapi setiap aksi uang meminta PIN 6 di
 | Klien | `js/exo-pin.js`, `js/exo-screens-pin.js` | gerbang `X.denganPin(alasan, kerja)` membungkus: konfirmasi bayar/tahan (keypad PIN yang ada kini diverifikasi sungguhan), isi & tarik saldo, bayar keranjang toko, pencairan toko, isi saldo iklan, ganti rekening, permintaan hapus akun; PIN dibuat saat pendaftaran pelanggan atau saat aksi uang pertama; layar **PIN transaksi** (Akun) untuk ganti & reset lewat OTP; tanpa server → hash PBKDF2 150k lokal dengan kunci 30 menit; PIN-token disimpan di memori dan dibawa otomatis oleh `js/exo-server.js` |
 
 Uji: `node alat/uji-keamanan.js` (53 uji, termasuk PIN lemah, salah 5× terkunci, PIN-token sub lain ditolak, reset dengan sesi segar).
+
+### 7.3 Verifikasi dua langkah (aplikasi autentikator & passkey) untuk semua pengguna (8 Sep 2026)
+
+Setara Tokopedia (Google Authenticator) dan GoPay (biometrik). Semua diputuskan di **auth-server** (`duafaktor.js`), bukan di perangkat.
+
+| Bagian | Cara kerja |
+|---|---|
+| TOTP | RFC 6238: rahasia 160-bit base32, HMAC-SHA1, 30 detik, 6 digit, toleransi ±1 langkah, kode yang sama tidak boleh dipakai dua kali; rahasia disimpan **terenkripsi** (AES-256-GCM, kunci HKDF dari `SESI_SECRET`) di `data/2fa.json`; QR dibuat server (`qrcode`) — pengguna memindai dengan Google Authenticator/Authy/Microsoft Authenticator |
+| Passkey | WebAuthn/FIDO2 ES256: tantangan acak 5 menit per akun; pendaftaran memeriksa clientDataJSON (type, challenge, origin ∈ `ALLOWED_ORIGINS`), `rpIdHash` (`DUA_RP_ID`), flag UP, lalu menyimpan kunci publik (COSE→JWK) + counter; masuk memverifikasi tanda tangan ECDSA atas `authenticatorData ‖ SHA-256(clientDataJSON)` dan counter yang naik (deteksi kloning). Attestation tidak dipercaya; CBOR decoder minimal tanpa dependensi |
+| Kode pemulihan | 8 kode `XXXXX-XXXXX`, disimpan SHA-256, sekali pakai; dibuat saat 2FA pertama aktif, bisa dibuat ulang dengan kode yang berlaku |
+| Alur masuk | OTP/login sosial pada akun ber-2FA → `{ perlu2fa, sesiSementara }` (klaim `tahap:'2fa'`, 5 menit) yang **ditolak** semua server lain (`wajibSesi` 401 `perlu2fa`) → `/api/auth/2fa/verifikasi` (kode/pemulihan) atau `/2fa/passkey/masuk` → sesi penuh |
+| Klien | `js/exo-2fa.js` (jembatan + WebAuthn di peramban), `js/exo-screens-2fa.js`: layar **Verifikasi dua langkah** di Akun tiap sisi; lembar masuk 2FA otomatis setelah OTP |
+| Endpoint | `/api/auth/2fa/{status, totp/daftar, totp/aktifkan, passkey/tantangan, passkey/daftar, passkey/hapus, passkey/masuk, verifikasi, pemulihan-baru, nonaktif}` — wajib sesi (kecuali verifikasi/masuk yang memakai sesi sementara); 30 permintaan/10 menit per akun |
+
+Uji: `npm run test:duafaktor` (12 uji: vektor RFC 6238, anti pemakaian ulang, CBOR, pendaftaran & masuk passkey dengan autentikator tiruan, penolakan tantangan/origin/rpId/kunci asing/counter mundur) dan `node alat/uji-keamanan.js` (alur OTP → sesi sementara → TOTP/pemulihan/passkey → sesi penuh).

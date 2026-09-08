@@ -608,6 +608,7 @@
     K.otpSibuk = true;
     EXO_SERVER.otpPeriksa(K.otpTujuan, K.otp, K.sisi === 'partner' ? 'mitra' : K.sisi === 'toko' ? 'toko' : 'klien').then(function (r) {
       K.otpSibuk = false;
+      if (r.ok && r.data && r.data.perlu2fa && X.mulaiDuaFaktorMasuk) { X.mulaiDuaFaktorMasuk(r.data, function () { K.authStep = 'pin'; }); sekilas('Nomor benar — selesaikan verifikasi dua langkah.'); X.gambar(); return; }
       if (r.ok) { K.authStep = 'pin'; if (r.data && r.data.sesi && window.EXO_BRANKAS) EXO_BRANKAS.terimaSesi(r.data.sesi); sekilas(tx('Number verified by the auth server.') + (r.data && r.data.sesi ? ' · brankas data aktif' : '')); }
       else { K.otp = ''; sekilas(r.error || tx('Wrong code.'), 'err'); }
       X.gambar();

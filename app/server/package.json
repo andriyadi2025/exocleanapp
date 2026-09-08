@@ -22,12 +22,14 @@
     "start:data": "node data-server.js",
     "start:vdp": "node vdp-server.js",
     "test:brankas": "node alat/uji-brankas.js",
+    "test:duafaktor": "node alat/uji-duafaktor.js",
     "dev:dwi": "node --watch dwi-server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "@anthropic-ai/sdk": "^0.80.0"
+    "qrcode": "^1.5.4"
   },
   "overrides": {
     "qs": "^6.16.0"
