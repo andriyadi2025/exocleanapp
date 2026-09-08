@@ -133,7 +133,7 @@
       h += foto ? '<div class="photo-slot isi"><img src="' + foto.url + '" alt="Claim photo ' + (f + 1) + '"><button class="photo-x"' + aksi('fotoBuang', foto.id) + ' aria-label="Remove">✕</button></div>'
                 : '<label class="photo-slot" style="cursor:pointer">add<br>photo<input type="file" accept="image/*" capture="environment" data-foto="klaim" aria-label="Add a photo"></label>';
     }
-    h += '</div>' + (K.fotoKlaim.length ? '<div class="t-11 o-6" style="margin-top:8px">Stored on this device only until you submit.</div>' : '') + '</div>';
+    h += '</div>' + '<div class="t-11 o-6" style="margin-top:8px">Best: JPG/PNG, at least 1024 px on the long side, up to 5 MB each — compressed automatically.' + (K.fotoKlaim.length ? ' Stored on this device only until you submit.' : '') + '</div>' + '</div>';
     if (K.keluhan) h += '<div class="card card-leaf gap-7" style="margin-top:16px"><div class="t-125 lh-15"><strong>What happens next:</strong> ' + esc(janji) + '</div></div>';
     h += '<div class="mt-auto stack gap-9" style="padding-top:14px"><button class="btn btn-primary btn-block btn-tall"' + (K.keluhan ? aksi('kirimKlaim') : ' disabled') + '>' + esc(t('submitCl')) + '</button><div class="center t-115 o-6">Decision promised by tomorrow 17:00</div></div>';
     return h + '</div>';
@@ -154,7 +154,7 @@
     h += '</div>';
     h += '<div class="sharecard"><div class="flex items-center gap-9">' + X.logoMark(30) + '<span class="t-11 up o-75">' + esc(kicker) + '</span></div>' +
       '<div class="headline" style="font-size:' + (tab === 'invite' ? 30 : 28) + 'px">' + esc(head) + '</div><div class="t-13 lh-15 o-85" style="margin-top:10px">' + esc(body) + '</div>' +
-      '<div class="flex items-center gap-10" style="margin-top:16px"><div class="code">DEWI50</div><div class="t-115 o-8">exoclean.id/r/DEWI50</div><div class="t-95 up o-7" style="margin-inline-start:auto">We clean all purpose</div></div></div>';
+      '<div class="flex items-center gap-10" style="margin-top:16px"><div class="code">DEWI50</div><div class="t-115 o-8">exoclean.id/r/DEWI50</div><div class="t-95 up o-7" style="margin-inline-start:auto" data-brand="tag">' + esc(EXO_BRAND.baca().tagline) + '</div></div></div>';
     h += '<div class="t-115 o-6 lh-145" style="margin-top:10px">Card is rendered at 1080×1350 for feed and 1080×1920 for Stories. Nothing about your address or cleaner\'s surname is ever printed on it.</div>';
     h += '<div style="margin-top:16px">' + X.labelBagian(esc(t('shareTo'))) + '<div class="share-grid">';
     for (var s = 0; s < D.SHARE_TARGETS.length; s++) {

@@ -449,7 +449,7 @@ var ADMIN = (function () {
     if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.terapkanJatuhTempo(); var nAntre = EXO_PERSETUJUAN.menunggu().length + EXO_PERSETUJUAN.dijadwalkan().length; NAV.forEach(function (n) { if (n[0] === 'persetujuan') n[2] = nAntre ? String(nAntre) : ''; }); } catch (e) { /* abaikan */ } }
     var side = document.getElementById('adm-side'), top = document.getElementById('adm-top'), body = document.getElementById('adm-body'), lapis = document.getElementById('adm-lapis');
     var b = S.brand;
-    var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg">We clean all purpose</div><div class="sub">' + esc(tr('Backend console')) + '</div></div></div><div class="adm-nav">';
+    var h = '<div class="adm-brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt=""><div><div class="n">' + esc(b.appName) + '</div><div class="tg" data-brand="tag">' + esc(b.tagline == null ? 'We clean all purpose' : b.tagline) + '</div><div class="sub">' + esc(tr('Backend console')) + '</div></div></div><div class="adm-nav">';
     KELOMPOK.forEach(function (g) {
       var item = g[2].filter(function (n) { return bolehLihat(n[0]); }); if (!item.length) return;
       h += '<div class="adm-grup">' + esc(tr(g[0])) + '</div>';

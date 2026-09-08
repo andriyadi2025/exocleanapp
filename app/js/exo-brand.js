@@ -38,6 +38,7 @@ var EXO_BRAND = (function () {
     markSrc:     'assets/exoclean-mark.png',
     wordSrc:     'assets/exoclean-wordmark.png',
     appName:     'EXOCLEAN',
+    tagline:     'We clean all purpose',   /* baris kecil di bawah wordmark; disunting di Appearance */
     tickerOn:    true,
     tickerBadge: 'Promo',
     tickerText:  'CLEAN25 — Rp25.000 off your first three bookings  ·  Saturday morning slots 15% off with SABTUPAGI  ·  Slot-locked guarantee: we move your booking, you get Rp100.000',
@@ -85,6 +86,8 @@ var EXO_BRAND = (function () {
     for (var m = 0; m < marks.length; m++) if (marks[m].getAttribute('src') !== b.markSrc) marks[m].src = b.markSrc;
     var words = document.querySelectorAll('img[data-brand="word"]');
     for (var w = 0; w < words.length; w++) if (words[w].getAttribute('src') !== b.wordSrc) words[w].src = b.wordSrc;
+    var tags = document.querySelectorAll('[data-brand="tag"]'), tagline = String(b.tagline == null ? BAWAAN.tagline : b.tagline);
+    for (var t = 0; t < tags.length; t++) { if (tags[t].textContent !== tagline) tags[t].textContent = tagline; tags[t].style.display = tagline ? '' : 'none'; }
 
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', ramp[4]);

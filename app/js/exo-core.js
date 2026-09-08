@@ -581,7 +581,7 @@ var ExoApp = (function () {
     var b = EXO_BRAND.baca();
     return '<div class="brand"><img src="' + esc(b.markSrc) + '" data-brand="mark" alt="" style="height:' + tinggiMark + 'px">' +
       '<div class="stack gap-4"><img src="' + esc(b.wordSrc) + '" data-brand="word" alt="' + esc(b.appName) + '" style="height:' + tinggiWord + 'px">' +
-      '<div class="brand-tag">We clean all purpose</div></div></div>';
+      '<div class="brand-tag" data-brand="tag"' + (b.tagline === '' ? ' style="display:none"' : '') + '>' + esc(b.tagline == null ? 'We clean all purpose' : b.tagline) + '</div></div></div>';
   }
   function logoMark(tinggi, gaya) {
     return '<img src="' + esc(EXO_BRAND.baca().markSrc) + '" data-brand="mark" alt="" style="height:' + tinggi + 'px;width:auto;display:block;' + (gaya || '') + '">';

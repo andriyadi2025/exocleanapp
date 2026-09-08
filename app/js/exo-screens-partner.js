@@ -172,7 +172,7 @@
         h += '<div class="flex gap-8" style="margin-top:10px">' +
           '<label class="sop-shot' + (fs.before ? ' isi' : '') + '" style="cursor:pointer">' + (fs.before ? '<img src="' + fs.before.url + '" alt="">' : 'sebelum') + '<input type="file" accept="image/*" capture="environment" data-foto="sop:' + num + ':before" style="display:none"' + (locked ? ' disabled' : '') + '></label>' +
           '<label class="sop-shot' + (fs.after ? ' isi' : '') + '" style="cursor:pointer">' + (fs.after ? '<img src="' + fs.after.url + '" alt="">' : 'sesudah') + '<input type="file" accept="image/*" capture="environment" data-foto="sop:' + num + ':after" style="display:none"' + (locked ? ' disabled' : '') + '></label>' +
-          '<div class="grow t-11 o-65 lh-14" style="align-self:center">Foto, jam dan lokasi terekam otomatis — checklist tidak bisa ditutup tanpa keduanya.</div></div>';
+          '<div class="grow t-11 o-65 lh-14" style="align-self:center">Foto, jam dan lokasi terekam otomatis — checklist tidak bisa ditutup tanpa keduanya. Ukuran terbaik: lanskap 4:3, min. 1280×960 px (kamera ponsel bawaan cukup).</div></div>';
       }
       h += '</div>';
     }
@@ -207,7 +207,7 @@
         '<label class="shot-btn' + (s.after ? ' on' : '') + '"' + (s.before ? '' : ' style="opacity:.45;cursor:not-allowed"') + '><em>sesudah</em><b>' + esc(al) + '</b><input type="file" accept="image/*" capture="environment" data-foto="laporan:' + ar.id + ':after" style="display:none"' + (s.before ? '' : ' disabled') + '></label></div>' +
         '<div class="t-11 o-65 lh-14">' + esc(done ? 'Lengkap · terkirim ke pelanggan saat job ditutup' : ar.note) + '</div></div>';
     }
-    h += '<div class="card card-leaf gap-8"><div class="t-125 lh-15">Setelah dikirim, pelanggan menerima notifikasi dan bisa membandingkan foto berdampingan. Laporan ini juga menjadi bukti bila ada klaim garansi.</div></div><div class="spacer-12"></div></div>';
+    h += '<div class="card card-leaf gap-8"><div class="t-125 lh-15">Setelah dikirim, pelanggan menerima notifikasi dan bisa membandingkan foto berdampingan. Laporan ini juga menjadi bukti bila ada klaim garansi.</div><div class="t-11 o-65 lh-14">Ukuran foto terbaik: lanskap 4:3, min. 1280×960 px, sudut dan jarak yang sama untuk sebelum &amp; sesudah, cahaya cukup — dikompresi otomatis, maks. 5 MB per foto.</div></div><div class="spacer-12"></div></div>';
     h += '<div class="actionbar actionbar--col"><button class="btn btn-primary btn-block" style="height:46px;margin:0"' + (blok ? ' disabled' : aksi('kirimLaporan')) + '>' + (blok ? 'Lengkapi foto setiap area' : 'Kirim laporan ke pelanggan') + '</button></div>';
     return h + '</div>';
   };
@@ -387,7 +387,7 @@
     if (window.EXO_PERLENGKAPAN) h += '<button class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer;text-align:start"' + aksi('ke', 'palat') + '><span style="font-size:22px">🧰</span><div class="grow"><b class="t-125">Alat kerja saya</b><div class="t-11 o-6">' + EXO_PERLENGKAPAN.alatMitra(a.name).length + ' alat · sisa umur pakai & lapor rusak</div></div><span class="o-5">›</span></button>';
     h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-12">' + X.avJuru(a, 52) + '<div class="grow"><div class="f-head t-17">' + esc(a.name) + '</div><div class="t-12 o-65">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · mitra sejak 2022</div></div></div>' +
       '<div class="flex gap-8"><label class="btn btn-secondary" style="flex:1;cursor:pointer">' + (X.fotoMitra(a.id) ? 'Ganti foto profil' : 'Unggah foto profil') + '<input type="file" accept="image/*" capture="user" data-foto="mitra" style="display:none"></label>' + (X.fotoMitra(a.id) ? '<button class="btn btn-ghost"' + aksi('fotoMitraHapus') + '>Hapus</button>' : '') + '</div>' +
-      '<div class="t-11 o-6 lh-145">Foto tampil di kartu petugas yang dilihat pelanggan. Wajah jelas, tanpa kacamata hitam — Partner Ops mencocokkannya dengan swafoto KTP.</div></div>';
+      '<div class="t-11 o-6 lh-145">Foto tampil di kartu petugas yang dilihat pelanggan. Wajah jelas, tanpa kacamata hitam — Partner Ops mencocokkannya dengan swafoto KTP. <b>Ukuran terbaik 600×600 px</b> (min. 400×400), kotak 1:1, JPG/PNG, maks. 2 MB.</div></div>';
     var baris = [['Dompet mitra & penarikan', rp(K.saldoMitra), 'ke', 'pwallet'], ['Pendaftaran mitra (formulir)', 'contoh', 'ke', 'preg'], ['Ketentuan & privasi', 'v2.3', 'ke', 'terms'], ['Bantuan — manusia dalam 60 dtk', 'Chat', 'lembar', 'obrol']];
     h += '<div class="card elev-sm gap-10">';
     for (var i = 0; i < baris.length; i++) h += '<button class="setting"' + aksi(baris[i][2], baris[i][3]) + '><span class="grow left">' + esc(baris[i][0]) + '</span><span class="t-115 o-6">' + esc(baris[i][1]) + '</span><span class="o-45">' + garis(IK.kanan, 16) + '</span></button>';
