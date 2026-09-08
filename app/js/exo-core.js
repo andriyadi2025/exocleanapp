@@ -795,7 +795,7 @@ var ExoApp = (function () {
     KEADAAN.posisi = bacaPosisi();
     wilayahSiapkan();
     /* ?layar=<nama> membuka layar tertentu saat dimuat — dipakai pratinjau Studio beranda di konsol admin dan tautan web. Diabaikan bila layar tidak dikenal. */
-    try { var qLayar = new URLSearchParams(location.search).get('layar'); if (qLayar && LAYAR[qLayar]) KEADAAN.layar = qLayar; } catch (e) { /* abaikan */ }
+    try { var qs = new URLSearchParams(location.search), qLayar = qs.get('layar'), qJasa = qs.get('jasa'), qCari = qs.get('cari'); if (qJasa && D.SERVICES[qJasa]) { KEADAAN.jasa = qJasa; KEADAAN.jam = D.MIN_QTY[qJasa] || D.DEFAULT_QTY[D.SERVICES[qJasa].unit] || 1; } if (qCari) KEADAAN.cari = String(qCari).slice(0, 60); if (qLayar && LAYAR[qLayar]) KEADAAN.layar = qLayar; } catch (e) { /* abaikan */ }
     gambar();
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () { /* file:// atau ditolak — tetap jalan, hanya tidak luring */ });
