@@ -1,0 +1,44 @@
+/* ==========================================================================
+   exo-admin-perlengkapan.js — Inventaris: norma pemakaian, pemakaian &
+   penyusutan lapangan, alat di tangan mitra (menambah VIEW.inventaris)
+   ========================================================================== */
+(function (A) {
+  'use strict';
+  var S = A.S, VIEW = A.VIEW, AKSI = A.AKSI, esc = A.esc, aksi = A.aksi, pill = A.pill, kpi = A.kpi, tabel = A.tabel, meter = A.meter;
+  var P = function () { return window.EXO_PERLENGKAPAN; }, rp = function (n) { return P().rp(n); };
+  var JASA = [['hourly', 'Cleaning per jam'], ['deep', 'Deep cleaning'], ['ac', 'Cuci & servis AC'], ['sofa', 'Sofa, kasur & karpet'], ['laundry', 'Laundry']];
+  S.invNormaJasa = S.invNormaJasa || 'hourly';
+  function siapa() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
+  function denganPin(alasan, kerja) { if (!siapa()) { A.sekilas('Masuk sebagai admin dulu.', 'err'); return; } EXO_ADMIN_AUTH.mintaPin(alasan).then(function (ok) { if (!ok) { A.sekilas('Dibatalkan — PIN tidak disetujui.', 'err'); A.gambar(); return; } try { kerja(siapa()); } catch (e) { A.sekilas('Gagal: ' + (e.message || e), 'err'); } A.gambar(); }); }
+  var asli = VIEW.inventaris;
+  VIEW.inventaris = function () { var h = asli ? asli() : ''; if (!P()) return h; P().semai(); return h + '<div class="spacer-14"></div>' + bagianLaporan() + '<div class="spacer-14"></div>' + bagianNorma() + '<div class="spacer-14"></div>' + bagianAlat(); };
+
+  function bagianLaporan() {
+    var bulan = new Date().toISOString().slice(0, 7), L = P().laporan(bulan), semua = P().laporan();
+    var h = kpi([{label:'Pemakaian chemical & habis pakai (bulan ini)', value:rp(L.pemakaian), note:L.jobs + ' job · akun 6200 ← 1500'},{label:'Penyusutan alat kerja (bulan ini)', value:rp(L.penyusutan), note:'akun 6210 ← 1610'},{label:'Biaya perlengkapan per job', value:rp(L.jobs ? (L.pemakaian + L.penyusutan) / L.jobs : 0), note:'rata-rata bulan ini'},{label:'Nilai persediaan gudang', value:rp(L.nilaiStok), note:'stok × harga beli · akun 1500'}], true, 4);
+    h += '<div class="grid g2" style="gap:16px"><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Pemakaian per item — bulan ini</div><div class="t-115 o-6">Dipotong otomatis saat mitra mengirim laporan job (checklist perlengkapan × norma jasa).</div></div></div>' + tabel(['Item', 'Kategori', 'Terpakai', 'Kemasan', 'Nilai', 'Job'], L.perItem.length ? L.perItem.map(function (x) { return ['<b>' + esc(x.nama) + '</b>', esc(x.kategori), Math.round(x.qty) + ' ' + esc(x.satuan), (Math.round(x.unit * 100) / 100) + ' unit', rp(x.nilai), String(x.n)]; }) : [['<span class="o-6">Belum ada pemakaian bulan ini.</span>', '', '', '', '', '']]) + '</div>';
+    h += '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Per mitra & per jasa — bulan ini</div><div class="t-115 o-6">Pantau mitra dengan pemakaian di atas norma.</div></div></div>' + tabel(['Mitra / jasa', 'Job', 'Pemakaian', 'Penyusutan', 'Per job'], L.perMitra.map(function (m) { return ['<b>' + esc(m.mitra || '—') + '</b>', String(m.nJob), rp(m.pemakaian), rp(m.susut), rp(m.nJob ? (m.pemakaian + m.susut) / m.nJob : 0)]; }).concat(L.perJasa.map(function (j) { return ['<span class="o-7">jasa · ' + esc((JASA.filter(function (x) { return x[0] === j.jasa; })[0] || [j.jasa, j.jasa])[1]) + '</span>', String(j.nJob), rp(j.pemakaian), rp(j.susut), rp(j.nJob ? (j.pemakaian + j.susut) / j.nJob : 0)]; })).concat(L.perMitra.length ? [] : [['<span class="o-6">Belum ada data.</span>', '', '', '', '']])) + '<div class="t-11 o-6" style="padding:8px 12px">Total sepanjang waktu: pemakaian ' + rp(semua.pemakaian) + ' · penyusutan ' + rp(semua.penyusutan) + ' · ' + semua.jobs + ' job.</div></div></div>';
+    return h;
+  }
+  function bagianNorma() {
+    var jasa = S.invNormaJasa, f = S.invNormaForm && S.invNormaForm.jasa === jasa ? S.invNormaForm : (S.invNormaForm = { jasa:jasa, daftar:P().norma(jasa).map(function (n) { return n.slice(); }) }), stok = P().stok();
+    var h = '<div class="card elev-sm gap-10"><div class="flex items-center gap-8 wrap"><div class="grow"><div class="card-title">Norma pemakaian per job</div><div class="t-115 o-6">Takaran chemical (ml) dan habis pakai (pcs) per job dan per jam; alat cukup dicantumkan untuk penyusutan (harga ÷ umur pakai). Perubahan lewat PIN + Persetujuan.</div></div>' + JASA.map(function (j) { return pill(jasa === j[0], j[1], 'invNormaJasa', j[0], true); }).join('') + '</div>';
+    h += tabel(['Item', 'Kategori', 'Per job', 'Per jam', 'Satuan', 'Harga/kemasan', 'Biaya/job (3 jam)', ''], f.daftar.map(function (n, i) { var it = P().item(n[0]); var biaya = it ? (it.kategori === 'alat' ? (it.umurPakai ? it.harga / it.umurPakai : 0) : (n[1] + n[2] * 3) / (it.isiUnit || 1) * it.harga) : 0; return ['<b>' + esc(n[0]) + '</b>' + (it ? '' : ' <span class="t-11" style="color:#b12a5b">tidak ada di stok</span>'), esc(it ? it.kategori : '—'), it && it.kategori === 'alat' ? '<span class="o-5">—</span>' : '<input class="input" style="width:80px;height:30px" inputmode="numeric" value="' + n[1] + '" data-ubah="invNormaUbah" data-arg="' + i + ':1">', it && it.kategori === 'alat' ? '<span class="o-5">—</span>' : '<input class="input" style="width:80px;height:30px" inputmode="numeric" value="' + n[2] + '" data-ubah="invNormaUbah" data-arg="' + i + ':2">', esc(it ? (it.kategori === 'alat' ? 'umur ' + it.umurPakai + ' job' : it.satuanIsi + ' (isi ' + it.isiUnit + ')') : ''), it ? rp(it.harga) : '', rp(biaya), '<button class="pill pill-sm"' + aksi('invNormaHapus', i) + '>✕</button>']; }));
+    h += '<div class="flex items-center gap-8 wrap"><select class="input" style="height:34px;max-width:320px" data-ubah="invNormaTambah"><option value="">+ Tambah item dari stok…</option>' + stok.filter(function (s) { return !f.daftar.some(function (n) { return n[0] === s.nama; }); }).map(function (s) { return '<option value="' + esc(s.nama) + '">' + esc(s.nama) + ' (' + esc(s.kategori) + ')</option>'; }).join('') + '</select><span class="grow"></span><button class="btn btn-secondary" style="height:34px"' + aksi('invNormaBatal') + '>Batalkan</button><button class="btn btn-primary" style="height:34px"' + aksi('invNormaAjukan') + '>Ajukan · PIN + Persetujuan</button></div></div>';
+    return h;
+  }
+  function bagianAlat() {
+    var daftar = P().alatMitra();
+    return '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Alat kerja di tangan mitra (' + daftar.length + ')</div><div class="t-115 o-6">Tercatat otomatis dari laporan job. Umur pakai habis atau lapor rusak → permintaan pengganti masuk "Permintaan dari lapangan".</div></div></div>' + tabel(['Alat', 'Mitra', 'Diterima', 'Dipakai', 'Sisa umur', 'Nilai buku', 'Kondisi'], daftar.length ? daftar.map(function (x) { return ['<b>' + esc(x.nama) + '</b>', esc(x.mitra), esc(x.diterima), String(x.jobDipakai || 0) + ' job', x.umurPakai ? '<div class="flex items-center gap-6"><span>' + x.sisaJob + '</span>' + meter(100 - x.pct, x.pct >= 90 ? 'acc' : 'soft') + '</div>' : '—', rp(x.nilaiBuku), '<span class="tag" style="font-size:10.5px;background:' + (x.kondisi === 'rusak' ? '#fde2e7' : 'var(--color-accent-2-100)') + '">' + esc(x.kondisi) + '</span>']; }) : [['<span class="o-6">Belum ada alat tercatat.</span>', '', '', '', '', '', '']]) + '</div>';
+  }
+  AKSI.invNormaJasa = function (v) { S.invNormaJasa = v; S.invNormaForm = null; };
+  AKSI.invNormaUbah = function (arg, v) { var p = arg.split(':'); S.invNormaForm.daftar[+p[0]][+p[1]] = Math.max(0, Number(String(v).replace(/[^\d.]/g, '')) || 0); };
+  AKSI.invNormaHapus = function (i) { S.invNormaForm.daftar.splice(+i, 1); };
+  AKSI.invNormaTambah = function (a, v) { if (v) S.invNormaForm.daftar.push([v, 0, 0]); };
+  AKSI.invNormaBatal = function () { S.invNormaForm = null; };
+  AKSI.invNormaAjukan = function () {
+    var f = S.invNormaForm; if (!f) return; var lama = P().norma(f.jasa); if (JSON.stringify(lama) === JSON.stringify(f.daftar)) { A.sekilas('Tidak ada perubahan.'); return; }
+    var nama = (JASA.filter(function (x) { return x[0] === f.jasa; })[0] || [f.jasa, f.jasa])[1];
+    denganPin('Ubah norma pemakaian ' + nama, function (oleh) { var h = EXO_PERSETUJUAN.ajukan('perlengkapan-norma', 'Ubah norma pemakaian · ' + nama, f.daftar.map(function (n) { return n[0] + ' ' + n[1] + '/job ' + n[2] + '/jam'; }).join('; '), lama, f.daftar, { jasa:f.jasa, daftar:f.daftar }, oleh); EXO_PERSETUJUAN.audit(oleh, 'Ajukan norma pemakaian ' + nama, h.usulan.id, f.daftar.length + ' item'); S.invNormaForm = null; A.sekilas(h.langsung ? 'Norma pemakaian diterapkan.' : 'Usulan masuk antrean Persetujuan · butuh ' + h.usulan.butuh + ' penyetuju.'); });
+  };
+})(ADMIN);

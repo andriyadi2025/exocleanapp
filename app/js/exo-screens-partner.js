@@ -49,7 +49,7 @@
     h += kartuAkademi();
     h += '<div class="card elev-md gap-11"><div class="flex items-center gap-8"><span class="tag tag-accent">Mulai 24 menit lagi</span><span style="margin-inline-start:auto" class="t-115 o-6">EXO-4471</span></div>' +
       '<div><div class="f-head t-16">Cleaning per jam · 3 jam</div><div class="t-12 o-7">Kemang Residence 12B · 2,1 km · Dewi A.</div></div>' +
-      '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('ke', 'proute') + '>Mulai rute</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'obrol') + '>Chat</button></div></div>';
+      '<div class="flex gap-8"><button class="btn btn-primary" style="flex:1"' + aksi('mulaiRute') + '>Mulai rute</button><button class="btn btn-secondary" style="flex:1"' + aksi('lembar', 'obrol') + '>Chat</button></div></div>';
     h += '<div class="sec-label" style="margin:0">Permintaan terbuka di dekat Anda</div>';
     for (var i = 0; i < D.PARTNER_JOBS.length; i++) {
       var j = D.PARTNER_JOBS[i];
@@ -71,6 +71,7 @@
       '<a class="btn btn-icon btn-primary" href="tel:+6281288904417" aria-label="Telepon">' + garis(IK.telepon, 17) + '</a></div>' +
       '<div class="t-12 lh-15 o-8">Catatan: “Tolong bunyikan bel, ada anjing di dalam. Fokus dapur dan kamar mandi.”</div></div>';
     h += '<div class="flex gap-8"><button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('ke', 'psop') + '>Checklist SOP · ' + esc(m.code) + '</button><button class="btn btn-secondary" style="flex:1;margin:0"' + aksi('ke', 'preport') + '>Foto sebelum–sesudah</button></div>';
+    if (window.EXO_PERLENGKAPAN) h += '<button class="btn btn-secondary btn-block" style="margin:0"' + aksi('ke', 'pkit') + '>🧴 Perlengkapan dibawa · ' + (K.kitSiap ? 'dikonfirmasi ✓' : 'belum dicek') + ' · stok terpotong otomatis saat laporan</button>';
     h += '<div class="card elev-sm gap-11"><div class="f-head t-15">Checklist tugas — pelanggan melihat ini langsung</div>' + X.barisCeklis(true) + '</div>';
     h += '<div class="card card-leaf gap-8"><div class="kv"><span>Upah job</span><span>Rp 234.000</span></div><div class="kv"><span>Biaya platform</span><span>− Rp 3.000</span></div>' +
       '<div class="flex between f-head t-16"><span>Anda terima</span><span>Rp 231.000</span></div><div class="t-115 o-7">Dibayarkan ke BCA ···4471 setiap Senin, atau instan dengan biaya Rp2.500.</div></div><div class="spacer-14"></div></div>';
@@ -381,6 +382,7 @@
   X.profilMitra = function () {
     var a = aku();
     var h = '<div class="screen"><div style="padding:18px 20px 0"><h3 style="margin:0">Profil</h3></div><div class="stack gap-14" style="padding:16px 20px 0">';
+    if (window.EXO_PERLENGKAPAN) h += '<button class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer;text-align:start"' + aksi('ke', 'palat') + '><span style="font-size:22px">🧰</span><div class="grow"><b class="t-125">Alat kerja saya</b><div class="t-11 o-6">' + EXO_PERLENGKAPAN.alatMitra(a.name).length + ' alat · sisa umur pakai & lapor rusak</div></div><span class="o-5">›</span></button>';
     h += '<div class="card elev-sm gap-11"><div class="flex items-center gap-12">' + X.avJuru(a, 52) + '<div class="grow"><div class="f-head t-17">' + esc(a.name) + '</div><div class="t-12 o-65">' + (a.rating ? '★ ' + esc(a.rating) + ' · ' : '') + esc(a.jobs) + ' job · mitra sejak 2022</div></div></div>' +
       '<div class="flex gap-8"><label class="btn btn-secondary" style="flex:1;cursor:pointer">' + (X.fotoMitra(a.id) ? 'Ganti foto profil' : 'Unggah foto profil') + '<input type="file" accept="image/*" capture="user" data-foto="mitra" style="display:none"></label>' + (X.fotoMitra(a.id) ? '<button class="btn btn-ghost"' + aksi('fotoMitraHapus') + '>Hapus</button>' : '') + '</div>' +
       '<div class="t-11 o-6 lh-145">Foto tampil di kartu petugas yang dilihat pelanggan. Wajah jelas, tanpa kacamata hitam — Partner Ops mencocokkannya dengan swafoto KTP.</div></div>';
