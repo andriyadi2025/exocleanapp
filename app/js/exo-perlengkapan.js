@@ -89,7 +89,7 @@ var EXO_PERLENGKAPAN = (function () {
         var am = d.all('alatMitra').filter(function (a) { return a.mitra === (job.mitra || '') && a.itemId === it.id; })[0];
         if (am) d.update('alatMitra', am.id, { jobDipakai:(am.jobDipakai || 0) + 1, terakhir:hariIni() }); else d.insert('alatMitra', { mitra:job.mitra || '', itemId:it.id, nama:it.nama, diterima:hariIni(), jobDipakai:1, umurPakai:it.umurPakai || 0, harga:it.harga, kondisi:'baik', terakhir:hariIni() });
       } else if (x.unit > 0) {
-        d.update('stok', it.id, { stok:bulat2(Math.max(0, (it.stok || 0) - x.unit)) });
+        d.update('stok', it.id, { stok:bulat2(Math.max(0, (it.stok || 0) - x.unit)) }); kurangiTas(job.mitra || '', it.id, x.qty);
         d.insert('pemakaianStok', { tgl:hariIni(), jobNo:job.no || '', jasa:job.jasa, mitra:job.mitra || '', lokasi:job.lokasi || '', itemId:it.id, nama:it.nama, kategori:it.kategori, qty:x.qty, satuan:x.satuan, unit:x.unit, nilai:x.nilai, at:kini() });
         hasil.pemakaian.push({ nama:it.nama, qty:x.qty, satuan:x.satuan, nilai:x.nilai }); hasil.nilaiPemakaian += x.nilai;
       }
@@ -99,6 +99,39 @@ var EXO_PERLENGKAPAN = (function () {
   function minta(nama, mitra, lokasi, urgensi) { var d = db(); if (!d) return null; return d.insert('permintaanStok', { barang:nama, mitra:mitra || '', lokasi:lokasi || '', urgensi:urgensi || 'sedang', status:'menunggu', tgl:hariIni() }); }
   function alatMitra(mitra) { var d = db(); return d ? d.all('alatMitra').filter(function (a) { return !mitra || a.mitra === mitra; }).map(function (a) { var sisa = a.umurPakai ? Math.max(0, a.umurPakai - (a.jobDipakai || 0)) : null; return Object.assign({}, a, { sisaJob:sisa, nilaiBuku:a.umurPakai ? Math.round(a.harga * (sisa / a.umurPakai)) : a.harga, pct:a.umurPakai ? Math.round((a.jobDipakai || 0) / a.umurPakai * 100) : 0 }); }) : []; }
   function lapor(mitra, alatId, kondisi, lokasi) { var d = db(); var a = d.find('alatMitra', alatId); if (!a) return null; d.update('alatMitra', alatId, { kondisi:kondisi }); if (kondisi === 'rusak') minta(a.nama + ' (ganti — rusak)', mitra, lokasi, 'tinggi'); return a; }
+
+  /* ---------- tas mitra & isi ulang mingguan ----------
+     Tas = persediaan kecil di tangan mitra (chemical, habis pakai, APD) dengan
+     kapasitas satu kemasan per item dari gabungan norma semua jasa. Job
+     mengurangi isi tas; isi ulang mingguan mengembalikannya ke kapasitas
+     (gudang tidak dipotong lagi — sudah dipotong per job). */
+  var ISI_ULANG_HARI = 7;
+  function tas(mitra) {
+    var d = db(); if (!d || !mitra) return []; var ada = d.all('tasMitra').filter(function (t) { return t.mitra === mitra; }), peta = {}; ada.forEach(function (t) { peta[t.itemId] = t; });
+    var nama = {}; Object.keys(NORMA_BAWAAN).forEach(function (j) { norma(j).forEach(function (n) { nama[n[0]] = 1; }); });
+    Object.keys(nama).forEach(function (nm) { var it = item(nm); if (!it || it.kategori === 'alat' || peta[it.id]) return; d.insert('tasMitra', { mitra:mitra, itemId:it.id, nama:it.nama, kategori:it.kategori, satuan:it.satuanIsi, kapasitas:it.isiUnit || 1, sisa:it.isiUnit || 1, terakhirIsi:hariIni() }); });
+    return d.all('tasMitra').filter(function (t) { return t.mitra === mitra; }).map(function (t) { return Object.assign({}, t, { pct:t.kapasitas ? Math.round(t.sisa / t.kapasitas * 100) : 0, kurang:Math.max(0, t.kapasitas - t.sisa) }); }).sort(function (a, b) { return a.pct - b.pct; });
+  }
+  function tasJatuhTempo(mitra) { var d = db(); if (!d) return null; var t = tas(mitra); if (!t.length) return null; var terakhir = t.reduce(function (m, x) { return x.terakhirIsi > m ? x.terakhirIsi : m; }, ''); var hari = terakhir ? Math.floor((Date.now() - new Date(terakhir).getTime()) / 86400000) : ISI_ULANG_HARI; var rendah = t.filter(function (x) { return x.pct < 50; }).length; var menunggu = d.all('isiUlangTas').filter(function (r) { return r.mitra === mitra && r.status !== 'diserahkan'; })[0] || null; return { hariSejak:hari, jatuhTempo:hari >= ISI_ULANG_HARI || rendah > 0, rendah:rendah, menunggu:menunggu, terakhir:terakhir }; }
+  function kurangiTas(mitra, itemId, qty) { var d = db(); var t = d.all('tasMitra').filter(function (x) { return x.mitra === mitra && x.itemId === itemId; })[0]; if (t) d.update('tasMitra', t.id, { sisa:bulat2(Math.max(0, t.sisa - qty)) }); }
+  function mintaIsiUlang(mitra, lokasi) { var d = db(); if (!d) return null; var t = tas(mitra).filter(function (x) { return x.kurang > 0; }); if (!t.length) throw new Error('Tas masih penuh — belum perlu isi ulang.'); if (d.all('isiUlangTas').some(function (r) { return r.mitra === mitra && r.status !== 'diserahkan'; })) throw new Error('Permintaan isi ulang sebelumnya masih diproses gudang.'); return d.insert('isiUlangTas', { mitra:mitra, lokasi:lokasi || '', tgl:hariIni(), items:t.map(function (x) { return { itemId:x.itemId, nama:x.nama, qty:Math.ceil(x.kurang), satuan:x.satuan }; }), status:'diminta', at:kini() }); }
+  function serahIsiUlang(id, oleh) { var d = db(); var r = d.find('isiUlangTas', id); if (!r || r.status === 'diserahkan') throw new Error('Permintaan tidak ditemukan atau sudah diserahkan'); d.all('tasMitra').filter(function (x) { return x.mitra === r.mitra; }).forEach(function (x) { d.update('tasMitra', x.id, { sisa:x.kapasitas, terakhirIsi:hariIni() }); }); return d.update('isiUlangTas', id, { status:'diserahkan', oleh:oleh || '', diserahkanAt:kini() }); }
+  function daftarIsiUlang(status) { var d = db(); return d ? d.all('isiUlangTas').filter(function (r) { return !status || r.status === status; }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }) : []; }
+
+  /* ---------- serah terima alat (onboarding) ----------
+     Admin menyerahkan paket alat standar per jasa ke mitra → alatMitra dengan
+     kondisi 'diserahkan' + berita acara (tabel bast). Mitra mengonfirmasi
+     terima di "Alat kerja saya" → kondisi 'baik', umur pakai mulai dihitung. */
+  function paketAlat(jasa) { var out = {}; (jasa && jasa.length ? jasa : Object.keys(NORMA_BAWAAN)).forEach(function (j) { norma(j).forEach(function (n) { var it = item(n[0]); if (it && it.kategori === 'alat') out[it.id] = it; }); }); return Object.keys(out).map(function (k) { return out[k]; }); }
+  function serahTerima(mitra, itemIds, oleh, catatan) {
+    var d = db(); if (!d) throw new Error('Basis data tidak tersedia'); if (!mitra) throw new Error('Pilih mitra'); var daftar = (itemIds || []).map(function (id) { return d.find('stok', id); }).filter(Boolean); if (!daftar.length) throw new Error('Pilih minimal satu alat');
+    var no = 'BAST-' + Date.now().toString(36).toUpperCase(), baris = [];
+    daftar.forEach(function (it) { var ada = d.all('alatMitra').filter(function (a) { return a.mitra === mitra && a.itemId === it.id && a.kondisi !== 'rusak'; })[0]; if (ada) return; d.update('stok', it.id, { stok:Math.max(0, (it.stok || 0) - 1) }); d.insert('alatMitra', { mitra:mitra, itemId:it.id, nama:it.nama, diterima:'', diserahkan:hariIni(), jobDipakai:0, umurPakai:it.umurPakai || 0, harga:it.harga, kondisi:'diserahkan', bast:no }); baris.push({ itemId:it.id, nama:it.nama, harga:it.harga }); });
+    if (!baris.length) throw new Error('Semua alat yang dipilih sudah ada di tangan mitra');
+    return d.insert('bast', { no:no, mitra:mitra, oleh:oleh || '', catatan:catatan || '', items:baris, nilai:baris.reduce(function (n, b) { return n + b.harga; }, 0), status:'menunggu', tgl:hariIni(), at:kini() });
+  }
+  function terimaAlat(mitra, bastNo) { var d = db(); var b = d.all('bast').filter(function (x) { return x.no === bastNo && x.mitra === mitra; })[0]; if (!b) throw new Error('Berita acara tidak ditemukan'); d.all('alatMitra').filter(function (a) { return a.bast === bastNo && a.mitra === mitra; }).forEach(function (a) { d.update('alatMitra', a.id, { kondisi:'baik', diterima:hariIni() }); }); return d.update('bast', b.id, { status:'diterima', diterimaAt:kini() }); }
+  function daftarBast(mitra) { var d = db(); return d ? d.all('bast').filter(function (b) { return !mitra || b.mitra === mitra; }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }) : []; }
 
   /* ---------- laporan admin ---------- */
   function laporan(bulan) {
@@ -112,5 +145,5 @@ var EXO_PERLENGKAPAN = (function () {
   }
 
   if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.TINGKAT['perlengkapan-norma'] = 'sedang'; EXO_PERSETUJUAN.daftarkanPenerap('perlengkapan-norma', function (u) { return simpanNorma(u.muatan.jasa, u.muatan.daftar); }); } catch (e) { /* konsol admin saja */ } }
-  return { KATEGORI:KATEGORI, KATALOG:KATALOG, NORMA_BAWAAN:NORMA_BAWAAN, rp:rp, semai:semai, stok:stok, item:item, cariItem:cariItem, norma:norma, simpanNorma:simpanNorma, rencana:rencana, ringkasRencana:ringkasRencana, konsumsi:konsumsi, minta:minta, alatMitra:alatMitra, lapor:lapor, laporan:laporan };
+  return { ISI_ULANG_HARI:ISI_ULANG_HARI, tas:tas, tasJatuhTempo:tasJatuhTempo, mintaIsiUlang:mintaIsiUlang, serahIsiUlang:serahIsiUlang, daftarIsiUlang:daftarIsiUlang, paketAlat:paketAlat, serahTerima:serahTerima, terimaAlat:terimaAlat, daftarBast:daftarBast, KATEGORI:KATEGORI, KATALOG:KATALOG, NORMA_BAWAAN:NORMA_BAWAAN, rp:rp, semai:semai, stok:stok, item:item, cariItem:cariItem, norma:norma, simpanNorma:simpanNorma, rencana:rencana, ringkasRencana:ringkasRencana, konsumsi:konsumsi, minta:minta, alatMitra:alatMitra, lapor:lapor, laporan:laporan };
 })();

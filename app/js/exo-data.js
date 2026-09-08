@@ -742,7 +742,7 @@ var EXO_DATA = (function () {
   ];
   var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tiklan','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar'];
   var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
-  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pkit','palat','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
+  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pkit','palat','ptas','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
   var JUMP_PPOB = [['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['perjalananPesanan','Permintaan perjalanan']];

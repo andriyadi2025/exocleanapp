@@ -46,6 +46,7 @@
       '<div class="flex gap-9" style="margin-top:16px"><div class="stat"><b>Rp 1,86jt</b><span>Minggu ini</span></div><div class="stat"><b>22 jam</b><span>Terjadwal</span></div></div>' + (window.EXO_KONTEN ? EXO_KONTEN.tiketHtml('mitra', 'margin-top:12px') : '') + '</div>';
     h += '<div class="stack gap-12" style="padding:18px 20px 0">';
     h += kartuPengumuman();
+    if (X.kartuTas) h += X.kartuTas();
     h += kartuAkademi();
     h += '<div class="card elev-md gap-11"><div class="flex items-center gap-8"><span class="tag tag-accent">Mulai 24 menit lagi</span><span style="margin-inline-start:auto" class="t-115 o-6">EXO-4471</span></div>' +
       '<div><div class="f-head t-16">Cleaning per jam · 3 jam</div><div class="t-12 o-7">Kemang Residence 12B · 2,1 km · Dewi A.</div></div>' +
