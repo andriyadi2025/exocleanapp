@@ -28,7 +28,7 @@
 
 /* Dinaikkan tiap kali KERANGKA berubah. Tanpa itu, pemasangan lama tetap
    memakai singgahan lamanya dan exo.html tidak pernah ikut tersimpan. */
-var VERSI = 'exoclean-v52';
+var VERSI = 'exoclean-v53';
 
 /* Kerangka yang membuat aplikasi tetap bisa dibuka tanpa sinyal. Sengaja
    pendek: berkas lain ikut tersinggah sendiri saat pertama diminta.
@@ -77,6 +77,7 @@ var KERANGKA = [
   './js/exo-screens-toko.js',
   './js/exo-screens-toko2.js',
   './js/exo-screens-toko-iklan.js',
+  './js/exo-screens-toko-profil.js',
   './js/exo-screens-akun.js',
   './js/exo-screens-home.js',
   './js/exo-screens-toko-produk.js',
