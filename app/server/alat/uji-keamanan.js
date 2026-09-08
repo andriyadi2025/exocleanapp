@@ -3,6 +3,8 @@
    menembak endpointnya. payment-server diuji untuk header + penolakan token. */
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
+const PIN_UJI = path.join(os.tmpdir(), 'exo-uji-pin-' + process.pid + '.json');
 const SV = path.join(__dirname, '..');
 const SESI = require('../sesi');
 const RAHASIA_HEX = SESI.buatKunci(), RAHASIA = Buffer.from(RAHASIA_HEX, 'hex');
@@ -18,7 +20,7 @@ function jalankan(berkas, env) {
 const tidur = ms => new Promise(r => setTimeout(r, ms));
 async function json(url, opsi) { const r = await fetch(url, opsi); let j = null; try { j = await r.json(); } catch (e) { j = null; } return { status: r.status, h: r.headers, j }; }
 (async () => {
-  const ENV = { ALLOWED_ORIGINS: 'http://localhost:8081,*', EXO_TLS_CERT: '', EXO_TLS_KEY: '', SMS_PROVIDER: 'log', EMAIL_PROVIDER: 'log', OTP_JEDA_DETIK: '1', LAJU_OTP_KIRIM_PER_JAM_IP: '3', LAJU_POSISI_PER_MENIT: '5', SESI_SECRET: RAHASIA_HEX, ADMIN_TELP: '081200000009' };
+  const ENV = { ALLOWED_ORIGINS: 'http://localhost:8081,*', EXO_TLS_CERT: '', EXO_TLS_KEY: '', SMS_PROVIDER: 'log', EMAIL_PROVIDER: 'log', OTP_JEDA_DETIK: '1', LAJU_OTP_KIRIM_PER_JAM_IP: '3', LAJU_POSISI_PER_MENIT: '5', SESI_SECRET: RAHASIA_HEX, ADMIN_TELP: '081200000009', PIN_BERKAS: PIN_UJI };
   const auth = jalankan('auth-server.js', Object.assign({ AUTH_PORT: '4171' }, ENV));
   const pos = jalankan('posisi-server.js', Object.assign({ POSISI_PORT: '4272' }, ENV));
   const pay = jalankan('payment-server.js', Object.assign({ PORT: '4073', MIDTRANS_SERVER_KEY: 'SB-Mid-server-uji' }, ENV));
@@ -70,18 +72,44 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     r = await json(P + '/api/posisi/ORD-1', { method: 'POST', headers: H(tokenMitra, { 'X-Exo-Token': tulis }), body: JSON.stringify({ lat: 95, lng: 106.8 }) }); ok('lat tidak valid → 400', r.status === 400);
     let terakhir = 0; for (let i = 0; i < 6; i++) { r = await json(P + '/api/posisi/ORD-1', { method: 'POST', headers: H(tokenMitra, { 'X-Exo-Token': tulis }), body: JSON.stringify({ lat: -6.3, lng: 106.8 }) }); terakhir = r.status; }
     ok('batas laju posisi (5/menit) → 429', terakhir === 429);
+    /* PIN transaksi (auth-server) */
+    const sesiKlien = r.j && r.j.sesi;
+    r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: '482913' }) });
+    ok('pin atur tanpa sesi → 401', r.status === 401);
+    r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '123456' }) });
+    ok('pin lemah (berurutan) ditolak', r.status === 400 && /berurutan/.test(r.j.error));
+    r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '482913' }) });
+    ok('pin atur → ok', r.status === 200 && r.j.ok);
+    r = await json(A + '/api/auth/pin/atur', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '482913' }) });
+    ok('pin atur ulang → 409', r.status === 409);
+    r = await json(A + '/api/auth/pin/verifikasi', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '000000' }) });
+    ok('pin salah → 400 sisa 4', r.status === 400 && r.j.sisa === 4);
+    r = await json(A + '/api/auth/pin/verifikasi', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '482913' }) });
+    ok('pin benar → PIN-token', r.status === 200 && r.j.pinToken && SESI.verifikasi(RAHASIA, r.j.pinToken).klaim.pin === true);
+    const pinToken = r.j.pinToken;
+    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 10000 }) });
+    ok('pay charge dengan sesi tanpa PIN-token → 403 perluPin', r.status === 403 && r.j.perluPin === true);
+    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlienB, { 'X-Exo-Pin': pinToken }), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 10000 }) });
+    ok('PIN-token milik A dipakai sesi B → 403', r.status === 403);
+    for (let i = 0; i < 5; i++) r = await json(A + '/api/auth/pin/verifikasi', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '111222' }) });
+    ok('pin salah 5× → terkunci 429', r.status === 429 || (r.status === 400 && /terkunci/.test(r.j.error)), 'status ' + r.status);
+    r = await json(A + '/api/auth/pin/reset', { method: 'POST', headers: H(SESI.terbitkan(RAHASIA, { sub: 'klienA', sisi: 'klien' }, { detik: 3600 }) ), body: JSON.stringify({ baru: '735182' }) });
+    ok('pin reset dengan sesi segar → ok (membuka kunci)', r.status === 200 && r.j.ok, r.j && r.j.error);
+    r = await json(A + '/api/auth/pin/verifikasi', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ pin: '735182' }) });
+    ok('pin baru setelah reset diterima', r.status === 200 && r.j.pinToken);
+    const PIN = { 'X-Exo-Pin': r.j.pinToken };
     /* pay: sesi wajib, token guard & validasi */
     r = await json(Y + '/api/pay/charge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 10000 }) });
     ok('pay charge tanpa sesi → 401', r.status === 401);
     r = await json(Y + '/api/pay/status', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'EXO-000001' }) });
     ok('pay status transaksi asing → 404', r.status === 404);
-    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'E#1', channel: 'qris', amount: 10000 }) });
+    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien, PIN), body: JSON.stringify({ orderId: 'E#1', channel: 'qris', amount: 10000 }) });
     ok('orderId terlalu pendek ditolak', r.status === 400 && /orderId/.test(r.j.error), r.j && r.j.error);
-    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 999999999 }) });
+    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien, PIN), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 999999999 }) });
     ok('nominal di atas PAY_MAKS ditolak', r.status === 400 && /batas/.test(r.j.error), r.j && r.j.error);
-    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 10000, customer: { nama: 'A', email: 'bukan-email' } }) });
+    r = await json(Y + '/api/pay/charge', { method: 'POST', headers: H(tokenKlien, PIN), body: JSON.stringify({ orderId: 'EXO-123456', channel: 'qris', amount: 10000, customer: { nama: 'A', email: 'bukan-email' } }) });
     ok('email pelanggan tidak valid ditolak', r.status === 400 && /email/.test(r.j.error), r.j && r.j.error);
-    r = await json(Y + '/api/pay/capture', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ orderId: 'EXO-123456', amount: 10000 }) });
+    r = await json(Y + '/api/pay/capture', { method: 'POST', headers: H(tokenKlien, PIN), body: JSON.stringify({ orderId: 'EXO-123456', amount: 10000 }) });
     ok('capture tanpa transaksi → 404', r.status === 404);
     /* kirim: sesi & pemilik (mode simulasi tanpa kunci Biteship) */
     r = await json(K + '/api/kirim/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refId: 'ORD-77', kurir: 'jne', layanan: 'reg', items: [{ nama: 'x', berat: 100, harga: 1000, qty: 1 }] }) });
@@ -99,6 +127,8 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     /* dwi: sesi & admin */
     r = await json(D + '/api/dwi/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jalur: '/x', isi: {} }) });
     ok('dwi bayar tanpa sesi → 401', r.status === 401);
+    r = await json(D + '/api/dwi/bayar', { method: 'POST', headers: H(tokenKlien), body: JSON.stringify({ jalur: '/x', isi: {} }) });
+    ok('dwi bayar dengan sesi tanpa PIN-token → 403', r.status === 403 && r.j.perluPin === true);
     r = await json(D + '/api/dwi/transaksi', { headers: H(tokenKlien) });
     ok('dwi transaksi dengan sesi klien → 403', r.status === 403);
     r = await json(D + '/api/dwi/balance', { headers: H(tokenAdmin) });
@@ -110,7 +140,7 @@ async function json(url, opsi) { const r = await fetch(url, opsi); let j = null;
     const tls = [auth, pos, pay].map(s => /127\.0\.0\.1|loopback/i.test(s.keluaran()));
     ok('tanpa sertifikat: hanya loopback (ketiga server)', tls.every(Boolean), tls.join(','));
   } catch (e) { hasil.push('GALAT: ' + e.stack); }
-  finally { auth.p.kill(); pos.p.kill(); pay.p.kill(); kir.p.kill(); dwi.p.kill(); }
+  finally { auth.p.kill(); pos.p.kill(); pay.p.kill(); kir.p.kill(); dwi.p.kill(); try { require('fs').unlinkSync(PIN_UJI); } catch (e) { /* sudah tidak ada */ } }
   console.log(hasil.join('\n'));
   const gagal = hasil.filter(h => !h.startsWith('LULUS')).length;
   if (gagal) { console.log('\n--- keluaran auth ---\n' + auth.keluaran().slice(-1500) + '\n--- keluaran pos ---\n' + pos.keluaran().slice(-800) + '\n--- keluaran pay ---\n' + pay.keluaran().slice(-800) + '\n--- keluaran kirim ---\n' + kir.keluaran().slice(-800) + '\n--- keluaran dwi ---\n' + dwi.keluaran().slice(-800)); }

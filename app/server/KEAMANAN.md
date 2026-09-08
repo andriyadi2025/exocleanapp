@@ -227,3 +227,15 @@ Menutup temuan audit "server uang tanpa autentikasi". Setiap endpoint di bawah i
 | data (brankas) | semua (pemilik) | statistik, verifikasi-audit, putar-kunci | health |
 
 Perilaku tanpa `SESI_SECRET`: `NODE_ENV=production` → 503 (endpoint menolak sampai rahasia diisi); pengembangan → lolos dengan satu peringatan di log (`req.sesi = null`). Klien (`js/exo-server.js`) selalu membawa Bearer dari sessionStorage pada GET maupun POST; balasan 401 ditandai `perluSesi` dan alur pembayaran mengarahkan pengguna ke OTP. Uji: `node alat/uji-keamanan.js` (kini juga menjalankan kirim & dwi dalam mode simulasi).
+
+### 7.2 PIN transaksi terpisah dari sandi/OTP untuk semua pengguna (8 Sep 2026)
+
+Pola Tokopedia/GoPay: masuk dengan OTP, tetapi setiap aksi uang meminta PIN 6 digit.
+
+| Lapisan | Berkas | Perilaku |
+|---|---|---|
+| Server | `auth-server.js` `/api/auth/pin/{status,atur,verifikasi,ganti,reset}` (wajib sesi) | hash PBKDF2-SHA256 100k per `sub` di `data/pin.json` (di luar repo; `PIN_BERKAS` untuk mengganti lokasi); PIN lemah ditolak (sama semua, berurutan, pola berulang, pola tanggal); salah 5× → terkunci 30 menit; verifikasi berhasil → **PIN-token** HS256 (klaim `pin:true`, `PIN_TOKEN_DETIK` bawaan 300) terikat `sub`; reset hanya dengan sesi segar < 10 menit (OTP baru) |
+| Penegakan | `sesi.js` `wajibPin()` | `payment` charge/authorize/capture dan `dwi` bayar wajib header `X-Exo-Pin` berisi PIN-token milik sesi yang sama (403 `perluPin` bila tidak ada/kedaluwarsa/milik sub lain) |
+| Klien | `js/exo-pin.js`, `js/exo-screens-pin.js` | gerbang `X.denganPin(alasan, kerja)` membungkus: konfirmasi bayar/tahan (keypad PIN yang ada kini diverifikasi sungguhan), isi & tarik saldo, bayar keranjang toko, pencairan toko, isi saldo iklan, ganti rekening, permintaan hapus akun; PIN dibuat saat pendaftaran pelanggan atau saat aksi uang pertama; layar **PIN transaksi** (Akun) untuk ganti & reset lewat OTP; tanpa server → hash PBKDF2 150k lokal dengan kunci 30 menit; PIN-token disimpan di memori dan dibawa otomatis oleh `js/exo-server.js` |
+
+Uji: `node alat/uji-keamanan.js` (53 uji, termasuk PIN lemah, salah 5× terkunci, PIN-token sub lain ditolak, reset dengan sesi segar).

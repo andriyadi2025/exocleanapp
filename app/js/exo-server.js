@@ -39,7 +39,7 @@ var EXO_SERVER = (function () {
 
   var sehat = {};   /* nama → { ok, at } */
   /* Header sesi bertanda tangan (setelah OTP) untuk semua permintaan ke server pendamping. */
-  function kepalaSesi(dasar) { var k = Object.assign({}, dasar || {}); try { var ss = window.EXO_BRANKAS && EXO_BRANKAS.sesi(); if (ss) k.Authorization = 'Bearer ' + ss.token; } catch (e) { /* tanpa sesi */ } return k; }
+  function kepalaSesi(dasar) { var k = Object.assign({}, dasar || {}); try { var ss = window.EXO_BRANKAS && EXO_BRANKAS.sesi(); if (ss) k.Authorization = 'Bearer ' + ss.token; var pt = window.EXO_PIN && EXO_PIN.tokenAktif(); if (pt) k['X-Exo-Pin'] = pt; } catch (e) { /* tanpa sesi */ } return k; }
   function cekSehat(nama, jalur) {
     var s = sehat[nama];
     if (s && Date.now() - s.at < 30000) return Promise.resolve(s.ok);
@@ -54,7 +54,7 @@ var EXO_SERVER = (function () {
   function kirim(nama, jalur, body, token) {
     var kepala = { 'Content-Type': 'application/json' }; if (token) kepala['X-Exo-Token'] = token;
     /* Sesi bertanda tangan (setelah OTP) dibawa ke semua server sebagai Bearer; data-server mewajibkannya. */
-    try { var ss = window.EXO_BRANKAS && EXO_BRANKAS.sesi(); if (ss) kepala.Authorization = 'Bearer ' + ss.token; } catch (e) { /* tanpa sesi */ }
+    kepala = kepalaSesi(kepala);
     return fetch(alamat()[nama] + jalur, {
       method:'POST', headers:kepala, body:JSON.stringify(body || {})
     }).then(function (r) {
@@ -104,6 +104,12 @@ var EXO_SERVER = (function () {
   function dataVerifikasiAudit() { return kirim('data', '/api/data/verifikasi-audit', {}); }
   function dataPutarKunci(tabel) { return kirim('data', '/api/data/putar-kunci', tabel ? { tabel:tabel } : {}); }
   /* VDP / bug bounty: laporan kerentanan → vdp-server (disimpan terenkripsi) */
+  /* PIN transaksi (auth-server): hash di server per sub sesi; verifikasi → PIN-token 5 menit */
+  function pinStatus() { return kirim('auth', '/api/auth/pin/status', {}); }
+  function pinAtur(pin) { return kirim('auth', '/api/auth/pin/atur', { pin:pin }); }
+  function pinVerifikasi(pin) { return kirim('auth', '/api/auth/pin/verifikasi', { pin:pin }); }
+  function pinGanti(lama, baru) { return kirim('auth', '/api/auth/pin/ganti', { lama:lama, baru:baru }); }
+  function pinReset(baru) { return kirim('auth', '/api/auth/pin/reset', { baru:baru }); }
   function vdpLapor(isi) { return kirim('vdp', '/api/vdp/lapor', isi); }
   function vdpSehat() { return cekSehat('vdp', '/api/vdp/health'); }
   function otpKirim(telp, captcha) {
@@ -216,6 +222,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { vdpLapor:vdpLapor, vdpSehat:vdpSehat, dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { pinStatus:pinStatus, pinAtur:pinAtur, pinVerifikasi:pinVerifikasi, pinGanti:pinGanti, pinReset:pinReset, vdpLapor:vdpLapor, vdpSehat:vdpSehat, dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

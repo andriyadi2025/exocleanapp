@@ -439,3 +439,7 @@ Diteliti dari Tokopedia Care "Cara Menambah dan Edit Produk" dan Pusat Edukasi S
 ## Sesi bertanda tangan wajib di server uang (8 Sep 2026)
 - Setelah OTP/login sosial, auth-server menerbitkan sesi HS256 (`server/sesi.js`); kini **semua endpoint pembayaran, pengiriman, DWI, posisi, dan brankas mewajibkannya** lewat `SESI.wajibDariEnv()` — transaksi/pesanan kirim terikat ke `sub` pembuatnya (pemilik lain → 403), daftar/saldo/transaksi hanya sesi admin, tulis posisi hanya sesi mitra. Webhook & health tetap bebas.
 - Tanpa `SESI_SECRET`: produksi → 503, pengembangan → lolos dengan peringatan. Klien membawa Bearer di GET & POST (`kepalaSesi()` di `js/exo-server.js`); balasan 401 mengarahkan ke OTP. Rincian di `server/KEAMANAN.md` §7.1; uji `node alat/uji-keamanan.js`.
+
+## PIN transaksi untuk semua pengguna (8 Sep 2026)
+- PIN 6 digit terpisah dari OTP/sandi (pola Tokopedia/GoPay) untuk pelanggan, mitra cleaning, dan mitra toko: diminta saat bayar/tahan dana, isi & tarik saldo, bayar keranjang toko, pencairan toko, isi saldo iklan, ganti rekening, dan permintaan hapus akun (`js/exo-pin.js`, `js/exo-screens-pin.js`, gerbang `X.denganPin`).
+- Server (`auth-server` `/api/auth/pin/*`): hash PBKDF2 per `sub` sesi, PIN lemah ditolak, 5× salah terkunci 30 menit, verifikasi → PIN-token 5 menit yang wajib dibawa ke payment/dwi (`X-Exo-Pin`, `SESI.wajibPin`); reset hanya lewat OTP baru. Tanpa server: hash lokal di perangkat. Layar **PIN transaksi** di Akun tiap sisi (ganti, reset). Cache SW `exoclean-v60`; rincian `server/KEAMANAN.md` §7.2.

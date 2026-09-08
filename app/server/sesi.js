@@ -83,8 +83,22 @@ function wajibDariEnv(env, opsi) {
 /** Benar bila permintaan boleh menyentuh rekaman milik `pemilik`: admin, pemilik yang sama, atau mode pengembangan tanpa sesi. */
 function pemilikCocok(req, pemilik) { if (!req.sesi) return true; if (req.sesi.sisi === 'admin') return true; return !pemilik || req.sesi.sub === pemilik; }
 function subDariReq(req) { return req.sesi ? req.sesi.sub : null; }
+/** PIN-token: bukti PIN transaksi baru saja diverifikasi (klaim pin:true, 5 menit), diterbitkan auth-server, diwajibkan payment/dwi lewat header X-Exo-Pin. */
+function terbitkanPinToken(rahasia, klaimSesi, detik) { return terbitkan(rahasia, { sub: klaimSesi.sub, sisi: klaimSesi.sisi, pin: true }, { detik: detik || 300 }); }
+function wajibPin(env) {
+  env = env || process.env;
+  let rahasia = null; try { rahasia = rahasiaDari(env); } catch (e) { rahasia = null; }
+  return function (req, res, next) {
+    if (!rahasia || !req.sesi) return next();                         /* tanpa SESI_SECRET (pengembangan) tidak ada yang bisa diverifikasi */
+    const t = String(req.headers['x-exo-pin'] || '');
+    if (!t) return res.status(403).json({ error: 'Perlu PIN transaksi.', perluPin: true });
+    const v = verifikasi(rahasia, t);
+    if (!v.ok || !v.klaim.pin || v.klaim.sub !== req.sesi.sub) return res.status(403).json({ error: 'PIN transaksi belum diverifikasi atau sudah kedaluwarsa.', perluPin: true });
+    req.pinOk = true; next();
+  };
+}
 function buatKunci() { return crypto.randomBytes(32).toString('hex'); }
 if (require.main === module) {
   if (process.argv.includes('--buat-kunci')) console.log('SESI_SECRET=' + buatKunci()); else console.log('pakai: node sesi.js --buat-kunci');
 }
-module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, wajibDariEnv, pemilikCocok, subDariReq, buatKunci };
+module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, wajibDariEnv, pemilikCocok, subDariReq, terbitkanPinToken, wajibPin, buatKunci };

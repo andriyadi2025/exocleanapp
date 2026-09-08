@@ -48,7 +48,7 @@ const CATATAN_FILE = path.join(__dirname, 'data', 'dwi-transaksi.json');
 app.use(express.json({ limit: '32kb' }));
 const ASAL = KEAMANAN.pasangDasar(app, process.env, 'dwi');
 /* Sesi wajib: jalur baca & uang untuk pengguna bersesi; saldo deposit, daftar transaksi, dan cocokkan hanya sesi admin. */
-const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] });
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] }), wajibPin = SESI.wajibPin(process.env);
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DWI_BACA_PER_MENIT || 60) });
 const lajuUang = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_DWI_BAYAR_10MENIT || 10) });
 
@@ -276,7 +276,7 @@ app.post('/api/dwi/call', wajibSesi, lajuBaca, async (req, res, next) => {
     res.json(await panggil(target, isi));
   } catch (e) { next(e); }
 });
-app.post('/api/dwi/bayar', wajibSesi, lajuUang, async (req, res, next) => {
+app.post('/api/dwi/bayar', wajibSesi, wajibPin, lajuUang, async (req, res, next) => {
   try {
     const target = KEAMANAN.batasiTeks((req.body || {}).jalur, 60), izin = Object.prototype.hasOwnProperty.call(DAFTAR_PUTIH, target) ? DAFTAR_PUTIH[target] : null;
     if (!izin || !izin.uang) throw galat('Pintu ini hanya untuk jalur yang memotong deposit; jalur baca memakai /api/dwi/call.', 400);

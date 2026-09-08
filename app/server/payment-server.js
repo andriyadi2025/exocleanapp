@@ -49,7 +49,7 @@ app.use(express.json({ limit: '1mb' }));
    JSON, log tanpa PII — semuanya dari keamanan.js supaya sama di tiap server. */
 const ALLOWED = KEAMANAN.pasangDasar(app, process.env, 'pay');
 /* Sesi bertanda tangan (auth-server) wajib untuk semua endpoint uang; transaksi terikat ke `sub` pembuatnya. Webhook & health tidak (dipanggil gateway). */
-const wajibSesi = SESI.wajibDariEnv(process.env);
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibPin = SESI.wajibPin(process.env);
 const lajuBuat = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_BAYAR_10MENIT || 20), pesan: 'Terlalu banyak transaksi dibuat dari alamat ini. Coba lagi beberapa menit lagi.' });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_STATUS_PER_MENIT || 60) });
 const lajuWebhook = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: 600 });
@@ -418,7 +418,7 @@ app.get('/api/pay/health', (req, res) => {
   });
 });
 
-app.post('/api/pay/charge', wajibSesi, lajuBuat, async (req, res) => {
+app.post('/api/pay/charge', wajibSesi, wajibPin, lajuBuat, async (req, res) => {
   const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !channel || !amount) throw new Error('orderId, channel, dan amount wajib diisi');
@@ -456,7 +456,7 @@ app.post('/api/pay/status', wajibSesi, lajuBaca, async (req, res) => {
   }
 });
 
-app.post('/api/pay/authorize', wajibSesi, lajuBuat, async (req, res) => {
+app.post('/api/pay/authorize', wajibSesi, wajibPin, lajuBuat, async (req, res) => {
   const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
@@ -475,7 +475,7 @@ app.post('/api/pay/authorize', wajibSesi, lajuBuat, async (req, res) => {
   }
 });
 
-app.post('/api/pay/capture', wajibSesi, lajuBaca, async (req, res) => {
+app.post('/api/pay/capture', wajibSesi, wajibPin, lajuBaca, async (req, res) => {
   const { orderId, amount } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');

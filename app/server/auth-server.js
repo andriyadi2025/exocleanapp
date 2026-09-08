@@ -35,6 +35,8 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const KEAMANAN = require('./keamanan');
@@ -458,6 +460,24 @@ app.post('/api/auth/otp/periksa', lajuPeriksaIp, (req, res) => {
     sisa
   });
 });
+
+/* ================================================================ PIN TRANSAKSI
+   Terpisah dari OTP/sandi. Hash PBKDF2-SHA256 100k per `sub` sesi di data/pin.json
+   (di luar repo). Salah 5 kali → terkunci 30 menit. Verifikasi berhasil menerbitkan
+   PIN-token 5 menit yang wajib dibawa ke payment/dwi. Reset hanya dengan sesi segar
+   (< 10 menit sejak OTP). */
+const PIN_BERKAS = process.env.PIN_BERKAS || path.join(__dirname, 'data', 'pin.json'), PIN_MAKS_GAGAL = 5, PIN_KUNCI_MENIT = 30, PIN_TOKEN_DETIK = Number(process.env.PIN_TOKEN_DETIK || 300);
+function pinBaca() { try { return JSON.parse(fs.readFileSync(PIN_BERKAS, 'utf8')); } catch (e) { return {}; } }
+function pinTulis(o) { fs.mkdirSync(path.dirname(PIN_BERKAS), { recursive: true, mode: 0o700 }); fs.writeFileSync(PIN_BERKAS, JSON.stringify(o), { mode: 0o600 }); }
+function pinHash(pin, garam) { return crypto.pbkdf2Sync(String(pin), Buffer.from(garam, 'hex'), 100000, 32, 'sha256').toString('hex'); }
+function pinLemah(pin) { pin = String(pin || ''); if (!/^\d{6}$/.test(pin)) return 'PIN harus 6 angka.'; if (/^(\d)\1{5}$/.test(pin)) return 'Jangan pakai angka yang sama semua.'; if ('01234567890'.includes(pin) || '09876543210'.includes(pin)) return 'Jangan pakai angka berurutan.'; if (/^(\d\d)\1\1$/.test(pin) || /^(\d\d\d)\1$/.test(pin)) return 'Pola berulang terlalu mudah ditebak.'; if (/^(0[1-9]|[12]\d|3[01])(0[1-9]|1[0-2])\d\d$/.test(pin) || /^(19|20)\d\d(0[1-9]|1[0-2])$/.test(pin)) return 'Hindari pola tanggal lahir.'; return null; }
+const wajibSesiPin = SESI.wajibDariEnv(process.env), lajuPin = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: 30, kunci: (req) => (req.sesi && req.sesi.sub) || KEAMANAN.ipKlien(req) });
+function pinRek(req) { if (!req.sesi) return null; const semua = pinBaca(); return { semua, rek: semua[req.sesi.sub] || null }; }
+app.post('/api/auth/pin/status', wajibSesiPin, lajuPin, (req, res) => { const p = pinRek(req); if (!p) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); res.json({ ok: true, ada: !!p.rek, terkunciSampai: p.rek && p.rek.gagal >= PIN_MAKS_GAGAL && p.rek.kunciSampai > Date.now() ? p.rek.kunciSampai : 0, digantiAt: p.rek && p.rek.digantiAt || null }); });
+app.post('/api/auth/pin/atur', wajibSesiPin, lajuPin, (req, res) => { const p = pinRek(req); if (!p) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); if (p.rek) return res.status(409).json({ error: 'PIN sudah ada — pakai ganti atau reset.' }); const pin = String((req.body || {}).pin || ''); const l = pinLemah(pin); if (l) return res.status(400).json({ error: l }); const garam = crypto.randomBytes(16).toString('hex'); p.semua[req.sesi.sub] = { garam, hash: pinHash(pin, garam), gagal: 0, kunciSampai: 0, dibuatAt: new Date().toISOString(), digantiAt: new Date().toISOString() }; pinTulis(p.semua); res.json({ ok: true }); });
+app.post('/api/auth/pin/verifikasi', wajibSesiPin, lajuPin, (req, res) => { const p = pinRek(req); if (!p) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); if (!p.rek) return res.status(404).json({ error: 'PIN belum dibuat.', belumAda: true }); if (p.rek.gagal >= PIN_MAKS_GAGAL && p.rek.kunciSampai > Date.now()) return res.status(429).json({ error: 'PIN terkunci ' + Math.ceil((p.rek.kunciSampai - Date.now()) / 60000) + ' menit lagi.', terkunciSampai: p.rek.kunciSampai }); const pin = String((req.body || {}).pin || ''); const cocok = /^\d{6}$/.test(pin) && samaAman(pinHash(pin, p.rek.garam), p.rek.hash); if (!cocok) { p.rek.gagal = (p.rek.gagal || 0) + 1; if (p.rek.gagal >= PIN_MAKS_GAGAL) p.rek.kunciSampai = Date.now() + PIN_KUNCI_MENIT * 60000; pinTulis(p.semua); console.log('[pin] salah · ' + req.sesi.sub.slice(0, 8) + ' · ' + p.rek.gagal); return res.status(400).json({ error: p.rek.gagal >= PIN_MAKS_GAGAL ? 'PIN salah 5 kali — terkunci ' + PIN_KUNCI_MENIT + ' menit.' : 'PIN salah. Sisa ' + (PIN_MAKS_GAGAL - p.rek.gagal) + ' percobaan.', sisa: Math.max(0, PIN_MAKS_GAGAL - p.rek.gagal) }); } p.rek.gagal = 0; p.rek.kunciSampai = 0; p.rek.terakhirOk = new Date().toISOString(); pinTulis(p.semua); res.json({ ok: true, pinToken: SESI.terbitkanPinToken(RAHASIA_SESI, req.sesi, PIN_TOKEN_DETIK), berlakuDetik: PIN_TOKEN_DETIK }); });
+app.post('/api/auth/pin/ganti', wajibSesiPin, lajuPin, (req, res) => { const p = pinRek(req); if (!p || !p.rek) return res.status(404).json({ error: 'PIN belum dibuat.' }); if (p.rek.gagal >= PIN_MAKS_GAGAL && p.rek.kunciSampai > Date.now()) return res.status(429).json({ error: 'PIN terkunci.' }); const b = req.body || {}; if (!samaAman(pinHash(String(b.lama || ''), p.rek.garam), p.rek.hash)) { p.rek.gagal = (p.rek.gagal || 0) + 1; if (p.rek.gagal >= PIN_MAKS_GAGAL) p.rek.kunciSampai = Date.now() + PIN_KUNCI_MENIT * 60000; pinTulis(p.semua); return res.status(400).json({ error: 'PIN lama salah.' }); } const l = pinLemah(b.baru); if (l) return res.status(400).json({ error: l }); if (String(b.baru) === String(b.lama)) return res.status(400).json({ error: 'PIN baru tidak boleh sama.' }); const garam = crypto.randomBytes(16).toString('hex'); p.semua[req.sesi.sub] = Object.assign(p.rek, { garam, hash: pinHash(String(b.baru), garam), gagal: 0, kunciSampai: 0, digantiAt: new Date().toISOString() }); pinTulis(p.semua); res.json({ ok: true }); });
+app.post('/api/auth/pin/reset', wajibSesiPin, lajuPin, (req, res) => { const p = pinRek(req); if (!p) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); const umur = Math.floor(Date.now() / 1000) - (req.sesi.iat || 0); if (umur > 600) return res.status(403).json({ error: 'Reset PIN butuh OTP baru (sesi harus lebih muda dari 10 menit).', perluOtp: true }); const l = pinLemah((req.body || {}).baru); if (l) return res.status(400).json({ error: l }); const garam = crypto.randomBytes(16).toString('hex'); p.semua[req.sesi.sub] = { garam, hash: pinHash(String(req.body.baru), garam), gagal: 0, kunciSampai: 0, dibuatAt: (p.rek && p.rek.dibuatAt) || new Date().toISOString(), digantiAt: new Date().toISOString(), diresetAt: new Date().toISOString() }; pinTulis(p.semua); console.log('[pin] direset lewat OTP · ' + req.sesi.sub.slice(0, 8)); res.json({ ok: true }); });
 
 app.use((req, res) => res.status(404).json({ error: 'Endpoint tidak dikenal' }));
 
