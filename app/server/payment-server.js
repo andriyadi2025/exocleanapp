@@ -35,6 +35,7 @@ require('dotenv').config();
 
 const KEAMANAN = require('./keamanan');
 const SESI = require('./sesi');
+const HARGA = require('./harga'); HARGA.muat();
 const app = express();
 const PORT = process.env.PORT || 4000;
 const PAY_MAKS = Number(process.env.PAY_MAKS_RUPIAH || 50000000);
@@ -418,10 +419,32 @@ app.get('/api/pay/health', (req, res) => {
   });
 });
 
-app.post('/api/pay/charge', wajibSesi, wajibPerangkat, wajibPin, lajuBuat, async (req, res) => {
-  const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
+/* ---------- nominal ditentukan server ----------
+   Klien mengirim komposisi → server menghitung dari katalog → tagihan 15 menit terikat sub.
+   charge/authorize hanya menerima tagihanId (bila ada sesi); amount dari klien diabaikan.
+   Tanpa sesi (pengembangan tanpa SESI_SECRET) amount klien masih diterima dan ditandai di log. */
+const wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] });
+app.post('/api/pay/tagihan', wajibSesi, wajibPerangkat, lajuBaca, (req, res) => {
   try {
-    if (!orderId || !channel || !amount) throw new Error('orderId, channel, dan amount wajib diisi');
+    const b = req.body || {}; let hasil;
+    if (b.jenis === 'akhir') { const rec = ambil(String(b.orderIdAsal || '')); if (!rec) throw Object.assign(new Error('Transaksi asal tidak dikenal'), { status: 404 }); if (!SESI.pemilikCocok(req, rec.pemilik)) throw Object.assign(new Error('Transaksi asal milik akun lain'), { status: 403 }); hasil = HARGA.hitungAkhir(rec.amount, b.ekstra); }
+    else hasil = HARGA.hitungJasa(b);
+    const t = HARGA.buatTagihan(SESI.subDariReq(req), hasil, b.jenis === 'akhir' ? 'akhir' : 'jasa');
+    const beda = b.perkiraan != null && Number(b.perkiraan) !== t.total;
+    if (beda) console.log('[tagihan] perkiraan klien ' + b.perkiraan + ' ≠ server ' + t.total + ' (' + (b.jasa || b.jenis) + ')');
+    res.json({ ok: true, tagihanId: t.id, total: t.total, rincian: t.rincian, berlakuDetik: Math.round(HARGA.TTL_TAGIHAN_MS / 1000), versiKatalog: t.versiKatalog, bedaDariPerkiraan: beda });
+  } catch (e) { res.status(e.status || 400).json({ error: e.message }); }
+});
+app.get('/api/pay/harga/versi', (req, res) => { const k = HARGA.kini(); res.json({ ok: true, versi: k.versi, at: k.at || null, sumber: k._sumber && k._sumber.endsWith('harga-bawaan.json') ? 'bawaan (exo-data.js)' : 'terbitan admin', jumlahJasa: Object.keys(k.jasa || {}).length, jumlahJuru: Object.keys(k.juru || {}).length, jumlahFlash: (k.flash || []).length, biayaAplikasi: k.biayaAplikasi }); });
+app.post('/api/pay/harga', wajibAdmin, wajibPerangkat, lajuBaca, (req, res) => { try { const k = HARGA.simpan((req.body || {}).katalog, req.sesi ? req.sesi.sub : null); console.log('[harga] katalog diterbitkan · versi ' + k.versi + ' · ' + Object.keys(k.jasa).length + ' jasa'); res.json({ ok: true, versi: k.versi, jumlahJasa: Object.keys(k.jasa).length }); } catch (e) { res.status(e.status || 400).json({ error: e.message }); } });
+/* nominal untuk charge/authorize: dari tagihan bila ada sesi; amount klien hanya di mode pengembangan */
+function nominalDari(req) { const b = req.body || {}; if (b.tagihanId) { const t = HARGA.ambilTagihan(b.tagihanId, SESI.subDariReq(req)); return { amount: t.total, tagihan: t }; } if (req.sesi) throw Object.assign(new Error('tagihanId wajib — minta tagihan lewat /api/pay/tagihan (nominal ditentukan server)'), { status: 400 }); if (!Number.isInteger(b.amount)) throw new Error('amount wajib bilangan bulat'); console.warn('[pay] amount dari klien dipakai (mode pengembangan tanpa sesi)'); return { amount: b.amount, tagihan: null }; }
+
+app.post('/api/pay/charge', wajibSesi, wajibPerangkat, wajibPin, lajuBuat, async (req, res) => {
+  const { gateway, orderId, channel, keterangan, invoiceNo } = req.body || {};
+  try {
+    if (!orderId || !channel) throw new Error('orderId dan channel wajib diisi');
+    const nd = nominalDari(req); const amount = nd.amount;
     const customer = periksaMasukan(orderId, amount, req.body.customer);
     if (!CHANNEL[channel]) throw new Error('channel tidak dikenal');
     if (ambil(orderId)) throw new Error('orderId sudah pernah dipakai');
@@ -432,13 +455,14 @@ app.post('/api/pay/charge', wajibSesi, wajibPerangkat, wajibPin, lajuBuat, async
       : await chargeMidtrans({ orderId, channel, amount, customer, keterangan, invoiceNo });
 
     simpan(orderId, {
-      orderId, gateway, channel, amount, status: 'pending', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req),
+      orderId, gateway, channel, amount, status: 'pending', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req), tagihanId: nd.tagihan ? nd.tagihan.id : null, rincian: nd.tagihan ? nd.tagihan.rincian : null,
       gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString()
     });
-    res.json(Object.assign({ token: tk.token }, hasil));
+    if (nd.tagihan) HARGA.pakaiTagihan(nd.tagihan.id, orderId);
+    res.json(Object.assign({ token: tk.token, amount }, hasil));
   } catch (e) {
     console.error('[charge]', e.message, e.detail || '');
-    res.status(400).json({ error: e.message });
+    res.status(e.status || 400).json({ error: e.message });
   }
 });
 
@@ -457,9 +481,10 @@ app.post('/api/pay/status', wajibSesi, wajibPerangkat, lajuBaca, async (req, res
 });
 
 app.post('/api/pay/authorize', wajibSesi, wajibPerangkat, wajibPin, lajuBuat, async (req, res) => {
-  const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
+  const { gateway, orderId, channel, keterangan, invoiceNo } = req.body || {};
   try {
-    if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
+    if (!orderId) throw new Error('orderId wajib diisi');
+    const nd = nominalDari(req); const amount = nd.amount;
     const customer = periksaMasukan(orderId, amount, req.body.customer);
     if (ambil(orderId)) throw new Error('orderId sudah pernah dipakai');
     if (gateway === 'xendit' || (channel && channel !== 'cc')) {
@@ -467,11 +492,12 @@ app.post('/api/pay/authorize', wajibSesi, wajibPerangkat, wajibPin, lajuBuat, as
     }
     const tk = terbitkanToken();
     const hasil = await authorizeMidtrans({ orderId, amount, customer, keterangan, invoiceNo });
-    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req), gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
-    res.json(Object.assign({ token: tk.token }, hasil));
+    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req), tagihanId: nd.tagihan ? nd.tagihan.id : null, rincian: nd.tagihan ? nd.tagihan.rincian : null, gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
+    if (nd.tagihan) HARGA.pakaiTagihan(nd.tagihan.id, orderId);
+    res.json(Object.assign({ token: tk.token, amount }, hasil));
   } catch (e) {
     console.error('[authorize]', e.message, e.detail || '');
-    res.status(400).json({ error: e.message });
+    res.status(e.status || 400).json({ error: e.message });
   }
 });
 

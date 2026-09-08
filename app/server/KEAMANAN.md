@@ -266,3 +266,19 @@ Uji: `npm run test:duafaktor` (12 uji: vektor RFC 6238, anti pemakaian ulang, CB
 | Kompatibilitas | sesi tanpa `dkt` (klien lama / uji) tetap diterima tanpa bukti; tanpa `SESI_SECRET` (pengembangan) tidak ada pengikatan |
 
 Uji: `node alat/uji-keamanan.js` — sesi terikat tanpa bukti → 403, bukti kunci lain → 403, bukti kedaluwarsa → 403, bukti sah → lolos, notifikasi SMS tercatat, daftar & cabut perangkat.
+
+### 7.5 Nominal pembayaran ditentukan server (8 Sep 2026)
+
+Menutup temuan audit kritis "amount diambil dari klien".
+
+| Bagian | Cara kerja |
+|---|---|
+| Katalog server | `harga.js` memuat `data/harga.json` (terbitan admin) atau `harga-bawaan.json` yang dibangkitkan dari `js/exo-data.js` oleh `alat/ekspor-harga.js` (`npm run harga:ekspor`) — tarif tiap jasa, add-on, faktor tarif tiap juru, voucher, flash deal, biaya aplikasi & regu, diskon langganan, minimum kuantitas, kebijakan ekstra |
+| Tagihan | `POST /api/pay/tagihan` (wajib sesi + perangkat): klien mengirim **komposisi** (jasa, jam, juru, add-on, regu, frekuensi, voucher) → server menghitung dengan rumus yang sama dengan aplikasi → tagihan `TG-…` 15 menit, terikat `sub`, sekali pakai; `perkiraan` klien hanya dibandingkan dan dicatat |
+| Charge/authorize | menerima **`tagihanId`** — bukan `amount`; bila ada sesi tanpa tagihanId → 400; tagihan milik akun lain → 403; nominal, rincian, dan versi katalog tersimpan di rekaman transaksi; PAY_MAKS_RUPIAH tetap berlaku |
+| Tagihan akhir | kanal tertunda (`orderId-C`): `jenis:'akhir'` = nominal transaksi asal (dari rekaman server) + ekstra yang disetujui, dibatasi kebijakan (maks Rp500.000 per item, maks 50% dari nominal asal) |
+| Terbitkan katalog | konsol admin → Services & pricing → kartu **Harga di server** → `POST /api/pay/harga` (sesi brankas admin + bukti perangkat + PIN + audit) memakai `EXO_HARGA.kumpulkan()` (tarif + terbitan admin, faktor juru dari basis data, voucher, flash deal aktif, biaya) |
+| Klien | `js/exo-harga.js` menyusun komposisi; `EXO_SERVER.bayar/tahan` minta tagihan dulu; bila nominal server ≠ perkiraan aplikasi, aplikasi memakai nominal server dan memberi tahu pengguna |
+| Mode pengembangan | tanpa `SESI_SECRET` (tanpa sesi) amount klien masih diterima dan ditandai di log — jangan di produksi |
+
+Uji: `npm run test:harga` (13 uji rumus & validasi) dan `node alat/uji-keamanan.js` (tagihan, charge tanpa tagihan ditolak, tagihan akun lain ditolak, amount klien diabaikan, katalog terbitan admin dipakai).

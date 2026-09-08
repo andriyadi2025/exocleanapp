@@ -70,12 +70,20 @@ var EXO_SERVER = (function () {
   /* ------------------------------------------------------------ pembayaran
      channel mengikuti peta CHANNEL di payment-server.js. */
   var KANAL = { qris:'qris', ewallet:'gopay', va:'va_bca', card:'cc' };
-  function bayar(id, orderId, amount, pelanggan) {
+  /* Nominal ditentukan server: minta tagihan dari komposisi pesanan, lalu charge dengan tagihanId. amount hanya perkiraan klien (untuk membandingkan). */
+  function tagihan(komposisi, perkiraan) { return kirim('pay', '/api/pay/tagihan', Object.assign({}, komposisi || {}, { perkiraan:perkiraan })); }
+  function hargaVersi() { return ambil('pay', '/api/pay/harga/versi'); }
+  function hargaTerbitkan(katalog) { return kirim('pay', '/api/pay/harga', { katalog:katalog }); }
+  function denganTagihan(komposisi, amount, lanjut) {
+    if (!komposisi) return lanjut({ amount:amount });
+    return tagihan(komposisi, amount).then(function (t) { if (!t.ok) return { ok:false, error:'Tagihan ditolak server: ' + (t.error || ''), offline:!!t.offline, tagihanDitolak:true }; return lanjut({ tagihanId:t.data.tagihanId, amount:t.data.total, rincian:t.data.rincian, bedaDariPerkiraan:t.data.bedaDariPerkiraan }); });
+  }
+  function bayar(id, orderId, amount, pelanggan, komposisi) {
     var channel = KANAL[id];
     if (!channel) return Promise.resolve({ ok:false, error:'Kanal ' + id + ' tidak lewat gateway' });
     return cekSehat('pay', '/api/pay/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
-      return kirim('pay', '/api/pay/charge', { gateway:'midtrans', orderId:orderId, channel:channel, amount:amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId, invoiceNo:orderId });
+      return denganTagihan(komposisi, amount, function (n) { return kirim('pay', '/api/pay/charge', { gateway:'midtrans', orderId:orderId, channel:channel, tagihanId:n.tagihanId, amount:n.amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId, invoiceNo:orderId }).then(function (r) { if (r.ok) { r.data.amount = r.data.amount || n.amount; r.data.rincian = n.rincian; r.data.bedaDariPerkiraan = n.bedaDariPerkiraan; } return r; }); });
     });
   }
   /* Token transaksi (dikembalikan sekali saat charge/authorize) wajib untuk
@@ -84,11 +92,11 @@ var EXO_SERVER = (function () {
   /* Penahanan dana (pre-authorization): di Midtrans hanya kartu kredit.
      Kanal lain dibalas { tunda:true } supaya aplikasi mencatat tagihan
      tertunda dan menagihnya lewat gateway setelah kunjungan selesai. */
-  function tahan(id, orderId, amount, pelanggan) {
+  function tahan(id, orderId, amount, pelanggan, komposisi) {
     if (id !== 'card') return Promise.resolve({ ok:false, tunda:true });
     return cekSehat('pay', '/api/pay/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
-      return kirim('pay', '/api/pay/authorize', { gateway:'midtrans', orderId:orderId, channel:'cc', amount:amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId + ' (hold)', invoiceNo:orderId });
+      return denganTagihan(komposisi, amount, function (n) { return kirim('pay', '/api/pay/authorize', { gateway:'midtrans', orderId:orderId, channel:'cc', tagihanId:n.tagihanId, amount:n.amount, customer:pelanggan, keterangan:'EXOCLEAN ' + orderId + ' (hold)', invoiceNo:orderId }).then(function (r) { if (r.ok) { r.data.amount = r.data.amount || n.amount; r.data.rincian = n.rincian; r.data.bedaDariPerkiraan = n.bedaDariPerkiraan; } return r; }); });
     });
   }
   function tangkap(orderId, amount, token) { return kirim('pay', '/api/pay/capture', { gateway:'midtrans', orderId:orderId, amount:amount }, token); }
@@ -237,6 +245,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { perangkatDaftar:perangkatDaftar, perangkatHapus:perangkatHapus, duaFaktorStatus:duaFaktorStatus, duaFaktorTotpDaftar:duaFaktorTotpDaftar, duaFaktorTotpAktifkan:duaFaktorTotpAktifkan, duaFaktorPasskeyTantangan:duaFaktorPasskeyTantangan, duaFaktorPasskeyDaftar:duaFaktorPasskeyDaftar, duaFaktorPasskeyHapus:duaFaktorPasskeyHapus, duaFaktorVerifikasi:duaFaktorVerifikasi, duaFaktorPasskeyMasuk:duaFaktorPasskeyMasuk, duaFaktorPemulihanBaru:duaFaktorPemulihanBaru, duaFaktorNonaktif:duaFaktorNonaktif, pinStatus:pinStatus, pinAtur:pinAtur, pinVerifikasi:pinVerifikasi, pinGanti:pinGanti, pinReset:pinReset, vdpLapor:vdpLapor, vdpSehat:vdpSehat, dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { tagihan:tagihan, hargaVersi:hargaVersi, hargaTerbitkan:hargaTerbitkan, perangkatDaftar:perangkatDaftar, perangkatHapus:perangkatHapus, duaFaktorStatus:duaFaktorStatus, duaFaktorTotpDaftar:duaFaktorTotpDaftar, duaFaktorTotpAktifkan:duaFaktorTotpAktifkan, duaFaktorPasskeyTantangan:duaFaktorPasskeyTantangan, duaFaktorPasskeyDaftar:duaFaktorPasskeyDaftar, duaFaktorPasskeyHapus:duaFaktorPasskeyHapus, duaFaktorVerifikasi:duaFaktorVerifikasi, duaFaktorPasskeyMasuk:duaFaktorPasskeyMasuk, duaFaktorPemulihanBaru:duaFaktorPemulihanBaru, duaFaktorNonaktif:duaFaktorNonaktif, pinStatus:pinStatus, pinAtur:pinAtur, pinVerifikasi:pinVerifikasi, pinGanti:pinGanti, pinReset:pinReset, vdpLapor:vdpLapor, vdpSehat:vdpSehat, dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

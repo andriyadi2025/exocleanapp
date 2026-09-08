@@ -451,3 +451,7 @@ Diteliti dari Tokopedia Care "Cara Menambah dan Edit Produk" dan Pusat Edukasi S
 ## Notifikasi login perangkat baru & pengikatan perangkat (8 Sep 2026)
 - Setiap perangkat membuat kunci ECDSA P-256 yang tidak bisa diekspor (`js/exo-perangkat.js`); saat OTP/login sosial, auth-server mencatat perangkat per akun dan **mengirim SMS/email** bila perangkat baru (pola Tokopedia), plus riwayat masuk.
 - **Device binding** (pola GoPay/DPoP): sesi memuat sidik kunci perangkat dan setiap permintaan ke server uang/brankas membawa bukti tanda tangan kunci perangkat (`X-Exo-Perangkat`, `SESI.wajibPerangkat`) — sesi yang dicuri tidak berguna di perangkat lain. Layar **Perangkat & aktivitas masuk** di Akun tiap sisi untuk mencabut perangkat (PIN). Rincian `server/KEAMANAN.md` §7.4; SW `exoclean-v62`.
+
+## Nominal pembayaran ditentukan server (8 Sep 2026)
+- `server/harga.js` + `harga-bawaan.json` (dibangkitkan dari `js/exo-data.js`): payment-server menghitung setiap tagihan dari katalog yang dipegang server — klien hanya mengirim komposisi pesanan (`js/exo-harga.js`) ke `POST /api/pay/tagihan`, lalu `charge/authorize` menerima `tagihanId` (15 menit, terikat akun, sekali pakai) dan mengabaikan `amount` klien. Tagihan akhir kanal tertunda = nominal asal + ekstra dalam batas kebijakan.
+- Admin → Services & pricing → **Harga di server**: terbitkan katalog (tarif, faktor juru, voucher, flash deal, biaya) ke server dengan sesi admin + PIN. Uji: `npm run test:harga`; rincian `server/KEAMANAN.md` §7.5; SW `exoclean-v63`.

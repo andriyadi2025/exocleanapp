@@ -283,9 +283,12 @@
     if (!window.EXO_SERVER) { if (tahan) X.tahanDana(n, K.bayar); selesaiBayar(); return; }
     K.gatewaySibuk = true;
     var orderId = 'EXO-' + Date.now().toString().slice(-6);
-    var janji = tahan ? EXO_SERVER.tahan(K.bayar, orderId, n, PELANGGAN) : EXO_SERVER.bayar(K.bayar, orderId, n, PELANGGAN);
+    var komposisi = window.EXO_HARGA ? EXO_HARGA.komposisi() : null;
+    var janji = tahan ? EXO_SERVER.tahan(K.bayar, orderId, n, PELANGGAN, komposisi) : EXO_SERVER.bayar(K.bayar, orderId, n, PELANGGAN, komposisi);
     janji.then(function (r) {
       K.gatewaySibuk = false;
+      if (r.tagihanDitolak) { sekilas(r.error, 'err'); X.gambar(); return; }
+      if (r.ok && r.data && r.data.amount && r.data.amount !== n) { sekilas('Nominal ditetapkan server: ' + rp(r.data.amount) + (r.data.bedaDariPerkiraan ? ' (perkiraan aplikasi ' + rp(n) + ')' : ''), 'err'); n = r.data.amount; }
       if (r.tunda) { X.tahanDana(n, K.bayar, { mode:'tunda', orderId:orderId }); sekilas(tx('No hold on this channel — you pay through the gateway once the visit is done.')); selesaiBayar(); X.gambar(); return; }
       if (r.offline) { sekilas(tx('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).'), 'err'); if (tahan) X.tahanDana(n, K.bayar); selesaiBayar(); X.gambar(); return; }
       if (r.perluSesi) { sekilas('Masuk lewat OTP dulu — pembayaran diikat ke akun Anda (sesi bertanda tangan).', 'err'); K.lembar = null; K.authStep = 'otp'; K.layar = 'signup'; X.gambar(); return; }
@@ -331,7 +334,7 @@
       if (h.mode === 'tunda' && window.EXO_SERVER) {
         /* kanal tanpa pre-auth: tagihan dibuat sekarang lewat gateway */
         K.gatewaySibuk = true;
-        EXO_SERVER.bayar(h.metode, h.orderId + '-C', total, PELANGGAN).then(function (r) {
+        EXO_SERVER.bayar(h.metode, h.orderId + '-C', total, PELANGGAN, window.EXO_HARGA ? EXO_HARGA.komposisiAkhir(h.orderId, K.ekstra) : null).then(function (r) {
           K.gatewaySibuk = false;
           if (!r.ok) { X.tangkapDana(); sekilas(tx('Visit done — charged') + ' ' + rp(total) + ' · ' + (r.offline ? 'simulated' : 'gateway: ' + (r.error || ''))); X.gambar(); return; }
           K.gateway = Object.assign({ orderId:h.orderId + '-C', amount:total, status:'pending', mode:'sandbox', jenis:'tangkap' }, r.data); K.lembar = 'gateway'; X.gambar();

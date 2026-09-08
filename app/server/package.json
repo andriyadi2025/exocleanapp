@@ -23,6 +23,8 @@
     "start:vdp": "node vdp-server.js",
     "test:brankas": "node alat/uji-brankas.js",
     "test:duafaktor": "node alat/uji-duafaktor.js",
+    "test:harga": "node alat/uji-harga.js",
+    "harga:ekspor": "node alat/ekspor-harga.js",
     "dev:dwi": "node --watch dwi-server.js"
   },
   "dependencies": {
