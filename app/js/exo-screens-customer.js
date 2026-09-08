@@ -328,6 +328,7 @@
       [v.code, app ? '− ' + rp(v.amount) : tx('not applied')]
     ];
     if (X.bisaLangganan()) lines.splice(4, 0, [tx('Plan discount') + ' · ' + tx(X.frekuensiKini().label), X.diskonLangganan() ? '− ' + rp(X.diskonLangganan()) : tx('not applied')]);
+    if (X.diskonFlash && X.diskonFlash()) lines.splice(3, 0, ['⚡ Flash Deal −' + (X.flashKini() ? X.flashKini().diskonPct : 0) + '%', '− ' + rp(X.diskonFlash())]);
     h += '<div class="card elev-sm gap-8">';
     for (var l = 0; l < lines.length; l++) h += '<div class="kv"><span>' + esc(lines[l][0]) + '</span><span>' + esc(lines[l][1]) + '</span></div>';
     h += '<div class="rule"></div><div class="flex items-baseline between"><span class="f-head t-15">' + esc(t('totalLbl')) + '</span><span class="f-head t-22">' + rp(X.totalN()) + '</span></div></div>';

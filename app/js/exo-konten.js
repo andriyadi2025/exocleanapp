@@ -31,8 +31,8 @@ var EXO_KONTEN = (function () {
         { id:'hourly', jasa:true, ikon:'🧹', label:'', aktif:true }, { id:'deep', jasa:true, ikon:'✨', label:'', aktif:true }, { id:'ac', jasa:true, ikon:'❄️', label:'', aktif:true }, { id:'sofa', jasa:true, ikon:'🛋️', label:'', aktif:true },
         { id:'toko', ke:'toko', ikon:'🛒', label:'Toko', aktif:true }, { id:'tagihan', ke:'tagihan', ikon:'🧾', label:'Tagihan', aktif:true }, { id:'perjalanan', ke:'perjalanan', ikon:'✈️', label:'Perjalanan', aktif:true }, { id:'catalog', ke:'catalog', ikon:'▦', label:'Semua', aktif:true }
       ],
-      bagian:{ kunjungan:true, flash:true, toko:true, mitra:true, jaminan:true, rekomendasi:true },
-      urutan:['kunjungan', 'flash', 'toko', 'mitra', 'jaminan', 'rekomendasi'],
+      bagian:{ kunjungan:true, flashJasa:true, flash:true, toko:true, mitra:true, jaminan:true, rekomendasi:true },
+      urutan:['kunjungan', 'flashJasa', 'flash', 'toko', 'mitra', 'jaminan', 'rekomendasi'],
       judulFlash:'⚡ Flash Sale', judulToko:'Toko pilihan', judulRekomendasi:'Rekomendasi untuk kamu',
       jaminan:'Setelah dikonfirmasi, hanya Anda yang bisa memindahkan jadwal. Bila kami yang menggeser, Rp100.000 masuk ke dompet Anda menit itu juga — tanpa tiket, tanpa mengejar.'
     },

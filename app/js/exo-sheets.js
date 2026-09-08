@@ -244,6 +244,7 @@
   A.batalPin = function () { K.payPinOpen = false; K.payPin = ''; };
   A.payPinTekan = function (k) { K.payPin = k === '⌫' ? K.payPin.slice(0, -1) : (K.payPin + k).slice(0, 6); };
   function selesaiBayar() {
+    if (window.EXO_FLASHDEAL) { try { EXO_FLASHDEAL.pakai(K.jasa); } catch (e) { /* abaikan */ } }
     K.layar = 'success'; K.tahap = 1; K.payPinOpen = false; K.payPin = ''; K.gatewaySibuk = false; K.dibatalkan = false; K.batalPaket = false;
     X.buatLangganan();   /* paket berkala bila pelanggan memilih frekuensi berulang */
     /* Tulis ke tabel orders basis data EXOCLEAN bila ada — pesanan ini lalu

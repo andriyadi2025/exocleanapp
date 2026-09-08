@@ -18,7 +18,7 @@
   S.kontenTab = S.kontenTab || 'klien';
   S.kontenBuka = S.kontenBuka || { tiket:true, menu:true, ikon:false, banner:false, susun:false, teks:false };
   S.kontenTick = S.kontenTick || 1;
-  var NAMA_BAGIAN = { kunjungan:['📅', 'Kunjungan berikutnya', 'kartu jadwal kunjungan aktif'], flash:['⚡', 'Flash Sale', 'produk diskon + hitung mundur'], toko:['🏪', 'Toko pilihan', 'toko dengan skor tertinggi'], mitra:['🧑‍🔧', 'Petugas di dekat Anda', 'juru bersih terdekat'], jaminan:['🛡️', 'Jaminan jadwal', 'kartu teks jaminan'], rekomendasi:['✨', 'Rekomendasi untuk kamu', 'feed produk 2 kolom'] };
+  var NAMA_BAGIAN = { kunjungan:['📅', 'Kunjungan berikutnya', 'kartu jadwal kunjungan aktif'], flashJasa:['⚡', 'Flash Deal jasa', 'sesi diskon layanan (Promos & vouchers)'], flash:['⚡', 'Flash Sale', 'produk diskon + hitung mundur'], toko:['🏪', 'Toko pilihan', 'toko dengan skor tertinggi'], mitra:['🧑‍🔧', 'Petugas di dekat Anda', 'juru bersih terdekat'], jaminan:['🛡️', 'Jaminan jadwal', 'kartu teks jaminan'], rekomendasi:['✨', 'Rekomendasi untuk kamu', 'feed produk 2 kolom'] };
   var NAMA_MENU = { toko:'Toko perlengkapan', tagihan:'Bayar & isi ulang', perjalanan:'Perjalanan', catalog:'Semua layanan' };
   function siapa() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
   function denganPin(alasan, kerja) { if (!siapa()) { A.sekilas('Masuk sebagai admin dulu.', 'err'); return; } EXO_ADMIN_AUTH.mintaPin(alasan).then(function (ok) { if (!ok) { A.sekilas('Dibatalkan — PIN tidak disetujui.', 'err'); A.gambar(); return; } try { kerja(siapa()); } catch (e) { A.sekilas('Gagal: ' + (e.message || e), 'err'); } A.gambar(); }); }

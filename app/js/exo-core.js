@@ -261,7 +261,8 @@ var ExoApp = (function () {
   }
   function voucherEligible() { return voucherKini().live && subtotalN() >= D.VOUCHER.min; }
   function voucherApplied() { return KEADAAN.voucher && voucherEligible(); }
-  function totalN() { return subtotalN() - diskonLangganan() + D.PLATFORM_FEE - (voucherApplied() ? voucherKini().amount : 0); }
+  function diskonFlash() { try { return window.EXO_FLASHDEAL ? EXO_FLASHDEAL.diskon(KEADAAN.jasa, lineFor(rateFor(juruKini()))) : 0; } catch (e) { return 0; } }
+  function totalN() { return Math.max(0, subtotalN() - diskonLangganan() - diskonFlash() + D.PLATFORM_FEE - (voucherApplied() ? voucherKini().amount : 0)); }
   function qtyStep() { return D.STEP_QTY[jasaKini().unit] || 1; }
   /* Batas bawah mengikuti MIN_QTY per layanan (perawatan 4 jam, memasak 2 jam,
      paket gedung 6 bulan) sebelum jatuh ke aturan per unit. */
