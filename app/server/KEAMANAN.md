@@ -174,3 +174,30 @@ Temuan dan perbaikan:
 - Uji koneksi Integrasi bisa tertulis "tidak terjangkau" karena CORS — petunjuk ALLOWED_ORIGINS ditampilkan.
 
 Yang tetap menjadi batas (bukan bug): seluruh kendali persetujuan, PIN, dan audit berjalan di peramban atas data localStorage; siapa pun yang memegang perangkat berlogin dapat memanggil fungsi langsung dari DevTools. Penegakan sungguhan menuntut server.
+
+## 7. Data pribadi terenkripsi di server, bukan di perangkat (8 Sep 2026)
+
+Menjawab temuan audit "PII polos di localStorage". Bidang data pribadi (telepon, email, alamat, koordinat, NIK, NPWP, rekening, kontak darurat) kini dititipkan ke **data-server** dan di perangkat hanya tersisa versi tersamar.
+
+| Lapisan | Berkas | Teknologi |
+|---|---|---|
+| Kriptografi | `brankas.js` | Enkripsi amplop: kunci induk (KEK) 256-bit berversi dari `.env`, sub-kunci lewat HKDF-SHA256 (bungkus/indeks/audit); kunci data (DEK) 256-bit **acak per rekaman**; AES-256-GCM per bidang dengan IV 96-bit acak dan AAD `tabel\|id\|bidang\|versi` (ciphertext tidak bisa dipindah antar bidang/rekaman); DEK dibungkus AES-256-GCM oleh KEK; rotasi kunci = bungkus ulang DEK saja; indeks buta HMAC-SHA256 untuk mencari email/telepon tanpa dekripsi; penghapusan kriptografis (hak hapus UU PDP); log audit tanpa data pribadi dirantai HMAC; buffer kunci dinolkan setelah dipakai |
+| Sesi | `sesi.js` | Token HS256 (HMAC-SHA256, rahasia 256-bit `SESI_SECRET`) diterbitkan auth-server setelah OTP/login sosial; `sub` = pseudonim HMAC atas nomor/email (tanpa data pribadi); `sisi` klien/mitra/toko/admin (admin hanya nomor di `ADMIN_TELP`); 12 jam; middleware `wajibSesi()` untuk server lain |
+| Server | `data-server.js` | Port 4600; semua endpoint wajib Bearer sesi; rekaman terikat pemilik `sub`; admin bisa membaca semua; statistik, verifikasi audit, rotasi kunci hanya sesi admin; **tidak ada mode simulasi** — tanpa `SESI_SECRET`/`BRANKAS_KUNCI` server menolak berjalan |
+| Klien | `js/exo-brankas.js` | Kait `EXO_DB.hooks`: setelah insert/update bidang pribadi dikirim ke brankas; sebelum localStorage ditulis, baris yang terkonfirmasi tersimpan diganti versi tersamar (`0812-••••-4417`, `d•••@gmail.com`, `Jl. Kemang…`); teks polos hanya di memori tab selama sesi; saat aplikasi dibuka dengan sesi aktif, rekaman diambil dari brankas dan digabung kembali; migrasi otomatis memindahkan data lama; bila brankas tidak terjangkau, data tetap lokal dan ditandai tertunda (tidak hilang) |
+| Admin | `js/exo-admin-brankas.js` | IT → Keamanan → kartu *Brankas data pribadi*: status server, rekaman di perangkat vs di brankas, sesi admin lewat OTP, migrasi manual, verifikasi rantai audit server, rotasi kunci (PIN + audit) |
+
+Menyiapkan di server produksi:
+
+```bash
+cd app/server
+node sesi.js --buat-kunci      # → SESI_SECRET
+node brankas.js --buat-kunci   # → BRANKAS_KUNCI, BRANKAS_KUNCI_VERSI=1
+# isi keduanya + ADMIN_TELP di .env (hak akses 600); simpan kunci di brankas kata sandi tim
+npm run start:data             # bersama start:auth; di nginx teruskan /api/data/ ke 127.0.0.1:4600
+npm run test:brankas           # 24 uji kriptografi & sesi
+```
+
+Rotasi kunci induk: pindahkan kunci lama ke `BRANKAS_KUNCI_LAMA=1:<hex-lama>`, isi `BRANKAS_KUNCI` baru dan `BRANKAS_KUNCI_VERSI=2`, mulai ulang data-server, lalu konsol admin → Keamanan → *Putar kunci*. Setelah semua rekaman berversi 2, kosongkan `BRANKAS_KUNCI_LAMA`.
+
+Yang masih menjadi batas: penyimpanan rekaman terenkripsi masih berkas JSON per rekaman (`data/brankas/`, di luar repo) — antarmuka `PENYIMPANAN` siap diganti PostgreSQL; kunci induk di `.env` sebaiknya dipindah ke KMS/HSM (Cloud KMS, Vault) saat volume naik; foto identitas belum dititipkan (tabel `foto` sudah diizinkan di `BRANKAS_TABEL`).

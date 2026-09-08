@@ -11,6 +11,10 @@ var EXO_DB = (function () {
   var KEY = EXO_UTIL.kunci('db'), VERSION = 1;
   var TABLES = ['users', 'orders', 'ratings', 'complaints', 'sertifikat', 'activity'];
   var state = null, saveTimer = null, listeners = [];
+  /* Kait untuk modul lain (exo-brankas.js): sebelumSimpan(state) → objek yang
+     benar-benar ditulis ke localStorage (bidang pribadi diganti versi tersamar);
+     setelahTulis(tabel, baris) dipanggil setelah insert/update. */
+  var hooks = {};
   function blank() {
     var s = { _v: VERSION };
     TABLES.forEach(function (t) { s[t] = []; });
@@ -33,7 +37,9 @@ var EXO_DB = (function () {
   function save(immediate) {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     if (!immediate) { saveTimer = setTimeout(function () { save(true); }, 120); return; }
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    var tulis = state;
+    if (typeof hooks.sebelumSimpan === 'function') { try { tulis = hooks.sebelumSimpan(state) || state; } catch (e) { tulis = state; } }
+    try { localStorage.setItem(KEY, JSON.stringify(tulis)); }
     catch (e) { if (window.console) console.warn('EXO_DB: penyimpanan penuh atau diblokir — perubahan terakhir tidak tersimpan.'); }
   }
   function emit() { listeners.forEach(function (f) { try { f(); } catch (e) { /* abaikan */ } }); }
@@ -57,12 +63,15 @@ var EXO_DB = (function () {
     if (!row.id) row.id = EXO_UTIL.uid(table.slice(0, 3));
     if (!row.createdAt) row.createdAt = EXO_UTIL.nowISO();
     state[table] = state[table] || []; state[table].push(row);
+    if (typeof hooks.setelahTulis === 'function') { try { hooks.setelahTulis(table, row); } catch (e) { /* kait tidak boleh menggagalkan tulis */ } }
     save(); emit(); return row;
   }
   function update(table, id, patch) {
     var row = find(table, id); if (!row) return null;
     Object.assign(row, typeof patch === 'function' ? patch(row) : patch);
-    row.updatedAt = EXO_UTIL.nowISO(); save(); emit(); return row;
+    row.updatedAt = EXO_UTIL.nowISO();
+    if (typeof hooks.setelahTulis === 'function') { try { hooks.setelahTulis(table, row); } catch (e) { /* abaikan */ } }
+    save(); emit(); return row;
   }
   function remove(table, id) { init(); state[table] = (state[table] || []).filter(function (r) { return r.id !== id; }); save(); emit(); }
   function nextNo(kind) { init(); state.counters[kind] = (state.counters[kind] || 0) + 1; save(); return state.counters[kind]; }
@@ -78,7 +87,7 @@ var EXO_DB = (function () {
   function ada() { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } }
   function ukuran() { try { return (localStorage.getItem(KEY) || '').length; } catch (e) { return 0; } }
   return {
-    KEY: KEY, TABLES: TABLES,
+    KEY: KEY, TABLES: TABLES, hooks: hooks,
     init: init, ada: ada, all: all, find: find, where: where, first: first, insert: insert, update: update, remove: remove,
     nextNo: nextNo, log: log, setting: setting, save: save, onChange: onChange, exportJSON: exportJSON, importJSON: importJSON, reset: reset, ukuran: ukuran,
     get raw() { return state; }

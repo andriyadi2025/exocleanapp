@@ -38,6 +38,21 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const KEAMANAN = require('./keamanan');
+const SESI = require('./sesi');
+/* Sesi bertanda tangan diterbitkan setelah OTP/login sosial berhasil (sesi.js).
+   Tanpa SESI_SECRET server tetap jalan untuk OTP, tetapi tidak menerbitkan sesi —
+   server data/brankas menolak semua permintaan sampai rahasia diisi. */
+let RAHASIA_SESI = null;
+try { RAHASIA_SESI = SESI.rahasiaDari(process.env); } catch (e) { console.warn('[auth] ' + e.message + ' — sesi tidak diterbitkan'); }
+const ADMIN_TELP = new Set(String(process.env.ADMIN_TELP || '').split(',').map((t) => t.trim()).filter(Boolean).map((t) => bakuTelp(t)));
+const SISI_SAH = ['klien', 'mitra', 'toko'];
+function sesiUntuk(jenis, identitas, sisiDiminta) {
+  if (!RAHASIA_SESI || !identitas) return {};
+  let sisi = SISI_SAH.indexOf(sisiDiminta) >= 0 ? sisiDiminta : 'klien';
+  if (sisiDiminta === 'admin') { if (jenis === 'telp' && ADMIN_TELP.has(identitas)) sisi = 'admin'; else return { sesiDitolak: 'nomor ini bukan admin terdaftar (ADMIN_TELP)' }; }
+  const sub = SESI.subDari(RAHASIA_SESI, jenis, identitas);
+  return { sesi: SESI.terbitkan(RAHASIA_SESI, { sub, sisi }, { detik: Number(process.env.SESI_DETIK || 12 * 3600) }), sub, sisi };
+}
 const app = express();
 const PORT = process.env.AUTH_PORT || 4100;
 
@@ -328,7 +343,7 @@ app.get('/api/auth/health', (req, res) => {
 app.post('/api/auth/google', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiGoogle(req.body && req.body.token);
-    res.json(profil);
+    res.json(Object.assign({}, profil, sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi)));
   } catch (e) {
     console.error('[google]', e.message);
     res.status(401).json({ error: e.message });
@@ -338,7 +353,7 @@ app.post('/api/auth/google', lajuSosial, async (req, res) => {
 app.post('/api/auth/facebook', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiFacebook(req.body && req.body.token);
-    res.json(profil);
+    res.json(Object.assign({}, profil, sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi)));
   } catch (e) {
     console.error('[facebook]', e.message);
     res.status(401).json({ error: e.message });
@@ -430,7 +445,7 @@ app.post('/api/auth/otp/periksa', lajuPeriksaIp, (req, res) => {
   const uji = turunkanKode(kode, rec.garam);
   if (samaAman(uji.hash, rec.hash)) {
     otpStore.delete(kunci);                    /* sekali pakai */
-    return res.json({ ok: true });
+    return res.json(Object.assign({ ok: true }, sesiUntuk(jenis === 'email' ? 'email' : 'telp', tujuan, req.body && req.body.sisi)));
   }
 
   /* Angka dibaca dulu, baru disimpan — supaya hitungan sisa tidak meleset. */
@@ -458,6 +473,7 @@ TLS.dengar(jadi, PORT, ALAMAT, () => {
     ? '  (kode hanya tercetak di konsol — belum benar-benar terkirim)' : ''));
   console.log('  Email    : ' + CFG.emailProvider + (CFG.emailProvider === 'log'
     ? '  (kode hanya tercetak di konsol — belum benar-benar terkirim)' : ''));
+  console.log('  Sesi     : ' + (RAHASIA_SESI ? 'diterbitkan (HS256, ' + Number(process.env.SESI_DETIK || 43200) / 3600 + ' jam)' + (ADMIN_TELP.size ? ' · admin: ' + ADMIN_TELP.size + ' nomor' : ' · ADMIN_TELP kosong') : 'TIDAK — SESI_SECRET belum diisi'));
   console.log('  Asal yang diizinkan: ' + ALLOWED.join(', '));
 });
 

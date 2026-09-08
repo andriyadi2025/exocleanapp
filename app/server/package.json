@@ -19,6 +19,8 @@
     "dev:kirim": "node --watch kirim-server.js",
     "start:dwi": "node dwi-server.js",
     "start:cs": "node cs-server.js",
+    "start:data": "node data-server.js",
+    "test:brankas": "node alat/uji-brankas.js",
     "dev:dwi": "node --watch dwi-server.js"
   },
   "dependencies": {

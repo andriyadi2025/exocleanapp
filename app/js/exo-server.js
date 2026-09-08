@@ -21,7 +21,7 @@
 var EXO_SERVER = (function () {
   'use strict';
 
-  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400', cs:'http://localhost:4500' };
+  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400', cs:'http://localhost:4500', data:'http://localhost:4600' };
   /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
      localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
      localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
@@ -51,6 +51,8 @@ var EXO_SERVER = (function () {
 
   function kirim(nama, jalur, body, token) {
     var kepala = { 'Content-Type': 'application/json' }; if (token) kepala['X-Exo-Token'] = token;
+    /* Sesi bertanda tangan (setelah OTP) dibawa ke semua server sebagai Bearer; data-server mewajibkannya. */
+    try { var ss = window.EXO_BRANKAS && EXO_BRANKAS.sesi(); if (ss) kepala.Authorization = 'Bearer ' + ss.token; } catch (e) { /* tanpa sesi */ }
     return fetch(alamat()[nama] + jalur, {
       method:'POST', headers:kepala, body:JSON.stringify(body || {})
     }).then(function (r) {
@@ -89,13 +91,24 @@ var EXO_SERVER = (function () {
   function lepas(orderId, token) { return kirim('pay', '/api/pay/cancel', { gateway:'midtrans', orderId:orderId }, token); }
 
   /* -------------------------------------------------------------- OTP */
+  /* Brankas data pribadi (data-server) */
+  function dataSehat() { var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, 2500) : null; return fetch(alamat().data + '/api/data/health', { signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (timer) clearTimeout(timer); sehat.data = { ok:!!(r.ok && j.ok), at:Date.now() }; return { ok:!!(r.ok && j.ok), data:j }; }); }).catch(function () { if (timer) clearTimeout(timer); sehat.data = { ok:false, at:Date.now() }; return { ok:false, offline:true }; }); }
+  function dataSimpan(tabel, id, data, indeks) { return kirim('data', '/api/data/simpan', { tabel:tabel, id:id, data:data, indeks:indeks || [] }); }
+  function dataAmbil(tabel, id) { return kirim('data', '/api/data/ambil', { tabel:tabel, id:id }); }
+  function dataAmbilSemua(tabel) { return kirim('data', '/api/data/ambil-semua', { tabel:tabel }); }
+  function dataCari(tabel, bidang, nilai) { return kirim('data', '/api/data/cari', { tabel:tabel, bidang:bidang, nilai:nilai }); }
+  function dataHapus(tabel, id) { return kirim('data', '/api/data/hapus', { tabel:tabel, id:id }); }
+  function dataStatistik() { return kirim('data', '/api/data/statistik', {}); }
+  function dataVerifikasiAudit() { return kirim('data', '/api/data/verifikasi-audit', {}); }
+  function dataPutarKunci(tabel) { return kirim('data', '/api/data/putar-kunci', tabel ? { tabel:tabel } : {}); }
   function otpKirim(telp, captcha) {
     return cekSehat('auth', '/api/auth/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
       return kirim('auth', '/api/auth/otp/kirim', { jenis:'telp', tujuan:telp, captcha:captcha || undefined });
     });
   }
-  function otpPeriksa(telp, kode) { return kirim('auth', '/api/auth/otp/periksa', { jenis:'telp', tujuan:telp, kode:kode }); }
+  /* sisi (klien/mitra/toko/admin) menentukan hak sesi yang diterbitkan auth-server */
+  function otpPeriksa(telp, kode, sisi) { return kirim('auth', '/api/auth/otp/periksa', { jenis:'telp', tujuan:telp, kode:kode, sisi:sisi || 'klien' }); }
 
   /* ---------------------------------------------------- login sosial
      Token dari Google Identity Services / Facebook SDK diverifikasi di
@@ -198,6 +211,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();
