@@ -21,7 +21,7 @@
 var EXO_SERVER = (function () {
   'use strict';
 
-  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400' };
+  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400', cs:'http://localhost:4500' };
   /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
      localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
      localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
@@ -169,6 +169,10 @@ var EXO_SERVER = (function () {
     return fetch(alamat().dwi + '/api/dwi/health', { signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.ok ? r.json() : { ok:false, siap:false }; }).catch(function () { return { ok:false, siap:false, offline:true }; })
       .then(function (j) { if (timer) clearTimeout(timer); infoDwi = { at:Date.now(), j:j }; sehat.dwi = { ok:!!j.ok, at:Date.now() }; return j; });
   }
+  /* Customer Care AI: kesehatan dicek sekali (cache 60 dtk); tanya lewat POST /tanya. */
+  var csInfoCache = null;
+  function csSehat() { if (!csInfoCache || Date.now() - csInfoCache.at > 60000) { csInfoCache = { at:Date.now(), ok:false }; ambil('cs', '/health').then(function (r) { csInfoCache = { at:Date.now(), ok:!!(r.ok && r.data && r.data.ok), mode:r.data && r.data.mode }; }); } return !!csInfoCache.ok; }
+  function csTanya(body) { return kirimStatus('cs', '/tanya', body); }
   function kirimStatus(nama, jalur, body) {
     return fetch(alamat()[nama] + jalur, { method:'POST', headers:{ 'Content-Type': 'application/json' }, body:JSON.stringify(body || {}) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok:r.ok, status:r.status, data:j, error:r.ok ? '' : (j.error || ('HTTP ' + r.status)) }; }); })
@@ -194,6 +198,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

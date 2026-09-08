@@ -1,0 +1,59 @@
+/* ==========================================================================
+   exo-admin-cs.js — konsol admin: Customer Care AI
+   --------------------------------------------------------------------------
+   KPI (jawaban dinilai, tingkat 👍, tiket terbuka, pertanyaan belum
+   terjawab) · tiket eskalasi (baru → ditangani → selesai, PIN + audit) ·
+   pertanyaan tak terjawab (tambahkan ke KB) · editor basis pengetahuan per
+   sisi (tambah/ubah/hapus; PIN + audit) · status cs-server (AI cloud).
+   ========================================================================== */
+(function (A) {
+  'use strict';
+  var S = A.S, VIEW = A.VIEW, AKSI = A.AKSI, esc = A.esc, aksi = A.aksi, pill = A.pill, kpi = A.kpi, tabel = A.tabel;
+  var C = function () { return window.EXO_CS; };
+  var SISI = [['klien', 'Pelanggan'], ['mitra', 'Mitra cleaning'], ['toko', 'Mitra toko']];
+  S.csTab = S.csTab || 'tiket'; S.csSisi = S.csSisi || 'klien';
+  function siapa() { var u = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna(); return u ? { id:u.id, nama:u.nama } : null; }
+  function denganPin(alasan, kerja) { if (!siapa()) { A.sekilas('Masuk sebagai admin dulu.', 'err'); return; } EXO_ADMIN_AUTH.mintaPin(alasan).then(function (ok) { if (!ok) { A.sekilas('Dibatalkan — PIN tidak disetujui.', 'err'); A.gambar(); return; } try { kerja(siapa()); } catch (e) { A.sekilas('Gagal: ' + (e.message || e), 'err'); } A.gambar(); }); }
+  function waktu(iso) { return esc(String(iso || '').slice(0, 16).replace('T', ' ')); }
+  function form() { if (!S.csForm) S.csForm = { id:'', sisi:S.csSisi, tanya:'', kata:'', jawab:'', aksiLabel:'', aksiLayar:'' }; return S.csForm; }
+  VIEW.cs = function () {
+    if (!C()) return '<div class="card elev-sm">Modul Customer Care (js/exo-cs.js) belum dimuat.</div>';
+    var st = C().statistik(), sehat = window.EXO_SERVER && EXO_SERVER.csSehat ? EXO_SERVER.csSehat() : false;
+    var h = kpi([{label:'Tiket eskalasi terbuka', value:String(st.terbuka), note:st.tiket + ' total · dibalas manusia', good:!st.terbuka},{label:'Pertanyaan belum terjawab', value:String(st.belum), note:'tambahkan ke basis pengetahuan', good:!st.belum},{label:'Jawaban dinilai', value:String(st.nilai), note:(st.nilai ? Math.round(st.baik / st.nilai * 100) : 0) + '% 👍'},{label:'AI cloud (cs-server)', value:sehat ? 'Aktif' : 'Lokal', note:sehat ? 'Claude menjawab dilandasi KB & data' : 'mesin kata kunci lokal · jalankan npm run start:cs', good:!!sehat}], true, 4);
+    h += '<div class="spacer-14"></div><div class="flex gap-8 wrap">' + [['tiket', 'Tiket eskalasi'], ['belum', 'Belum terjawab'], ['kb', 'Basis pengetahuan'], ['uji', 'Uji jawaban']].map(function (t) { return pill(S.csTab === t[0], t[1], 'csTab', t[0], true); }).join('') + '</div><div class="spacer-14"></div>';
+    return h + ({ tiket:tabTiket, belum:tabBelum, kb:tabKB, uji:tabUji }[S.csTab] || tabTiket)();
+  };
+  AKSI.csTab = function (v) { S.csTab = v; };
+  function labelSisi(s) { return (SISI.filter(function (x) { return x[0] === s; })[0] || [s, s])[1]; }
+  function tabTiket() {
+    var t = C().tiket();
+    return '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Tiket eskalasi ke manusia</div><div class="t-115 o-6">Dibuat saat pengguna menekan "Hubungkan ke tim" atau AI tidak yakin. Balas lewat Komunikasi/chat, lalu tandai ditangani dan selesai (PIN + audit).</div></div></div>' + tabel(['Waktu', 'No', 'Sisi', 'Pengguna', 'Percakapan terakhir', 'Status', ''], t.length ? t.slice(0, 30).map(function (x) { var terakhir = (x.riwayat || []).filter(function (p) { return p.dari === 'saya'; }).slice(-2).map(function (p) { return esc(p.teks); }).join('<br>'); return [waktu(x.at), esc(x.no), esc(labelSisi(x.sisi)), '<b>' + esc(x.pengguna) + '</b>', '<span class="t-12">' + (terakhir || '—') + '</span>', '<span class="tag" style="font-size:10.5px;background:' + (x.status === 'baru' ? '#fde2e7' : x.status === 'ditangani' ? '#fff4d6' : 'var(--color-accent-2-100)') + '">' + esc(x.status) + '</span>', x.status === 'baru' ? '<button class="btn btn-primary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('csTiket', x.id + ':ditangani') + '>Tangani · PIN</button>' : x.status === 'ditangani' ? '<button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('csTiket', x.id + ':selesai') + '>Selesai · PIN</button>' : '<span class="t-11 o-6">' + esc(x.oleh || '') + '</span>']; }) : [['<span class="o-6">Belum ada tiket.</span>', '', '', '', '', '', '']]) + '</div>';
+  }
+  function tabBelum() {
+    var l = C().tanyaLog().filter(function (x) { return x.status === 'belum'; });
+    return '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Pertanyaan yang belum terjawab AI</div><div class="t-115 o-6">Klik "Jadikan entri KB" untuk mengisi formulir jawaban di tab Basis pengetahuan.</div></div></div>' + tabel(['Waktu', 'Sisi', 'Pertanyaan', ''], l.length ? l.slice(0, 40).map(function (x) { return [waktu(x.at), esc(labelSisi(x.sisi)), '<b>' + esc(x.tanya) + '</b>', '<div class="flex gap-4"><button class="btn btn-primary" style="height:28px;padding:0 10px;font-size:11.5px"' + aksi('csJadikanKB', x.id) + '>Jadikan entri KB</button><button class="pill pill-sm"' + aksi('csLogSelesai', x.id) + '>Abaikan</button></div>']; }) : [['<span class="o-6">Semua pertanyaan terjawab.</span>', '', '', '']]) + '</div>';
+  }
+  function tabKB() {
+    var f = form(), daftar = C().kb(S.csSisi), dihapus = ((window.EXO_DB && EXO_DB.setting('csKB')) || {}).hapus || [];
+    var h = '<div style="display:grid;grid-template-columns:minmax(0,3fr) minmax(320px,2fr);gap:16px"><div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Basis pengetahuan · ' + esc(labelSisi(S.csSisi)) + ' (' + daftar.length + ')</div><div class="t-115 o-6">Kata kunci menentukan pencocokan; jawaban ditampilkan apa adanya dan menjadi landasan AI cloud.</div></div>' + SISI.map(function (s) { return pill(S.csSisi === s[0], s[1], 'csSisi', s[0], true); }).join('') + '</div>' + tabel(['Pertanyaan', 'Kata kunci', 'Jawaban', ''], daftar.map(function (e) { return ['<b>' + esc(e.tanya) + '</b><div class="t-11 o-6">' + esc(e.id) + (e.aksi && e.aksi.length ? ' · tombol: ' + esc(e.aksi.map(function (a) { return a[0]; }).join(', ')) : '') + '</div>', '<span class="t-11">' + esc((e.kata || []).join(', ')) + '</span>', '<span class="t-12">' + esc(String(e.jawab).slice(0, 140)) + (e.jawab.length > 140 ? '…' : '') + '</span>', '<div class="flex gap-4"><button class="pill pill-sm"' + aksi('csKBUbah', e.id) + '>✎</button><button class="pill pill-sm"' + aksi('csKBHapus', e.id) + '>✕</button></div>']; })) + (dihapus.length ? '<div class="t-11 o-6" style="padding:8px 12px">Entri bawaan dihapus: ' + dihapus.map(function (id) { return esc(id) + ' <button class="pill pill-sm"' + aksi('csKBPulihkan', id) + '>pulihkan</button>'; }).join(' · ') + '</div>' : '') + '</div>';
+    h += '<div class="card elev-sm gap-10"><div class="card-title">' + (f.id ? 'Ubah entri ' + esc(f.id) : 'Entri baru · ' + esc(labelSisi(S.csSisi))) + '</div><div class="field"><label>Pertanyaan (ditampilkan sebagai chip)</label><input class="input" value="' + esc(f.tanya) + '" data-ubah="csIsi" data-arg="tanya"></div><div class="field"><label>Kata kunci (pisahkan koma)</label><input class="input" value="' + esc(f.kata) + '" data-ubah="csIsi" data-arg="kata" placeholder="mis. refund, uang kembali, batal"></div><div class="field"><label>Jawaban</label><textarea class="input" style="min-height:110px" data-ubah="csIsi" data-arg="jawab">' + esc(f.jawab) + '</textarea></div><div class="grid g2" style="gap:8px"><div class="field"><label>Label tombol (opsional)</label><input class="input" value="' + esc(f.aksiLabel) + '" data-ubah="csIsi" data-arg="aksiLabel" placeholder="Buka Transaksi"></div><div class="field"><label>Layar tujuan</label><input class="input" value="' + esc(f.aksiLayar) + '" data-ubah="csIsi" data-arg="aksiLayar" placeholder="orders · tpesanan · pjobs"></div></div><div class="flex gap-8"><button class="btn btn-secondary" style="height:36px"' + aksi('csKBBatal') + '>Batal</button><button class="btn btn-primary" style="height:36px"' + aksi('csKBSimpan') + '>Simpan · PIN</button></div></div></div>';
+    return h;
+  }
+  function tabUji() {
+    var u = S.csUji || (S.csUji = { sisi:'klien', tanya:'', hasil:null });
+    return '<div class="card elev-sm gap-10" style="max-width:720px"><div class="card-title">Uji jawaban asisten</div><div class="flex gap-6 wrap">' + SISI.map(function (s) { return pill(u.sisi === s[0], s[1], 'csUjiSisi', s[0], true); }).join('') + '</div><div class="flex gap-8"><input class="input" style="flex:1" value="' + esc(u.tanya) + '" data-ubah="csUjiTeks" placeholder="Ketik pertanyaan seperti pengguna…"><button class="btn btn-primary" style="height:38px"' + aksi('csUjiKirim') + '>Uji</button></div>' + (u.hasil ? '<div class="card" style="background:var(--color-bg);white-space:pre-line">' + esc(u.hasil.teks) + '</div><div class="t-11 o-6">sumber: ' + esc(u.hasil.sumber) + (u.hasil.id ? ' · entri ' + esc(u.hasil.id) : '') + (u.hasil.tidakTerjawab ? ' · TIDAK TERJAWAB (tercatat)' : '') + ' · saran: ' + esc((u.hasil.saran || []).join(' | ')) + '</div>' : '') + '</div>';
+  }
+  AKSI.csSisi = function (v) { S.csSisi = v; S.csForm = null; };
+  AKSI.csIsi = function (k, v) { form()[k] = String(v || ''); };
+  AKSI.csKBBatal = function () { S.csForm = null; };
+  AKSI.csKBUbah = function (id) { var e = C().kb(S.csSisi).filter(function (x) { return x.id === id; })[0]; if (!e) return; S.csForm = { id:e.id, sisi:S.csSisi, tanya:e.tanya, kata:(e.kata || []).join(', '), jawab:e.jawab, aksiLabel:e.aksi && e.aksi[0] ? e.aksi[0][0] : '', aksiLayar:e.aksi && e.aksi[0] ? e.aksi[0][1] : '' }; };
+  AKSI.csKBSimpan = function () { var f = form(); if (!f.tanya.trim() || !f.jawab.trim()) { A.sekilas('Pertanyaan dan jawaban wajib diisi.', 'err'); return; } denganPin((f.id ? 'Ubah' : 'Tambah') + ' entri KB Customer Care', function (oleh) { var e = C().simpanKB(S.csSisi, { id:f.id, tanya:f.tanya, kata:f.kata || f.tanya, jawab:f.jawab, aksi:f.aksiLabel && f.aksiLayar ? [[f.aksiLabel, f.aksiLayar]] : [] }); EXO_PERSETUJUAN.audit(oleh, (f.id ? 'Ubah' : 'Tambah') + ' KB CS ' + labelSisi(S.csSisi), '', f.tanya); S.csForm = null; A.sekilas('Entri KB tersimpan (' + e.length + ' entri tambahan).'); }); };
+  AKSI.csKBHapus = function (id) { denganPin('Hapus entri KB ' + id, function (oleh) { C().hapusKB(S.csSisi, id); EXO_PERSETUJUAN.audit(oleh, 'Hapus KB CS ' + id, '', labelSisi(S.csSisi)); A.sekilas('Entri dihapus.'); }); };
+  AKSI.csKBPulihkan = function (id) { C().pulihkanKB(id); A.sekilas('Entri bawaan dipulihkan.'); };
+  AKSI.csJadikanKB = function (id) { var x = window.EXO_DB.find('csTanyaLog', id); if (!x) return; S.csSisi = x.sisi; S.csForm = { id:'', sisi:x.sisi, tanya:x.tanya, kata:x.tanya, jawab:'', aksiLabel:'', aksiLayar:'' }; window.EXO_DB.update('csTanyaLog', id, { status:'diproses' }); S.csTab = 'kb'; };
+  AKSI.csLogSelesai = function (id) { window.EXO_DB.update('csTanyaLog', id, { status:'diabaikan' }); };
+  AKSI.csTiket = function (arg) { var p = arg.split(':'), t = window.EXO_DB.find('tiketCs', p[0]); denganPin('Tandai tiket ' + t.no + ' ' + p[1], function (oleh) { C().ubahTiket(p[0], { status:p[1], oleh:oleh.nama }); EXO_PERSETUJUAN.audit(oleh, 'Tiket CS ' + t.no + ' → ' + p[1], p[0], t.pengguna); A.sekilas('Tiket ' + t.no + ' ' + p[1] + '.'); }); };
+  AKSI.csUjiSisi = function (v) { S.csUji = Object.assign(S.csUji || {}, { sisi:v, hasil:null }); };
+  AKSI.csUjiTeks = function (a, v) { (S.csUji || (S.csUji = {})).tanya = String(v || ''); };
+  AKSI.csUjiKirim = function () { var u = S.csUji; if (!u || !u.tanya.trim()) return; u.hasil = C().jawab(u.sisi, u.tanya, {}); };
+})(ADMIN);

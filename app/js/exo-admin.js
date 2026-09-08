@@ -64,7 +64,7 @@ var ADMIN = (function () {
      konsol perusahaan untuk IT). NAV tetap daftar datar untuk lencana; KELOMPOK
      menentukan judul bagian di bilah samping. */
   var KELOMPOK = [
-    ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['moderasi','Moderasi',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
+    ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['moderasi','Moderasi',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['cs','Customer Care AI',''], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran & sertifikasi (LMS)',''], ['tas','Isi tas mitra',''], ['keselamatan','Keselamatan mitra',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
     ['Mitra Toko', 'pasar', [['pasar','Ringkasan marketplace',''], ['pasarToko','Verifikasi & mitra toko',''], ['pasarProduk','Produk & moderasi',''], ['pasarPesanan','Pesanan toko',''], ['pasarKomisi','Komisi & pencairan',''], ['pasarKomplain','Komplain & retur',''], ['pasarPromo','Promo & flash sale',''], ['iklan','Iklan toko (Ads)',''], ['biaya','Biaya & asuransi','']]],
     ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata',''], ['perjalanan','Perjalanan — Darmawisata','']]],
@@ -120,6 +120,7 @@ var ADMIN = (function () {
     claims:['Claims & refunds','12 open · 0 past deadline','New claim'],
     promos:['Promos & vouchers','5 codes · 2 live','Create code'],
     rewards:['Poin & cashback','Aturan poin, tier dan cashback yang berlaku di aplikasi pelanggan','Simulasi'],
+    cs:['Customer Care AI','Asisten tanya-jawab untuk pelanggan, mitra cleaning & mitra toko · tiket eskalasi ke manusia · basis pengetahuan per sisi (PIN) · AI cloud lewat cs-server','PIN'],
     moderasi:['Moderasi','Usulan layanan/tarif/area dari mitra · antrean produk & toko · ulasan produk · chat toko','PIN'],
     konten:['Halaman & konten','Sunting beranda klien (banner, menu ikon, bagian, teks), Seller Center, beranda mitra, dan web depan · pratinjau · terbit lewat Persetujuan + PIN · riwayat versi','Terbitkan'],
     brand:['Appearance','Logo, colour and app name across every surface','Preview apps'],
