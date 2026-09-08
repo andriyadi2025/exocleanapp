@@ -35,6 +35,7 @@
     if (T()) T().pesananPembeli(pembeli().nama, pembeli().id).forEach(function (o) {
       var st = o.status === 'selesai' ? 'berhasil' : o.status === 'dibatalkan' ? 'gagal' : 'berjalan', p0 = o.items && o.items[0], pr = p0 ? T().produk(p0.produkId) : null, tk = T().toko(o.tokoId);
       var ak = [];
+      if (window.EXO_INVOICE && EXO_INVOICE.pastikanToko(o, tk)) ak.push(['🧾 Invoice', 'invoiceBuka', o.invoiceNo]);
       if (o.status === 'menunggu-bayar') ak.push(['Bayar', 'ke', 'pesananToko', true]); else if (o.status === 'dikirim') ak.push(['Lacak', 'ke', 'pesananToko', true]); else if (o.status === 'selesai') ak.push(['Beli lagi', 'tokoProduk', p0 ? p0.produkId : '', true], ['Ulas', 'ke', 'pesananToko']); else ak.push(['Lihat', 'ke', 'pesananToko', true]);
       out.push({ id:'toko-' + o.id, jenis:'toko', tgl:o.at, judul:p0 ? p0.nama + (o.items.length > 1 ? ' +' + (o.items.length - 1) + ' produk lainnya' : '') : 'Pesanan toko', sub:(tk ? tk.nama : '') + (p0 && p0.varian ? ' · ' + p0.varian + ' × ' + p0.qty : ''), thumb:'<span class="av av-plain" style="--s:40px;font-size:22px">' + (pr && X.fotoProdukUtama && X.fotoProdukUtama(pr) ? '<img src="' + X.fotoProdukUtama(pr) + '" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:12px">' : esc(p0 ? p0.ikon || '📦' : '📦')) + '</span>', total:o.total, status:st, statusLabel:T().labelStatus(o.status), no:o.no, aksi:ak });
     });
@@ -68,6 +69,7 @@
     h += daftar.map(kartuTrx).join('');
     return h + '<div class="spacer-26"></div></div></div>';
   };
+  A.invoiceBuka = function (no) { try { window.open(EXO_INVOICE.tautan(no), '_blank', 'noopener'); } catch (e) { /* popup diblokir */ } };
   A.trxTab = function (v) { K.trxTab = v; }; A.trxKat = function (v) { K.trxKat = v; }; A.trxRentang = function (v) { K.trxRentang = Number(v); }; A.trxCariKosong = function () { K.trxCari = ''; };
 
   /* ---------------------------------------------------- Akun */

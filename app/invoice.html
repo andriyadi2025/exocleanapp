@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- invoice.html — struk / invoice "ORDER RECEIPT" untuk pesanan toko dan jasa.
+     Tata letak mengikuti contoh struk yang diberikan; nomor invoice 24
+     karakter huruf+angka (EXO_INVOICE). Dibuka dari aplikasi pelanggan,
+     Seller Center, dan konsol admin: invoice.html?no=<nomor>. Tombol Cetak
+     memakai dialog cetak peramban (simpan sebagai PDF). -->
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'">
+<meta name="referrer" content="no-referrer"><title>Invoice — EXOCLEAN</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<style>body{margin:0;background:#eef2f0;font-family:"Nunito",system-ui,sans-serif}.bar{max-width:760px;margin:0 auto;padding:12px 32px;display:flex;gap:8px;align-items:center;font-size:13px;color:#446}.bar button{margin-left:auto;background:#009183;color:#fff;border:0;border-radius:999px;padding:10px 18px;font-weight:800;cursor:pointer}.kosong{max-width:760px;margin:40px auto;padding:32px;background:#fff;border-radius:16px;text-align:center;color:#555}</style>
+<style id="gaya-inv"></style>
+</head>
+<body>
+<div class="bar no-print"><span id="ket">Invoice EXOCLEAN</span><button id="cetak" type="button">Cetak / Simpan PDF</button></div>
+<div id="isi"></div>
+<script src="js/exo-util.js"></script><script src="js/exo-db.js"></script><script src="js/exo-invoice.js"></script>
+<script src="js/exo-invoice-halaman.js"></script>
+</body></html>
