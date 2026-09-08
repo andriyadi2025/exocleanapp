@@ -726,11 +726,11 @@ var EXO_DATA = (function () {
   ];
   /* Navigasi bawah pelanggan mengikuti aplikasi pembeli Tokopedia: Beranda · Toko · Transaksi · Wishlist · Akun; dompet dibuka dari strip beranda dan Akun. */
   var TABS_PARTNER = [
-    { id:'pjobs',   label:'Job',         d:'M3 6h18M3 12h18M3 18h12' },
+    { id:'pjobs',   label:'Beranda',     d:'m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' },
+    { id:'pjadwal', label:'Jadwal',      d:'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4' },
     { id:'pjob',    label:'Berjalan',    d:'m5 13 4 4L19 7' },
-    { id:'pearn',   label:'Penghasilan', d:'M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
-    { id:'pbelajar', label:'Akademi',    d:'M2 7l10-4 10 4-10 4L2 7zm4 3v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5' },
-    { id:'profile', label:'Profil',      d:'M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8' }
+    { id:'pearn',   label:'Pendapatan',  d:'M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+    { id:'profile', label:'Akun',        d:'M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8' }
   ];
   /* Seller Center mitra toko (sisi 'toko') */
   var TABS_TOKO = [
@@ -741,8 +741,8 @@ var EXO_DATA = (function () {
     { id:'tkeuangan', label:'Keuangan', d:'M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z' }
   ];
   var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tiklan','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar'];
-  var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
-  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pkit','palat','ptas','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
+  var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjadwal','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
+  var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pkit','palat','ptas','pjadwal','pinsentif','pabsen','priwayat','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];
   var JUMP_PPOB = [['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['perjalananPesanan','Permintaan perjalanan']];
