@@ -66,14 +66,14 @@ var ADMIN = (function () {
   var KELOMPOK = [
     ['Operasional', 'ops', [['dash','Dashboard',''], ['live','Live ops','24'], ['orders','Orders','128'], ['services','Services & pricing',''], ['moderasi','Moderasi',''], ['sop','SOP & QC','8'], ['inventaris','Inventaris & perlengkapan',''], ['crm','CRM','3'], ['desk','Complaint desk','9'], ['promos','Promos & vouchers',''], ['rewards','Poin & cashback','']]],
     ['Mitra', 'mitra', [['cleaners','Cleaners & rekrutmen','7'], ['absensi','Absensi & timesheet',''], ['jadwal','Jadwal & cuti',''], ['kinerja','Kinerja & sanksi',''], ['lms','Pembelajaran & sertifikasi (LMS)',''], ['tas','Isi tas mitra',''], ['payoutmitra','Payout mitra',''], ['komunikasi','Komunikasi tim','']]],
-    ['Marketplace', 'pasar', [['pasar','Marketplace perlengkapan',''], ['biaya','Biaya & asuransi',''], ['iklan','Iklan toko (Ads)','']]],
+    ['Mitra Toko', 'pasar', [['pasar','Ringkasan marketplace',''], ['pasarToko','Verifikasi & mitra toko',''], ['pasarProduk','Produk & moderasi',''], ['pasarPesanan','Pesanan toko',''], ['pasarKomisi','Komisi & pencairan',''], ['pasarKomplain','Komplain & retur',''], ['pasarPromo','Promo & flash sale',''], ['iklan','Iklan toko (Ads)',''], ['biaya','Biaya & asuransi','']]],
     ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata',''], ['perjalanan','Perjalanan — Darmawisata','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
     ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance',''], ['konten','Halaman & konten','']]]
   ];
   var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
-  var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', pasar:'Marketplace', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
+  var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', pasar:'Mitra Toko', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
   var UNIT_URUT = ['ops', 'mitra', 'pasar', 'keuangan', 'hrd', 'it'];
   /* ------------------------------------------------------------ HAK AKSES MENU
      Menu yang tampil mengikuti PERAN (staf · supervisor · superadmin) dan UNIT
@@ -137,7 +137,13 @@ var ADMIN = (function () {
     keamanan:['Keamanan','Konteks aman, login & PIN gagal, passkey, kontrol yang aktif · peristiwa autentikasi','Uji'],
     integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
     data:['Cadangan & data','Ekspor/impor basis data lokal · reset · ukuran penyimpanan','Ekspor'],
-    pasar:['Marketplace perlengkapan','Mitra toko · produk & moderasi · pesanan · komisi per tingkat toko & pencairan · komplain · flash sale — pola Tokopedia','Verifikasi'],
+    pasar:['Ringkasan marketplace','GMV, komisi, toko aktif, antrean moderasi & pencairan — pola Tokopedia','Verifikasi'],
+    pasarToko:['Verifikasi & mitra toko','Verifikasi toko baru (PIN + Persetujuan), tingkat Reguler/Power/Official, penalti, penangguhan','PIN'],
+    pasarProduk:['Produk & moderasi','Antrean produk baru & perubahan, tolak dengan alasan, sembunyikan ulasan','PIN'],
+    pasarPesanan:['Pesanan toko','Semua pesanan marketplace · status · resi Biteship · dana ditahan','Lihat'],
+    pasarKomisi:['Komisi & pencairan','Biaya layanan terkumpul (4120) · saldo toko · permintaan pencairan (Persetujuan)','PIN'],
+    pasarKomplain:['Komplain & retur','Komplain pembeli, retur & refund ke dompet','PIN'],
+    pasarPromo:['Promo & flash sale','Slot flash sale mingguan, kupon toko aktif, produk unggulan','PIN'],
     iklan:['Iklan toko (Ads)','Iklan produk & iklan toko mitra ala TopAds · bayar per klik · moderasi · slot cari/beranda/produk · pendapatan iklan 4150','PIN'],
     biaya:['Biaya & asuransi','Biaya jasa aplikasi & biaya layanan pembeli · asuransi pengiriman & proteksi produk · biaya layanan penjual per tingkat · Gratis Ongkir · biaya aplikasi jasa — pola Tokopedia','PIN + Persetujuan'],
     kurir:['Kurir — Biteship','Status server kurir · pesanan kirim & resi · uji tarif · panduan sambung; dipakai marketplace perlengkapan','Segarkan'],

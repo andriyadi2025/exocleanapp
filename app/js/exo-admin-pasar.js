@@ -30,6 +30,9 @@
     return h + ({ ringkasan:tabRingkasan, toko:tabToko, produk:tabProduk, pesanan:tabPesanan, komisi:tabKomisi, komplain:tabKomplain, promo:tabPromo }[S.pasarTab] || tabRingkasan)();
   };
   AKSI.pasarTab = function (v) { S.pasarTab = v; };
+  /* Menu terpisah di grup Mitra Toko — masing-masing membuka tab marketplace yang sesuai (bilah tab tetap tampil untuk pindah cepat). */
+  [['pasarToko', 'toko'], ['pasarProduk', 'produk'], ['pasarPesanan', 'pesanan'], ['pasarKomisi', 'komisi'], ['pasarKomplain', 'komplain'], ['pasarPromo', 'promo']].forEach(function (m) { VIEW[m[0]] = function () { S.pasarTab = m[1]; return VIEW.pasar(); }; });
+  var pasarAsli = VIEW.pasar; VIEW.pasar = function () { if (S.view === 'pasar' && S.pasarViewTerakhir !== 'pasar') S.pasarTab = 'ringkasan'; S.pasarViewTerakhir = S.view; return pasarAsli(); };
 
   function tabRingkasan() {
     var r = T().ringkasanAdmin();
