@@ -71,7 +71,7 @@ var EXO_IKLAN = (function () {
     segarkanHari(ik); if (ik.hariIni.biaya + ik.bid > ik.anggaranHarian) return false;
     if (saldoIklan(ik.tokoId) < ik.bid) return false;
     if (ik.jenis === 'produk') { var p = T().produk(ik.produkId); if (!p || p.status !== 'aktif') return false; }
-    var tk = T().toko(ik.tokoId); return !!tk && tk.status === 'aktif';
+    var tk = T().toko(ik.tokoId); return !!tk && tk.status === 'aktif' && !tk.tutupSementara;
   }
   function cocok(ik, q) {
     var p = ik.jenis === 'produk' ? T().produk(ik.produkId) : null, cari = String(q.cari || '').trim().toLowerCase();

@@ -97,7 +97,7 @@ var EXO_TOKO = (function () {
   function toko(id) { var d = db(); return d ? d.find('toko', id) : null; }
   function produkToko(tokoId, semuaStatus) { var d = db(); return d ? d.all('produk').filter(function (p) { return p.tokoId === tokoId && (semuaStatus || p.status === 'aktif'); }) : []; }
   function katalog(q, kategori) {
-    var d = db(); if (d) semai(); var aktifToko = {}; semuaToko().forEach(function (t) { if (t.status === 'aktif') aktifToko[t.id] = t; });
+    var d = db(); if (d) semai(); var aktifToko = {}; semuaToko().forEach(function (t) { if (t.status === 'aktif' && !t.tutupSementara) aktifToko[t.id] = t; });
     var s = String(q || '').toLowerCase();
     return (d ? d.all('produk') : []).filter(function (p) { return p.status === 'aktif' && aktifToko[p.tokoId] && (!kategori || kategori === 'semua' || p.kategori === kategori) && (!s || p.nama.toLowerCase().indexOf(s) >= 0 || (p.deskripsi || '').toLowerCase().indexOf(s) >= 0); }).map(function (p) { return Object.assign({ toko:aktifToko[p.tokoId] }, p); }).sort(function (a, b) { return (b.unggulan - a.unggulan) || (b.terjual - a.terjual); });
   }
