@@ -291,7 +291,7 @@
     var P = EXO_PERSETUJUAN, saya = window.EXO_ADMIN_AUTH && EXO_ADMIN_AUTH.pengguna();
     var akun = EXO_DB.where('users', function (u) { return u.role === 'admin'; });
     var h = '<div class="card elev-sm table-card"><div class="card-head"><div class="grow"><div class="card-title">Akun admin di basis data ini</div><div class="t-115 o-6">Peran menentukan siapa boleh menyetujui: staf mengajukan, supervisor & super admin menyetujui. Mengubah peran = usulan tingkat tinggi (2 penyetuju, tunda 30 menit).</div></div>' +
-      (saya && P.peranDari(saya) === 'superadmin' ? '<button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('akunTambah') + '>+ Akun admin</button>' : '') + '</div>' +
+      (saya && (P.peranDari(saya) === 'superadmin' || (A.bolehKelolaAkun && A.bolehKelolaAkun(saya))) ? '<button class="btn btn-secondary" style="height:32px;padding:0 14px;font-size:12px"' + aksi('akunTambah') + '>+ Akun admin</button>' : '') + '</div>' +
       tabel(['Nama','Email','Peran','Unit (menu yang tampil)','PIN','Passkey','Status',''], akun.map(function (u) {
         var pr = P.peranDari(u), me = saya && saya.id === u.id, unitU = A.unitKini(u), bolehUnit = saya && P.peranDari(saya) === 'superadmin' && pr !== 'superadmin';
         var selUnit = pr === 'superadmin' ? '<span class="t-12 o-7">semua</span>' : A.UNIT_URUT.map(function (k) { var on = unitU.indexOf(k) >= 0; return '<button class="pill pill-sm' + (on ? ' on' : '') + '" style="font-size:11px"' + (bolehUnit ? aksi('unitUsul', u.id + ':' + k) : ' disabled') + ' title="' + esc(A.UNIT_NAMA[k]) + '">' + esc(A.UNIT_NAMA[k]) + '</button>'; }).join(' ');
@@ -326,6 +326,7 @@
     if (EXO_DB.where('users', function (u) { return u.role === 'admin' && String(u.email || '').toLowerCase() === email; }).length) { f.pesan = 'Email ini sudah dipakai akun admin lain.'; return; }
     if (!f.sandi || f.sandi.length < 10) { f.pesan = 'Sandi minimal 10 karakter.'; return; }
     if (f.peran !== 'superadmin' && !(f.unit || []).length) { f.pesan = 'Pilih minimal satu unit kerja.'; return; }
+    if (f.peran === 'superadmin' && EXO_PERSETUJUAN.peranDari(EXO_ADMIN_AUTH.pengguna()) !== 'superadmin') { f.pesan = 'Hanya super admin yang bisa membuat akun super admin.'; return; }
     var sandi = f.sandi, peran = f.peran, unit = (f.unit || []).slice();
     denganPin('Buat akun admin ' + nama + ' (' + namaPeran(peran) + ')', function (oleh) {
       EXO_ADMIN_AUTH.buatHash(sandi).then(function (h) {

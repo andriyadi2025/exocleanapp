@@ -84,7 +84,8 @@ var ADMIN = (function () {
        · staf        → menu unit yang ditugaskan (bawaan: ops) + Persetujuan
                        (untuk melihat usulannya sendiri); tidak ada menu IT.
      Beberapa menu IT hanya untuk superadmin apa pun unitnya: roles, team,
-     integrasi, data, brand. Menu yang tidak berhak tidak digambar di bilah
+     integrasi, data, brand — kecuali team, yang juga dibuka untuk supervisor
+     berunit IT (admin IT mengelola pengguna & sandi, lihat exo-admin-akun.js). Menu yang tidak berhak tidak digambar di bilah
      samping, dan tampilan yang dipanggil lewat hash ditolak. */
   var HANYA_SUPERADMIN = { roles:true, team:true, integrasi:true, data:true, brand:true };
   var SELALU = { persetujuan:true, belajar:true };
@@ -103,7 +104,8 @@ var ADMIN = (function () {
     var pr = peranKini(u);
     if (pr === 'superadmin') return true;
     if (SELALU[id]) return true;
-    if (HANYA_SUPERADMIN[id]) return false;
+    /* Admins & akun juga terbuka untuk supervisor berunit IT (kelola pengguna & sandi, tanpa akun super admin). */
+    if (HANYA_SUPERADMIN[id]) return id === 'team' && pr === 'supervisor' && unitKini(u).indexOf('it') >= 0;
     var unit = unitMenu(id); return unit ? unitKini(u).indexOf(unit) >= 0 : false;
   }
   function menuPertama() { for (var i = 0; i < NAV.length; i++) if (bolehLihat(NAV[i][0])) return NAV[i][0]; return 'persetujuan'; }
@@ -154,7 +156,7 @@ var ADMIN = (function () {
     keuangan:['Accounting & Finance','GMV · pendapatan platform · dana ditahan · payout mitra · pajak · jurnal · laporan','Ekspor'],
     persetujuan:['Persetujuan perubahan','Pengaju–penyetuju · tingkat risiko · berlaku tertunda · log berantai hash','Verifikasi rantai'],
     roles:['Roles & permissions','8 roles · least-privilege by default','New role'],
-    team:['Admins','9 admins · 2FA enforced','Invite admin']
+    team:['Admins & akun','Kelola pengguna & sandi (unit IT): ubah nama/email/jabatan, reset sandi & PIN, nonaktifkan · peran & unit lewat Persetujuan','PIN']
   };
 
   /* ---------------------------------------------------------- pembantu */
