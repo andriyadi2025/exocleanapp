@@ -38,7 +38,7 @@ const posisi = new Map();   /* orderId → { lat, lng, akurasi, at, tulisHash, b
 app.use(express.json({ limit: '2kb' }));
 const ASAL = KEAMANAN.pasangDasar(app, process.env, 'posisi');
 /* Sesi wajib di atas token per pesanan: hanya sesi mitra/admin yang boleh menulis posisi; membaca butuh sesi apa pun + token baca. */
-const wajibSesi = SESI.wajibDariEnv(process.env), wajibMitra = SESI.wajibDariEnv(process.env, { sisi: ['mitra', 'admin'] });
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibMitra = SESI.wajibDariEnv(process.env, { sisi: ['mitra', 'admin'] }), wajibPerangkat = SESI.wajibPerangkat();
 const lajuTulis = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_POSISI_PER_MENIT || 60) });
 
 setInterval(() => { const now = Date.now(); for (const [k, v] of posisi) if (now - v.at > TTL) posisi.delete(k); }, 60000).unref();
@@ -58,7 +58,7 @@ app.get('/api/posisi/:id', wajibSesi, (req, res) => {
   res.json({ lat: p.lat, lng: p.lng, akurasi: p.akurasi, at: p.at });
 });
 
-app.post('/api/posisi/:id', wajibMitra, lajuTulis, (req, res) => {
+app.post('/api/posisi/:id', wajibMitra, wajibPerangkat, lajuTulis, (req, res) => {
   const id = req.params.id; if (!idSah(id)) return res.status(404).json({ error: 'Tidak ada' });
   const b = req.body || {};
   const lat = Number(b.lat), lng = Number(b.lng);

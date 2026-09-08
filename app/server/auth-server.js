@@ -42,6 +42,7 @@ require('dotenv').config();
 const KEAMANAN = require('./keamanan');
 const SESI = require('./sesi');
 const DUA = require('./duafaktor');
+const PERANGKAT = require('./perangkat');
 let QR = null; try { QR = require('qrcode'); } catch (e) { QR = null; }
 /* Sesi bertanda tangan diterbitkan setelah OTP/login sosial berhasil (sesi.js).
    Tanpa SESI_SECRET server tetap jalan untuk OTP, tetapi tidak menerbitkan sesi —
@@ -50,15 +51,44 @@ let RAHASIA_SESI = null;
 try { RAHASIA_SESI = SESI.rahasiaDari(process.env); } catch (e) { console.warn('[auth] ' + e.message + ' — sesi tidak diterbitkan'); }
 const ADMIN_TELP = new Set(String(process.env.ADMIN_TELP || '').split(',').map((t) => t.trim()).filter(Boolean).map((t) => bakuTelp(t)));
 const SISI_SAH = ['klien', 'mitra', 'toko'];
-function sesiUntuk(jenis, identitas, sisiDiminta) {
+/* ---------- perangkat per akun: data/perangkat.json { sub: { daftar:[…], riwayat:[…] } } ---------- */
+const PERANGKAT_BERKAS = process.env.PERANGKAT_BERKAS || path.join(__dirname, 'data', 'perangkat.json');
+function perangkatBaca() { try { return JSON.parse(fs.readFileSync(PERANGKAT_BERKAS, 'utf8')); } catch (e) { return {}; } }
+function perangkatTulis(o) { fs.mkdirSync(path.dirname(PERANGKAT_BERKAS), { recursive: true, mode: 0o700 }); fs.writeFileSync(PERANGKAT_BERKAS, JSON.stringify(o), { mode: 0o600 }); }
+/* Catat perangkat saat login; kembalikan { klaim:{dev,dkt}, baru, nama, dicabut }. Tanpa info perangkat (klien lama) → tanpa pengikatan. */
+function perangkatCatat(sub, perangkat, req) {
+  if (!perangkat || !PERANGKAT.idSah(perangkat.id) || !PERANGKAT.jwkSah(perangkat.kunciPublik)) return { klaim: {}, baru: false, tanpa: true };
+  const semua = perangkatBaca(), akun = semua[sub] || { daftar: [], riwayat: [] }, dkt = PERANGKAT.thumbprint(perangkat.kunciPublik), kini = new Date().toISOString();
+  const nama = KEAMANAN.batasiTeks(perangkat.nama, 40) || PERANGKAT.namaPerangkat(req && req.headers['user-agent'], perangkat.platform);
+  let rek = akun.daftar.find((d) => d.id === perangkat.id);
+  if (rek && rek.dicabutAt) return { klaim: {}, baru: false, dicabut: true, nama: rek.nama };
+  if (rek && rek.dkt !== dkt) { rek.dicabutAt = kini; rek = null; }   /* id sama tapi kunci beda = perangkat lain memakai id curian → yang lama dicabut, ini perangkat baru */
+  const baru = !rek;
+  if (baru) { rek = { id: perangkat.id, dkt, nama, platform: KEAMANAN.batasiTeks(perangkat.platform, 20), pertamaAt: kini, terakhirAt: kini }; akun.daftar.push(rek); if (akun.daftar.length > 20) akun.daftar = akun.daftar.slice(-20); }
+  else { rek.terakhirAt = kini; if (nama && rek.nama !== nama) rek.nama = nama; }
+  akun.riwayat.unshift({ at: kini, id: rek.id, nama: rek.nama, baru, ip: KEAMANAN.samarIp(KEAMANAN.ipKlien(req)) }); akun.riwayat = akun.riwayat.slice(0, 50);
+  semua[sub] = akun; perangkatTulis(semua);
+  return { klaim: { dev: rek.id, dkt }, baru, nama: rek.nama };
+}
+/* Notifikasi login dari perangkat baru (pola Tokopedia: SMS tiap login perangkat baru) — tidak memblokir balasan. */
+function beritahuPerangkatBaru(jenis, identitas, nama, req) {
+  const kapan = new Date().toLocaleString('id-ID', { timeZone: process.env.ZONA_WAKTU || 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const pesan = 'EXOCLEAN: akun Anda baru saja masuk dari perangkat baru (' + nama + ') pada ' + kapan + ' WIB. Bukan Anda? Buka Akun > Perangkat untuk mencabutnya, ganti PIN, atau hubungi security@exoclean.id. Jangan bagikan OTP/PIN.';
+  const janji = jenis === 'email' ? kirimEmail(identitas, 'Login dari perangkat baru', pesan) : kirimSms(identitas, pesan);
+  janji.catch((e) => console.warn('[perangkat] notifikasi gagal: ' + e.message));
+}
+function sesiUntuk(jenis, identitas, sisiDiminta, perangkat, req) {
   if (!RAHASIA_SESI || !identitas) return {};
   let sisi = SISI_SAH.indexOf(sisiDiminta) >= 0 ? sisiDiminta : 'klien';
   if (sisiDiminta === 'admin') { if (jenis === 'telp' && ADMIN_TELP.has(identitas)) sisi = 'admin'; else return { sesiDitolak: 'nomor ini bukan admin terdaftar (ADMIN_TELP)' }; }
   const sub = SESI.subDari(RAHASIA_SESI, jenis, identitas);
+  const pr = perangkatCatat(sub, perangkat, req);
+  if (pr.dicabut) return { sesiDitolak: 'Perangkat ini sudah dicabut dari akun. Masuk dari perangkat lain atau hubungi dukungan.', perangkatDicabut: true };
+  if (pr.baru) beritahuPerangkatBaru(jenis, identitas, pr.nama, req);
   /* Akun ber-2FA: OTP saja belum cukup — beri sesi sementara (5 menit, klaim tahap:'2fa') yang ditolak semua server lain sampai diselesaikan lewat /api/auth/2fa/verifikasi atau passkey. */
   const d2 = duaBaca()[sub];
-  if (d2 && d2.aktif) return { perlu2fa: true, sesiSementara: SESI.terbitkan(RAHASIA_SESI, { sub, sisi, tahap: '2fa' }, { detik: 300 }), metode: { totp: !!(d2.totp && d2.totp.aktif), passkey: (d2.passkeys || []).length > 0 }, sub, sisi };
-  return { sesi: SESI.terbitkan(RAHASIA_SESI, { sub, sisi }, { detik: Number(process.env.SESI_DETIK || 12 * 3600) }), sub, sisi };
+  if (d2 && d2.aktif) return { perlu2fa: true, sesiSementara: SESI.terbitkan(RAHASIA_SESI, Object.assign({ sub, sisi, tahap: '2fa' }, pr.klaim), { detik: 300 }), metode: { totp: !!(d2.totp && d2.totp.aktif), passkey: (d2.passkeys || []).length > 0 }, sub, sisi, perangkatBaru: pr.baru, perangkatNama: pr.nama };
+  return { sesi: SESI.terbitkan(RAHASIA_SESI, Object.assign({ sub, sisi }, pr.klaim), { detik: Number(process.env.SESI_DETIK || 12 * 3600) }), sub, sisi, perangkatBaru: pr.baru, perangkatNama: pr.nama, terikatPerangkat: !!pr.klaim.dkt };
 }
 const DUA_BERKAS = process.env.DUA_BERKAS || path.join(__dirname, 'data', '2fa.json');
 function duaBaca() { try { return JSON.parse(fs.readFileSync(DUA_BERKAS, 'utf8')); } catch (e) { return {}; } }
@@ -353,7 +383,8 @@ app.get('/api/auth/health', (req, res) => {
 app.post('/api/auth/google', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiGoogle(req.body && req.body.token);
-    res.json(Object.assign({}, profil, sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi)));
+    const su = sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi, req.body && req.body.perangkat, req); if (su.perangkatDicabut) return res.status(403).json({ error: su.sesiDitolak });
+    res.json(Object.assign({}, profil, su));
   } catch (e) {
     console.error('[google]', e.message);
     res.status(401).json({ error: e.message });
@@ -363,7 +394,8 @@ app.post('/api/auth/google', lajuSosial, async (req, res) => {
 app.post('/api/auth/facebook', lajuSosial, async (req, res) => {
   try {
     const profil = await verifikasiFacebook(req.body && req.body.token);
-    res.json(Object.assign({}, profil, sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi)));
+    const su = sesiUntuk('email', bakuEmail(profil.email), req.body && req.body.sisi, req.body && req.body.perangkat, req); if (su.perangkatDicabut) return res.status(403).json({ error: su.sesiDitolak });
+    res.json(Object.assign({}, profil, su));
   } catch (e) {
     console.error('[facebook]', e.message);
     res.status(401).json({ error: e.message });
@@ -455,7 +487,9 @@ app.post('/api/auth/otp/periksa', lajuPeriksaIp, (req, res) => {
   const uji = turunkanKode(kode, rec.garam);
   if (samaAman(uji.hash, rec.hash)) {
     otpStore.delete(kunci);                    /* sekali pakai */
-    return res.json(Object.assign({ ok: true }, sesiUntuk(jenis === 'email' ? 'email' : 'telp', tujuan, req.body && req.body.sisi)));
+    const su = sesiUntuk(jenis === 'email' ? 'email' : 'telp', tujuan, req.body && req.body.sisi, req.body && req.body.perangkat, req);
+    if (su.perangkatDicabut) return res.status(403).json({ error: su.sesiDitolak, perangkatDicabut: true });
+    return res.json(Object.assign({ ok: true }, su));
   }
 
   /* Angka dibaca dulu, baru disimpan — supaya hitungan sisa tidak meleset. */
@@ -469,6 +503,11 @@ app.post('/api/auth/otp/periksa', lajuPeriksaIp, (req, res) => {
   });
 });
 
+/* ================================================================ PERANGKAT */
+const wajibSesiPerangkat = SESI.wajibDariEnv(process.env);
+app.post('/api/auth/perangkat/daftar', wajibSesiPerangkat, (req, res) => { if (!req.sesi) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); const akun = perangkatBaca()[req.sesi.sub] || { daftar: [], riwayat: [] }; res.json({ ok: true, kini: req.sesi.dev || null, daftar: akun.daftar.map((d) => ({ id: d.id, nama: d.nama, platform: d.platform, pertamaAt: d.pertamaAt, terakhirAt: d.terakhirAt, dicabutAt: d.dicabutAt || null })), riwayat: akun.riwayat }); });
+app.post('/api/auth/perangkat/hapus', wajibSesiPerangkat, (req, res) => { if (!req.sesi) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); const semua = perangkatBaca(), akun = semua[req.sesi.sub]; const id = String((req.body || {}).id || ''); const rek = akun && akun.daftar.find((d) => d.id === id); if (!rek) return res.status(404).json({ error: 'Perangkat tidak ditemukan.' }); rek.dicabutAt = new Date().toISOString(); akun.riwayat.unshift({ at: rek.dicabutAt, id: rek.id, nama: rek.nama, dicabut: true, ip: KEAMANAN.samarIp(KEAMANAN.ipKlien(req)) }); semua[req.sesi.sub] = akun; perangkatTulis(semua); console.log('[perangkat] dicabut · ' + req.sesi.sub.slice(0, 8)); res.json({ ok: true, iniPerangkatSaya: rek.id === req.sesi.dev }); });
+
 /* ================================================================ DUA LANGKAH (2FA)
    TOTP (aplikasi autentikator) & passkey (WebAuthn) untuk semua pengguna, dicek di
    server. Rahasia TOTP terenkripsi (duafaktor.segel). Tantangan passkey disimpan di
@@ -481,7 +520,7 @@ function duaSimpan(semua, sub, rek) { rek.aktif = !!((rek.totp && rek.totp.aktif
 function duaStatus(rek) { return { aktif: !!rek.aktif, totp: rek.totp && rek.totp.aktif ? { dibuatAt: rek.totp.dibuatAt } : null, passkeys: (rek.passkeys || []).map((p) => ({ id: p.id, nama: p.nama, dibuatAt: p.dibuatAt, terakhirAt: p.terakhirAt || null })), pemulihanSisa: (rek.pemulihan || []).filter((h) => !h.dipakaiAt).length }; }
 /* kode autentikator ATAU kode pemulihan yang masih berlaku → true (dan mencatat pemakaian) */
 function duaCekKode(semua, sub, rek, kode) { kode = String(kode || '').trim(); if (rek.totp && rek.totp.aktif && /^\d{6}$/.test(kode)) { const l = DUA.totpVerifikasi(DUA.buka(RAHASIA_SESI, rek.totp.rahasia), kode, rek.totp.langkahTerakhir); if (l >= 0) { rek.totp.langkahTerakhir = l; duaSimpan(semua, sub, rek); return true; } } const h = DUA.pemulihanHash(kode); const p = (rek.pemulihan || []).find((x) => !x.dipakaiAt && x.hash === h); if (p) { p.dipakaiAt = new Date().toISOString(); duaSimpan(semua, sub, rek); return true; } return false; }
-function sesiPenuh(klaim) { return SESI.terbitkan(RAHASIA_SESI, { sub: klaim.sub, sisi: klaim.sisi }, { detik: Number(process.env.SESI_DETIK || 12 * 3600) }); }
+function sesiPenuh(klaim) { const k = { sub: klaim.sub, sisi: klaim.sisi }; if (klaim.dev && klaim.dkt) { k.dev = klaim.dev; k.dkt = klaim.dkt; } return SESI.terbitkan(RAHASIA_SESI, k, { detik: Number(process.env.SESI_DETIK || 12 * 3600) }); }
 function sesiSementaraDari(req, res) { const t = String((req.body || {}).sesiSementara || ''); const v = RAHASIA_SESI ? SESI.verifikasi(RAHASIA_SESI, t) : { ok: false, sebab: 'rahasia' }; if (!v.ok || v.klaim.tahap !== '2fa') { res.status(401).json({ error: 'Sesi sementara tidak sah atau kedaluwarsa — ulangi OTP.' }); return null; } return v.klaim; }
 function pemulihanBaru(rek) { const kode = DUA.pemulihanBuat(8); rek.pemulihan = kode.map((k) => ({ hash: DUA.pemulihanHash(k), dibuatAt: new Date().toISOString() })); return kode; }
 app.post('/api/auth/2fa/status', wajibSesi2fa, lajuDua, (req, res) => { if (!req.sesi) return res.status(503).json({ error: 'SESI_SECRET belum diisi' }); res.json(Object.assign({ ok: true, rpId: DUA_RP_ID, passkeyDidukung: true }, duaStatus(duaRek(req.sesi.sub).rek))); });

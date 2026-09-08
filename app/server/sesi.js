@@ -98,8 +98,20 @@ function wajibPin(env) {
     req.pinOk = true; next();
   };
 }
+/** Pengikatan perangkat: bila sesi memuat klaim dev/dkt, header X-Exo-Perangkat (bukti ECDSA kunci perangkat) wajib cocok. Sesi tanpa dkt (lama/uji) lolos. */
+function wajibPerangkat() {
+  const P = require('./perangkat');
+  return function (req, res, next) {
+    if (!req.sesi || !req.sesi.dkt) return next();
+    const h = String(req.headers['x-exo-perangkat'] || '');
+    if (!h) return res.status(403).json({ error: 'Perlu bukti perangkat (sesi terikat perangkat).', perluPerangkat: true });
+    const v = P.verifikasiBukti(h, req.sesi);
+    if (!v.ok) return res.status(403).json({ error: 'Bukti perangkat ditolak: ' + v.sebab, perluPerangkat: true });
+    req.perangkatOk = true; next();
+  };
+}
 function buatKunci() { return crypto.randomBytes(32).toString('hex'); }
 if (require.main === module) {
   if (process.argv.includes('--buat-kunci')) console.log('SESI_SECRET=' + buatKunci()); else console.log('pakai: node sesi.js --buat-kunci');
 }
-module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, wajibDariEnv, pemilikCocok, subDariReq, terbitkanPinToken, wajibPin, buatKunci };
+module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, wajibDariEnv, pemilikCocok, subDariReq, terbitkanPinToken, wajibPin, wajibPerangkat, buatKunci };

@@ -42,7 +42,9 @@ KEAMANAN.pasangDasar(app, process.env, 'data');
 app.use(express.json({ limit: '3mb' }));
 const lajuTulis = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DATA_TULIS_PER_MENIT || 60), kunci: (req) => (req.sesi && req.sesi.sub) || KEAMANAN.ipKlien(req) });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DATA_BACA_PER_MENIT || 120), kunci: (req) => (req.sesi && req.sesi.sub) || KEAMANAN.ipKlien(req) });
-const wajib = SESI.wajibSesi(RAHASIA_SESI), wajibAdmin = SESI.wajibSesi(RAHASIA_SESI, { sisi: ['admin'] });
+const wajibSaja = SESI.wajibSesi(RAHASIA_SESI), wajibAdminSaja = SESI.wajibSesi(RAHASIA_SESI, { sisi: ['admin'] }), wajibPerangkat = SESI.wajibPerangkat();
+/* brankas: sesi + bukti perangkat (sesi curian tanpa kunci perangkat tidak bisa membuka data pribadi) */
+const wajib = [wajibSaja, wajibPerangkat], wajibAdmin = [wajibAdminSaja, wajibPerangkat];
 const TABEL_BOLEH = new Set(String(process.env.BRANKAS_TABEL || 'users,orders,kontakDarurat,toko,penarikanToko,pendaftaran,sosInsiden,foto,vdp').split(',').map((s) => s.trim()).filter(Boolean));
 function tabelSah(t) { if (!TABEL_BOLEH.has(String(t || ''))) throw Object.assign(new Error('tabel tidak diizinkan'), { status: 400 }); return t; }
 function opsiDari(req) { return { pemilik: req.sesi.sub, admin: req.sesi.sisi === 'admin' }; }

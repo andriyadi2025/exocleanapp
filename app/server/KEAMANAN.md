@@ -254,3 +254,15 @@ Setara Tokopedia (Google Authenticator) dan GoPay (biometrik). Semua diputuskan 
 | Endpoint | `/api/auth/2fa/{status, totp/daftar, totp/aktifkan, passkey/tantangan, passkey/daftar, passkey/hapus, passkey/masuk, verifikasi, pemulihan-baru, nonaktif}` — wajib sesi (kecuali verifikasi/masuk yang memakai sesi sementara); 30 permintaan/10 menit per akun |
 
 Uji: `npm run test:duafaktor` (12 uji: vektor RFC 6238, anti pemakaian ulang, CBOR, pendaftaran & masuk passkey dengan autentikator tiruan, penolakan tantangan/origin/rpId/kunci asing/counter mundur) dan `node alat/uji-keamanan.js` (alur OTP → sesi sementara → TOTP/pemulihan/passkey → sesi penuh).
+
+### 7.4 Notifikasi login perangkat baru & pengikatan perangkat (8 Sep 2026)
+
+| Bagian | Cara kerja |
+|---|---|
+| Identitas perangkat | `js/exo-perangkat.js`: id acak 24 byte + pasangan kunci ECDSA P-256 (privat **tidak bisa diekspor**) di IndexedDB per peramban/perangkat; dikirim (id, kunci publik JWK, nama, platform) saat OTP/login sosial |
+| Perangkat baru | auth-server (`perangkatCatat`) menyimpan daftar perangkat per akun di `data/perangkat.json` (`PERANGKAT_BERKAS`); perangkat yang belum dikenal → **notifikasi SMS/email** ("akun Anda baru saja masuk dari perangkat baru … Bukan Anda? …") lewat penyedia OTP yang sama, riwayat masuk (50 terakhir, IP disamarkan), balasan `perangkatBaru` ditampilkan aplikasi; id yang sama dengan kunci berbeda dianggap perangkat baru dan yang lama dicabut |
+| Pengikatan sesi | sesi (dan sesi sementara 2FA) memuat klaim `dev` (id) & `dkt` (thumbprint JWK RFC 7638); setiap permintaan ke payment/dwi/kirim/posisi/data membawa `X-Exo-Perangkat` = base64url(JSON{ id, jwk, ts, sig }) dengan `sig` = ECDSA-SHA256(`id\|ts\|sub`) dari kunci privat perangkat; `SESI.wajibPerangkat()` menolak (403 `perluPerangkat`) bila thumbprint/id tidak cocok, tanda tangan salah, atau ts di luar ±5 menit — sesi yang dicuri tidak bisa dipakai di perangkat lain (pola DPoP) |
+| Kelola | layar **Perangkat & aktivitas masuk** (Akun tiap sisi): daftar perangkat, perangkat ini, cabut perangkat lain (PIN transaksi), riwayat masuk, nama perangkat; endpoint `/api/auth/perangkat/{daftar,hapus}`; perangkat yang dicabut ditolak saat login (403 `perangkatDicabut`) |
+| Kompatibilitas | sesi tanpa `dkt` (klien lama / uji) tetap diterima tanpa bukti; tanpa `SESI_SECRET` (pengembangan) tidak ada pengikatan |
+
+Uji: `node alat/uji-keamanan.js` — sesi terikat tanpa bukti → 403, bukti kunci lain → 403, bukti kedaluwarsa → 403, bukti sah → lolos, notifikasi SMS tercatat, daftar & cabut perangkat.

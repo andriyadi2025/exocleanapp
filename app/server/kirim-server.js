@@ -44,7 +44,7 @@ const lajuTarif = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.en
 const lajuPesan = KEAMANAN.batasLaju({ jendelaDetik: 3600, maks: Number(process.env.LAJU_KIRIM_ORDER_PER_JAM || 20) });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_KIRIM_BACA_PER_MENIT || 60) });
 /* Sesi wajib: semua endpoint yang memanggil Biteship (berbayar) atau membuka data pesanan; daftar hanya admin; webhook & health bebas. */
-const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] });
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] }), wajibPerangkat = SESI.wajibPerangkat();
 
 /* ---------------------------------------------------------------- Biteship */
 const BITESHIP = {
@@ -149,7 +149,7 @@ app.post('/api/kirim/rates', wajibSesi, lajuTarif, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-app.post('/api/kirim/orders', wajibSesi, lajuPesan, async (req, res, next) => {
+app.post('/api/kirim/orders', wajibSesi, wajibPerangkat, lajuPesan, async (req, res, next) => {
   try {
     const b = req.body || {};
     const ref = KEAMANAN.batasiTeks(b.refId, 40);
