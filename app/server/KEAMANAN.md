@@ -212,3 +212,18 @@ Yang masih menjadi batas: penyimpanan rekaman terenkripsi masih berkas JSON per 
 | Konsol admin | `js/exo-admin-vdp.js` (IT → Bug bounty / VDP) | laporan dimuat dari brankas dengan sesi admin, triase: status (baru → triase → valid/duplikat/tidak berlaku → diperbaiki → dibayar), CVSS → tingkat → hadiah saran (interpolasi dalam rentang), PIN + audit tiap perubahan; penyunting kebijakan yang diterbitkan ke halaman publik; hall of fame dengan izin pelapor; penanda lewat SLA |
 
 Menjalankan: `npm run start:vdp` (butuh `BRANKAS_KUNCI` yang sama dengan data-server); nginx meneruskan `/api/vdp/` ke 4700 dan melayani `/.well-known/security.txt` (contoh di `contoh/nginx-exoclean.conf`). Pembayaran hadiah dicatat di triase; masukkan ke Accounting sebagai beban keamanan saat dibayar.
+
+### 7.1 Sesi wajib di semua server uang (8 Sep 2026)
+
+Menutup temuan audit "server uang tanpa autentikasi". Setiap endpoint di bawah ini kini memakai `SESI.wajibDariEnv()`: Bearer sesi bertanda tangan dari auth-server wajib; rekaman terikat ke `sub` pembuatnya dan hanya boleh dibaca/diubah oleh pemilik yang sama atau sesi admin.
+
+| Server | Wajib sesi (pengguna) | Hanya sesi admin | Bebas (dipanggil gateway/monitor) |
+|---|---|---|---|
+| payment | charge, authorize, status, capture, cancel (+ X-Exo-Token, + pemilik) | — | health, webhook Midtrans/Xendit |
+| kirim | couriers, areas, rates, orders (pemilik), status/:ref (pemilik), tracking/:id | daftar | health, webhook |
+| dwi | call, bayar (sub dicatat di log), perjalanan/akses, perjalanan/cari | balance, transaksi, cocokkan | health |
+| posisi | baca (sesi apa pun + token baca) | — | health |
+| posisi (tulis) | hanya sesi **mitra**/admin + token tulis | | |
+| data (brankas) | semua (pemilik) | statistik, verifikasi-audit, putar-kunci | health |
+
+Perilaku tanpa `SESI_SECRET`: `NODE_ENV=production` → 503 (endpoint menolak sampai rahasia diisi); pengembangan → lolos dengan satu peringatan di log (`req.sesi = null`). Klien (`js/exo-server.js`) selalu membawa Bearer dari sessionStorage pada GET maupun POST; balasan 401 ditandai `perluSesi` dan alur pembayaran mengarahkan pengguna ke OTP. Uji: `node alat/uji-keamanan.js` (kini juga menjalankan kirim & dwi dalam mode simulasi).

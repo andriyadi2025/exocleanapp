@@ -32,6 +32,7 @@ const path = require('node:path');
 require('dotenv').config();
 const KEAMANAN = require('./keamanan');
 const TLS = require('./tls');
+const SESI = require('./sesi');
 
 const app = express();
 const PORT = Number(process.env.KIRIM_PORT || process.env.SHIPPING_PORT || 4300);
@@ -42,6 +43,8 @@ const ASAL = KEAMANAN.pasangDasar(app, process.env, 'kirim');
 const lajuTarif = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_KIRIM_TARIF_PER_MENIT || 30) });
 const lajuPesan = KEAMANAN.batasLaju({ jendelaDetik: 3600, maks: Number(process.env.LAJU_KIRIM_ORDER_PER_JAM || 20) });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_KIRIM_BACA_PER_MENIT || 60) });
+/* Sesi wajib: semua endpoint yang memanggil Biteship (berbayar) atau membuka data pesanan; daftar hanya admin; webhook & health bebas. */
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] });
 
 /* ---------------------------------------------------------------- Biteship */
 const BITESHIP = {
@@ -121,19 +124,19 @@ app.get('/api/kirim/health', lajuBaca, async (req, res) => {
   catch (e) { res.json({ ok: true, layanan: 'EXOCLEAN kirim-server', siap: false, mode: BITESHIP.jenis, pesan: e.message }); }
 });
 
-app.get('/api/kirim/couriers', lajuBaca, async (req, res, next) => {
+app.get('/api/kirim/couriers', wajibSesi, lajuBaca, async (req, res, next) => {
   try { const j = await biteship('/v1/couriers'); const peta = new Map();
     for (const c of j.couriers || []) { if (!peta.has(c.courier_code)) peta.set(c.courier_code, { kurir: c.courier_code, nama: c.courier_name, layanan: [] }); peta.get(c.courier_code).layanan.push({ kode: c.courier_service_code, nama: c.courier_service_name, tipe: c.shipping_type, deskripsi: c.description }); }
     res.json({ kurir: [...peta.values()] }); } catch (e) { next(e); }
 });
 
-app.get('/api/kirim/areas', lajuBaca, async (req, res, next) => {
+app.get('/api/kirim/areas', wajibSesi, lajuBaca, async (req, res, next) => {
   try { const q = KEAMANAN.batasiTeks(req.query.q, 60); if (q.length < 3) return res.json({ areas: [] });
     const j = await biteship('/v1/maps/areas?countries=ID&type=single&input=' + encodeURIComponent(q));
     res.json({ areas: (j.areas || []).slice(0, 20).map((a) => ({ id: a.id, nama: a.name, kelurahan: a.administrative_division_level_4_name, kecamatan: a.administrative_division_level_3_name, kota: a.administrative_division_level_2_name, provinsi: a.administrative_division_level_1_name, kodePos: a.postal_code })) }); } catch (e) { next(e); }
 });
 
-app.post('/api/kirim/rates', lajuTarif, async (req, res, next) => {
+app.post('/api/kirim/rates', wajibSesi, lajuTarif, async (req, res, next) => {
   try {
     const b = req.body || {}; const items = rapikanBarang(b.items);
     if (!items.length) throw galat('Daftar barang kosong', 400);
@@ -146,14 +149,14 @@ app.post('/api/kirim/rates', lajuTarif, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-app.post('/api/kirim/orders', lajuPesan, async (req, res, next) => {
+app.post('/api/kirim/orders', wajibSesi, lajuPesan, async (req, res, next) => {
   try {
     const b = req.body || {};
     const ref = KEAMANAN.batasiTeks(b.refId, 40);
     if (!refSah(ref)) throw galat('refId (nomor pesanan) wajib dan hanya huruf/angka/-/_', 400);
     if (!b.kurir || !b.layanan) throw galat('Kurir dan layanan wajib dipilih lebih dulu', 400);
     const simpanan = bacaSimpanan();
-    if (simpanan[ref] && simpanan[ref].orderId) return res.json(Object.assign({ sudahAda: true }, simpanan[ref]));   /* idempoten: tidak membuat pesanan kirim dua kali */
+    if (simpanan[ref] && simpanan[ref].orderId) { if (!SESI.pemilikCocok(req, simpanan[ref].pemilik)) throw galat('Pesanan kirim ini milik akun lain', 403); return res.json(Object.assign({ sudahAda: true }, simpanan[ref])); }   /* idempoten: tidak membuat pesanan kirim dua kali */
     const items = rapikanBarang(b.items); if (!items.length) throw galat('Daftar barang kosong', 400);
     const dari = b.dari || {}, ke = b.ke || {};
     const body = {
@@ -165,21 +168,22 @@ app.post('/api/kirim/orders', lajuPesan, async (req, res, next) => {
       courier_company: KEAMANAN.batasiTeks(b.kurir, 20).toLowerCase(), courier_type: KEAMANAN.batasiTeks(b.layanan, 30).toLowerCase(), courier_insurance: b.asuransi ? Math.max(0, Number(b.nilaiBarang) || 0) : undefined,
       delivery_type: 'now', order_note: 'EXOCLEAN ' + ref, reference_id: ref, items
     };
-    if (SIMULASI) { const rs = { refId: ref, orderId: 'sim_' + ref.toLowerCase(), trackingId: 'SIM' + Date.now().toString(36).toUpperCase(), resi: 'SIM' + Date.now().toString(36).toUpperCase(), kurir: body.courier_company, layanan: body.courier_type, status: 'diproses', statusKurir: 'confirmed', harga: null, riwayat: [{ at: new Date().toISOString(), judul: 'confirmed', ket: 'Pesanan kirim tiruan dibuat (simulasi)' }], at: new Date().toISOString(), diperbarui: new Date().toISOString(), simulasi: true }; simpanan[ref] = rs; tulisSimpanan(simpanan); return res.json(rs); }
+    if (SIMULASI) { const rs = { refId: ref, orderId: 'sim_' + ref.toLowerCase(), trackingId: 'SIM' + Date.now().toString(36).toUpperCase(), resi: 'SIM' + Date.now().toString(36).toUpperCase(), kurir: body.courier_company, layanan: body.courier_type, status: 'diproses', statusKurir: 'confirmed', harga: null, riwayat: [{ at: new Date().toISOString(), judul: 'confirmed', ket: 'Pesanan kirim tiruan dibuat (simulasi)' }], at: new Date().toISOString(), diperbarui: new Date().toISOString(), simulasi: true, pemilik: SESI.subDariReq(req) }; simpanan[ref] = rs; tulisSimpanan(simpanan); return res.json(rs); }
     const j = await biteship('/v1/orders', { method: 'POST', body });
-    const rekam = { refId: ref, orderId: j.id, trackingId: j.courier && j.courier.tracking_id || null, resi: j.courier && (j.courier.waybill_id || j.courier.tracking_id) || null, kurir: body.courier_company, layanan: body.courier_type, status: statusApp(j.status), statusKurir: j.status || 'confirmed', harga: j.price || null, riwayat: [], at: new Date().toISOString(), diperbarui: new Date().toISOString() };
+    const rekam = { refId: ref, orderId: j.id, trackingId: j.courier && j.courier.tracking_id || null, resi: j.courier && (j.courier.waybill_id || j.courier.tracking_id) || null, kurir: body.courier_company, layanan: body.courier_type, status: statusApp(j.status), statusKurir: j.status || 'confirmed', harga: j.price || null, riwayat: [], at: new Date().toISOString(), diperbarui: new Date().toISOString(), pemilik: SESI.subDariReq(req) };
     simpanan[ref] = rekam; tulisSimpanan(simpanan);
     console.log('[kirim] pesanan kirim dibuat untuk ' + ref + ' (' + body.courier_company + '/' + body.courier_type + ') mode ' + BITESHIP.jenis);
     res.json(rekam);
   } catch (e) { next(e); }
 });
 
-app.get('/api/kirim/daftar', lajuBaca, (req, res) => { const s = bacaSimpanan(); const daftar = Object.keys(s).map((k) => { const r = s[k]; if (r.simulasi) majukanSimulasi(r); return { refId:r.refId, orderId:r.orderId, resi:r.resi, kurir:r.kurir, layanan:r.layanan, status:r.status, statusKurir:r.statusKurir, at:r.at, diperbarui:r.diperbarui, simulasi:!!r.simulasi }; }).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 200); res.json({ total:Object.keys(s).length, daftar }); });
+app.get('/api/kirim/daftar', wajibAdmin, lajuBaca, (req, res) => { const s = bacaSimpanan(); const daftar = Object.keys(s).map((k) => { const r = s[k]; if (r.simulasi) majukanSimulasi(r); return { refId:r.refId, orderId:r.orderId, resi:r.resi, kurir:r.kurir, layanan:r.layanan, status:r.status, statusKurir:r.statusKurir, at:r.at, diperbarui:r.diperbarui, simulasi:!!r.simulasi }; }).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 200); res.json({ total:Object.keys(s).length, daftar }); });
 
-app.get('/api/kirim/status/:ref', lajuBaca, async (req, res) => {
+app.get('/api/kirim/status/:ref', wajibSesi, lajuBaca, async (req, res) => {
   const ref = req.params.ref; if (!refSah(ref)) return res.status(404).json({ error: 'Tidak ada' });
   const simpanan = bacaSimpanan(), r = simpanan[ref];
   if (!r) return res.status(404).json({ error: 'Belum ada pesanan kirim untuk nomor ini' });
+  if (!SESI.pemilikCocok(req, r.pemilik)) return res.status(403).json({ error: 'Pesanan kirim ini milik akun lain' });
   if (r.simulasi) { majukanSimulasi(r); simpanan[ref] = r; tulisSimpanan(simpanan); return res.json(r); }
   /* Segarkan dari Biteship bila sudah > 10 menit dan belum final (webhook bisa tidak sampai saat pengembangan). */
   if (r.orderId && ['selesai', 'dibatalkan', 'gagal', 'retur'].indexOf(r.status) < 0 && Date.now() - new Date(r.diperbarui).getTime() > 600000 && BITESHIP.key) {
@@ -188,7 +192,7 @@ app.get('/api/kirim/status/:ref', lajuBaca, async (req, res) => {
   res.json(r);
 });
 
-app.get('/api/kirim/tracking/:id', lajuBaca, async (req, res, next) => {
+app.get('/api/kirim/tracking/:id', wajibSesi, lajuBaca, async (req, res, next) => {
   try { const id = KEAMANAN.batasiTeks(req.params.id, 60); if (!/^[A-Za-z0-9_\-]+$/.test(id)) throw galat('Id tidak sah', 400);
     const j = await biteship('/v1/orders/' + encodeURIComponent(id)); res.json({ status: statusApp(j.status), statusKurir: j.status, resi: j.courier && j.courier.waybill_id || null, riwayat: rapikanRiwayat(j) }); } catch (e) { next(e); }
 });

@@ -67,8 +67,24 @@ function wajibSesi(rahasia, opsi) {
     next();
   };
 }
+/** Pelindung dari .env: bila SESI_SECRET terisi → wajibSesi; bila kosong: produksi menolak (503), pengembangan meloloskan dengan peringatan sekali (req.sesi = null). */
+function wajibDariEnv(env, opsi) {
+  env = env || process.env;
+  let rahasia = null; try { rahasia = rahasiaDari(env); } catch (e) { rahasia = null; }
+  if (rahasia) return wajibSesi(rahasia, opsi);
+  const produksi = env.NODE_ENV === 'production';
+  let sudahDiperingatkan = false;
+  return function (req, res, next) {
+    if (produksi) return res.status(503).json({ error: 'SESI_SECRET belum diisi di server — endpoint ini wajib sesi.' });
+    if (!sudahDiperingatkan) { sudahDiperingatkan = true; console.warn('[sesi] SESI_SECRET kosong: endpoint berjalan TANPA sesi (hanya untuk pengembangan). Buat: node sesi.js --buat-kunci'); }
+    req.sesi = null; next();
+  };
+}
+/** Benar bila permintaan boleh menyentuh rekaman milik `pemilik`: admin, pemilik yang sama, atau mode pengembangan tanpa sesi. */
+function pemilikCocok(req, pemilik) { if (!req.sesi) return true; if (req.sesi.sisi === 'admin') return true; return !pemilik || req.sesi.sub === pemilik; }
+function subDariReq(req) { return req.sesi ? req.sesi.sub : null; }
 function buatKunci() { return crypto.randomBytes(32).toString('hex'); }
 if (require.main === module) {
   if (process.argv.includes('--buat-kunci')) console.log('SESI_SECRET=' + buatKunci()); else console.log('pakai: node sesi.js --buat-kunci');
 }
-module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, buatKunci };
+module.exports = { rahasiaDari, subDari, terbitkan, verifikasi, wajibSesi, wajibDariEnv, pemilikCocok, subDariReq, buatKunci };

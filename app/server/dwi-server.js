@@ -38,6 +38,7 @@ const path = require('node:path');
 require('dotenv').config();
 const KEAMANAN = require('./keamanan');
 const TLS = require('./tls');
+const SESI = require('./sesi');
 
 const app = express();
 const PORT = Number(process.env.DWI_PORT || 4400);
@@ -46,6 +47,8 @@ const CATATAN_FILE = path.join(__dirname, 'data', 'dwi-transaksi.json');
 
 app.use(express.json({ limit: '32kb' }));
 const ASAL = KEAMANAN.pasangDasar(app, process.env, 'dwi');
+/* Sesi wajib: jalur baca & uang untuk pengguna bersesi; saldo deposit, daftar transaksi, dan cocokkan hanya sesi admin. */
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibAdmin = SESI.wajibDariEnv(process.env, { sisi: ['admin'] });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DWI_BACA_PER_MENIT || 60) });
 const lajuUang = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_DWI_BAYAR_10MENIT || 10) });
 
@@ -263,8 +266,8 @@ app.get('/api/dwi/health', lajuBaca, async (req, res) => {
   try { await login(); hasil.sesiAktif = true; hasil.pesan = 'Login berhasil (' + hasil.mode + ').'; } catch (e) { hasil.siap = false; hasil.pesan = e.message; }
   res.json(hasil);
 });
-app.get('/api/dwi/balance', lajuBaca, async (req, res, next) => { try { const j = await panggil('/Agent/Balance', {}); if (String(j.status).toUpperCase() !== 'SUCCESS') throw galat(j.respMessage || 'Gagal membaca saldo', 400); res.json({ saldo: j.balance, waktu: j.respTime, simulasi: SIMULASI }); } catch (e) { next(e); } });
-app.post('/api/dwi/call', lajuBaca, async (req, res, next) => {
+app.get('/api/dwi/balance', wajibAdmin, lajuBaca, async (req, res, next) => { try { const j = await panggil('/Agent/Balance', {}); if (String(j.status).toUpperCase() !== 'SUCCESS') throw galat(j.respMessage || 'Gagal membaca saldo', 400); res.json({ saldo: j.balance, waktu: j.respTime, simulasi: SIMULASI }); } catch (e) { next(e); } });
+app.post('/api/dwi/call', wajibSesi, lajuBaca, async (req, res, next) => {
   try {
     const target = KEAMANAN.batasiTeks((req.body || {}).jalur, 60), izin = Object.prototype.hasOwnProperty.call(DAFTAR_PUTIH, target) ? DAFTAR_PUTIH[target] : null;
     if (!izin) throw galat('Jalur "' + target + '" tidak ada di daftar putih server ini.', 403);
@@ -273,22 +276,22 @@ app.post('/api/dwi/call', lajuBaca, async (req, res, next) => {
     res.json(await panggil(target, isi));
   } catch (e) { next(e); }
 });
-app.post('/api/dwi/bayar', lajuUang, async (req, res, next) => {
+app.post('/api/dwi/bayar', wajibSesi, lajuUang, async (req, res, next) => {
   try {
     const target = KEAMANAN.batasiTeks((req.body || {}).jalur, 60), izin = Object.prototype.hasOwnProperty.call(DAFTAR_PUTIH, target) ? DAFTAR_PUTIH[target] : null;
     if (!izin || !izin.uang) throw galat('Pintu ini hanya untuk jalur yang memotong deposit; jalur baca memakai /api/dwi/call.', 400);
     const isi = req.body && typeof req.body.isi === 'object' && req.body.isi ? req.body.isi : {};
     const hasil = await panggilUang(target, isi);
-    if (hasil.kode === 200 && !hasil.badan.idempotenDiulang) console.log('[dwi] ' + target + ' selesai · kunci ' + kunciDari(target, isi) + (SIMULASI ? ' (simulasi)' : ''));
+    if (hasil.kode === 200 && !hasil.badan.idempotenDiulang) console.log('[dwi] ' + target + ' selesai · kunci ' + kunciDari(target, isi) + ' · sub ' + (SESI.subDariReq(req) || '-') + (SIMULASI ? ' (simulasi)' : ''));
     res.status(hasil.kode).json(hasil.badan);
   } catch (e) { next(e); }
 });
-app.get('/api/dwi/perjalanan/akses', lajuBaca, async (req, res) => {
+app.get('/api/dwi/perjalanan/akses', wajibSesi, lajuBaca, async (req, res) => {
   if (SIMULASI) { const out = {}; Object.keys(PERJALANAN).forEach((r) => { out[r] = { ok: true, jalur: PERJALANAN[r].ketuk, pesan: '', n: 3 }; }); return res.json({ ok: true, mode: 'simulasi', rumpun: out }); }
   if (!DWI.userID || !DWI.password) return res.json({ ok: false, mode: 'kosong', rumpun: {}, pesan: 'Kredensial kosong' });
   try { res.json({ ok: true, mode: DWI.produksi ? 'produksi' : 'uat', rumpun: await aksesPerjalanan(req.query.segar === '1') }); } catch (e) { res.json({ ok: false, mode: DWI.produksi ? 'produksi' : 'uat', rumpun: {}, pesan: e.message }); }
 });
-app.post('/api/dwi/perjalanan/cari', lajuBaca, async (req, res, next) => {
+app.post('/api/dwi/perjalanan/cari', wajibSesi, lajuBaca, async (req, res, next) => {
   try {
     const b = req.body || {}, r = KEAMANAN.batasiTeks(b.rumpun, 20), m = PERJALANAN[r]; if (!m) throw galat('Rumpun tidak dikenal', 400);
     const p = {}; Object.keys(b.param || {}).slice(0, 12).forEach((k) => { p[KEAMANAN.batasiTeks(k, 20)] = KEAMANAN.batasiTeks(b.param[k], 60); });
@@ -298,8 +301,8 @@ app.post('/api/dwi/perjalanan/cari', lajuBaca, async (req, res, next) => {
     res.json({ status: 'SUCCESS', rumpun: r, items: rapikanPerjalanan(j), mentahRingkas: Object.keys(j).slice(0, 12) });
   } catch (e) { next(e); }
 });
-app.post('/api/dwi/cocokkan', lajuBaca, async (req, res, next) => { try { const kunci = KEAMANAN.batasiTeks((req.body || {}).kunci, 160); if (!kunci) throw galat('Sebutkan kunci transaksinya.', 400); const h = await cocokkan(kunci); res.status(h.kode).json(h.badan); } catch (e) { next(e); } });
-app.get('/api/dwi/transaksi', lajuBaca, (req, res) => {
+app.post('/api/dwi/cocokkan', wajibAdmin, lajuBaca, async (req, res, next) => { try { const kunci = KEAMANAN.batasiTeks((req.body || {}).kunci, 160); if (!kunci) throw galat('Sebutkan kunci transaksinya.', 400); const h = await cocokkan(kunci); res.status(h.kode).json(h.badan); } catch (e) { next(e); } });
+app.get('/api/dwi/transaksi', wajibAdmin, lajuBaca, (req, res) => {
   const daftar = Object.keys(catatan).map((k) => { const c = catatan[k]; return { kunci: k, keadaan: c.keadaan, jalur: c.jalur, penanda: c.penanda || null, mulai: c.mulai, selesai: c.selesai || null, sebab: c.sebab || null, permintaan: c.permintaan || null, simulasi: !!c.simulasi }; }).sort((a, b) => String(b.mulai).localeCompare(String(a.mulai)));
   const n = (k) => daftar.filter((x) => x.keadaan === k).length;
   res.json({ total: daftar.length, ragu: n('ragu'), tertunda: n('tertunda'), berjalan: n('berjalan'), selesai: n('selesai'), daftar: daftar.slice(0, 200) });

@@ -288,6 +288,7 @@
       K.gatewaySibuk = false;
       if (r.tunda) { X.tahanDana(n, K.bayar, { mode:'tunda', orderId:orderId }); sekilas(tx('No hold on this channel — you pay through the gateway once the visit is done.')); selesaiBayar(); X.gambar(); return; }
       if (r.offline) { sekilas(tx('Payment server offline — simulated confirmation (start app/server/payment-server.js for real Midtrans sandbox).'), 'err'); if (tahan) X.tahanDana(n, K.bayar); selesaiBayar(); X.gambar(); return; }
+      if (r.perluSesi) { sekilas('Masuk lewat OTP dulu — pembayaran diikat ke akun Anda (sesi bertanda tangan).', 'err'); K.lembar = null; K.authStep = 'otp'; K.layar = 'signup'; X.gambar(); return; }
       if (!r.ok) { sekilas('Gateway refused: ' + (r.error || 'unknown') + '. Nothing was charged.', 'err'); X.gambar(); return; }
       K.gateway = Object.assign({ orderId:orderId, amount:n, status:'pending', mode:'sandbox', jenis: tahan ? 'tahan' : 'bayar' }, r.data);
       K.payPinOpen = false; K.payPin = ''; K.lembar = 'gateway';

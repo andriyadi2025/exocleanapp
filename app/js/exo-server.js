@@ -38,6 +38,8 @@ var EXO_SERVER = (function () {
   }
 
   var sehat = {};   /* nama → { ok, at } */
+  /* Header sesi bertanda tangan (setelah OTP) untuk semua permintaan ke server pendamping. */
+  function kepalaSesi(dasar) { var k = Object.assign({}, dasar || {}); try { var ss = window.EXO_BRANKAS && EXO_BRANKAS.sesi(); if (ss) k.Authorization = 'Bearer ' + ss.token; } catch (e) { /* tanpa sesi */ } return k; }
   function cekSehat(nama, jalur) {
     var s = sehat[nama];
     if (s && Date.now() - s.at < 30000) return Promise.resolve(s.ok);
@@ -57,7 +59,7 @@ var EXO_SERVER = (function () {
       method:'POST', headers:kepala, body:JSON.stringify(body || {})
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) return { ok:false, error: j.error || ('HTTP ' + r.status), data:j };
+        if (!r.ok) return { ok:false, error: j.error || ('HTTP ' + r.status), data:j, perluSesi: r.status === 401, status:r.status };
         return { ok:true, data:j };
       });
     }).catch(function (e) { sehat[nama] = { ok:false, at:Date.now() }; return { ok:false, offline:true, error:e.message }; });
@@ -145,7 +147,7 @@ var EXO_SERVER = (function () {
     return cekSehat('posisi', '/api/posisi/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
       var t = tokenPosisi(orderId) || {}, tk = tokenBaca || t.baca || t.tulis || '';
-      return fetch(alamat().posisi + '/api/posisi/' + kunciPosisi(orderId), { headers: tk ? { 'X-Exo-Token': tk } : {} })
+      return fetch(alamat().posisi + '/api/posisi/' + kunciPosisi(orderId), { headers: kepalaSesi(tk ? { 'X-Exo-Token': tk } : {}) })
         .then(function (r) { return r.ok ? r.json().then(function (j) { return { ok:true, data:j }; }) : { ok:false, kosong:true }; })
         .catch(function () { return { ok:false, offline:true }; });
     });
@@ -158,7 +160,7 @@ var EXO_SERVER = (function () {
      aplikasi memakai tarif statis. */
   var infoKirim = null;
   function ambil(nama, jalur) {
-    return fetch(alamat()[nama] + jalur).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return r.ok ? { ok:true, data:j } : { ok:false, error:j.error || ('HTTP ' + r.status) }; }); })
+    return fetch(alamat()[nama] + jalur, { headers:kepalaSesi() }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return r.ok ? { ok:true, data:j } : { ok:false, error:j.error || ('HTTP ' + r.status), perluSesi:r.status === 401, status:r.status }; }); })
       .catch(function (e) { sehat[nama] = { ok:false, at:Date.now() }; return { ok:false, offline:true, error:e.message }; });
   }
   function kirimInfo(segar) {
@@ -190,8 +192,8 @@ var EXO_SERVER = (function () {
   function csSehat() { if (!csInfoCache || Date.now() - csInfoCache.at > 60000) { csInfoCache = { at:Date.now(), ok:false }; ambil('cs', '/health').then(function (r) { csInfoCache = { at:Date.now(), ok:!!(r.ok && r.data && r.data.ok), mode:r.data && r.data.mode }; }); } return !!csInfoCache.ok; }
   function csTanya(body) { return kirimStatus('cs', '/tanya', body); }
   function kirimStatus(nama, jalur, body) {
-    return fetch(alamat()[nama] + jalur, { method:'POST', headers:{ 'Content-Type': 'application/json' }, body:JSON.stringify(body || {}) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok:r.ok, status:r.status, data:j, error:r.ok ? '' : (j.error || ('HTTP ' + r.status)) }; }); })
+    return fetch(alamat()[nama] + jalur, { method:'POST', headers:kepalaSesi({ 'Content-Type': 'application/json' }), body:JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok:r.ok, status:r.status, data:j, error:r.ok ? '' : (j.error || ('HTTP ' + r.status)), perluSesi:r.status === 401 }; }); })
       .catch(function (e) { sehat[nama] = { ok:false, at:Date.now() }; return { ok:false, offline:true, status:0, data:{}, error:e.message }; });
   }
   function dwiCall(jalur, isi) { return dwiInfo().then(function (j) { if (!j.siap) return { ok:false, offline:!j.ok, siap:false, error:j.pesan || 'Server Darmawisata belum siap' }; return kirimStatus('dwi', '/api/dwi/call', { jalur:jalur, isi:isi || {} }).then(function (r) { r.mode = j.mode; return r; }); }); }

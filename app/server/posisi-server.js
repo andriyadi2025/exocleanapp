@@ -28,6 +28,7 @@ const express = require('express');
 require('dotenv').config();
 const KEAMANAN = require('./keamanan');
 const TLS = require('./tls');
+const SESI = require('./sesi');
 
 const app = express();
 const PORT = Number(process.env.POSISI_PORT || 4200);
@@ -36,6 +37,8 @@ const posisi = new Map();   /* orderId → { lat, lng, akurasi, at, tulisHash, b
 
 app.use(express.json({ limit: '2kb' }));
 const ASAL = KEAMANAN.pasangDasar(app, process.env, 'posisi');
+/* Sesi wajib di atas token per pesanan: hanya sesi mitra/admin yang boleh menulis posisi; membaca butuh sesi apa pun + token baca. */
+const wajibSesi = SESI.wajibDariEnv(process.env), wajibMitra = SESI.wajibDariEnv(process.env, { sisi: ['mitra', 'admin'] });
 const lajuTulis = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_POSISI_PER_MENIT || 60) });
 
 setInterval(() => { const now = Date.now(); for (const [k, v] of posisi) if (now - v.at > TTL) posisi.delete(k); }, 60000).unref();
@@ -46,7 +49,7 @@ function cocok(token, hash) { return KEAMANAN.samaAman(KEAMANAN.hashToken(token)
 
 app.get('/api/posisi/health', (req, res) => res.json({ ok: true, layanan: 'EXOCLEAN posisi server', aktif: posisi.size, token: true }));
 
-app.get('/api/posisi/:id', (req, res) => {
+app.get('/api/posisi/:id', wajibSesi, (req, res) => {
   const id = req.params.id; if (!idSah(id)) return res.status(404).json({ error: 'Tidak ada' });
   const p = posisi.get(id);
   if (!p || Date.now() - p.at > TTL) return res.status(404).json({ error: 'Belum ada posisi untuk pesanan ini' });
@@ -55,7 +58,7 @@ app.get('/api/posisi/:id', (req, res) => {
   res.json({ lat: p.lat, lng: p.lng, akurasi: p.akurasi, at: p.at });
 });
 
-app.post('/api/posisi/:id', lajuTulis, (req, res) => {
+app.post('/api/posisi/:id', wajibMitra, lajuTulis, (req, res) => {
   const id = req.params.id; if (!idSah(id)) return res.status(404).json({ error: 'Tidak ada' });
   const b = req.body || {};
   const lat = Number(b.lat), lng = Number(b.lng);

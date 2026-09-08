@@ -34,6 +34,7 @@ const path = require('path');
 require('dotenv').config();
 
 const KEAMANAN = require('./keamanan');
+const SESI = require('./sesi');
 const app = express();
 const PORT = process.env.PORT || 4000;
 const PAY_MAKS = Number(process.env.PAY_MAKS_RUPIAH || 50000000);
@@ -47,6 +48,8 @@ app.use(express.json({ limit: '1mb' }));
    Header pengaman, CORS ketat (tanpa '*'), pembatas laju per IP, POST wajib
    JSON, log tanpa PII — semuanya dari keamanan.js supaya sama di tiap server. */
 const ALLOWED = KEAMANAN.pasangDasar(app, process.env, 'pay');
+/* Sesi bertanda tangan (auth-server) wajib untuk semua endpoint uang; transaksi terikat ke `sub` pembuatnya. Webhook & health tidak (dipanggil gateway). */
+const wajibSesi = SESI.wajibDariEnv(process.env);
 const lajuBuat = KEAMANAN.batasLaju({ jendelaDetik: 600, maks: Number(process.env.LAJU_BAYAR_10MENIT || 20), pesan: 'Terlalu banyak transaksi dibuat dari alamat ini. Coba lagi beberapa menit lagi.' });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_STATUS_PER_MENIT || 60) });
 const lajuWebhook = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: 600 });
@@ -415,7 +418,7 @@ app.get('/api/pay/health', (req, res) => {
   });
 });
 
-app.post('/api/pay/charge', lajuBuat, async (req, res) => {
+app.post('/api/pay/charge', wajibSesi, lajuBuat, async (req, res) => {
   const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !channel || !amount) throw new Error('orderId, channel, dan amount wajib diisi');
@@ -429,7 +432,7 @@ app.post('/api/pay/charge', lajuBuat, async (req, res) => {
       : await chargeMidtrans({ orderId, channel, amount, customer, keterangan, invoiceNo });
 
     simpan(orderId, {
-      orderId, gateway, channel, amount, status: 'pending', tokenHash: tk.tokenHash,
+      orderId, gateway, channel, amount, status: 'pending', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req),
       gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString()
     });
     res.json(Object.assign({ token: tk.token }, hasil));
@@ -439,11 +442,12 @@ app.post('/api/pay/charge', lajuBuat, async (req, res) => {
   }
 });
 
-app.post('/api/pay/status', lajuBaca, async (req, res) => {
+app.post('/api/pay/status', wajibSesi, lajuBaca, async (req, res) => {
   const { gateway, orderId } = req.body || {};
   try {
     if (!orderId) throw new Error('orderId wajib diisi');
-    if (!jagaToken(req, res, orderId)) return;
+    const rec = jagaToken(req, res, orderId); if (!rec) return;
+    if (!SESI.pemilikCocok(req, rec.pemilik)) return res.status(403).json({ error: 'Transaksi ini milik akun lain' });
     const hasil = gateway === 'xendit' ? await statusXendit(orderId) : await statusMidtrans(orderId);
     simpan(orderId, { status: hasil.status });
     res.json(hasil);
@@ -452,7 +456,7 @@ app.post('/api/pay/status', lajuBaca, async (req, res) => {
   }
 });
 
-app.post('/api/pay/authorize', lajuBuat, async (req, res) => {
+app.post('/api/pay/authorize', wajibSesi, lajuBuat, async (req, res) => {
   const { gateway, orderId, channel, amount, keterangan, invoiceNo } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
@@ -463,7 +467,7 @@ app.post('/api/pay/authorize', lajuBuat, async (req, res) => {
     }
     const tk = terbitkanToken();
     const hasil = await authorizeMidtrans({ orderId, amount, customer, keterangan, invoiceNo });
-    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', tokenHash: tk.tokenHash, gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
+    simpan(orderId, { orderId, gateway: 'midtrans', channel: 'cc', amount, status: 'pending', jenis: 'tahan', tokenHash: tk.tokenHash, pemilik: SESI.subDariReq(req), gatewayRef: hasil.gatewayRef, createdAt: new Date().toISOString() });
     res.json(Object.assign({ token: tk.token }, hasil));
   } catch (e) {
     console.error('[authorize]', e.message, e.detail || '');
@@ -471,12 +475,13 @@ app.post('/api/pay/authorize', lajuBuat, async (req, res) => {
   }
 });
 
-app.post('/api/pay/capture', lajuBaca, async (req, res) => {
+app.post('/api/pay/capture', wajibSesi, lajuBaca, async (req, res) => {
   const { orderId, amount } = req.body || {};
   try {
     if (!orderId || !amount) throw new Error('orderId dan amount wajib diisi');
     if (!Number.isInteger(amount) || amount < 1) throw new Error('amount harus bilangan bulat rupiah');
     const rec = jagaToken(req, res, orderId); if (!rec) return;
+    if (!SESI.pemilikCocok(req, rec.pemilik)) return res.status(403).json({ error: 'Transaksi ini milik akun lain' });
     if (rec.jenis !== 'tahan') throw new Error('Transaksi ini bukan penahanan dana');
     if (amount > rec.amount) throw new Error('amount melebihi dana yang ditahan (' + rec.amount + ')');
     const hasil = await captureMidtrans(orderId, amount);
@@ -488,11 +493,12 @@ app.post('/api/pay/capture', lajuBaca, async (req, res) => {
   }
 });
 
-app.post('/api/pay/cancel', lajuBaca, async (req, res) => {
+app.post('/api/pay/cancel', wajibSesi, lajuBaca, async (req, res) => {
   const { orderId } = req.body || {};
   try {
     if (!orderId) throw new Error('orderId wajib diisi');
-    if (!jagaToken(req, res, orderId)) return;
+    const rec = jagaToken(req, res, orderId); if (!rec) return;
+    if (!SESI.pemilikCocok(req, rec.pemilik)) return res.status(403).json({ error: 'Transaksi ini milik akun lain' });
     const hasil = await cancelMidtrans(orderId);
     simpan(orderId, { status: 'cancelled', cancelledAt: new Date().toISOString() });
     res.json(hasil);
