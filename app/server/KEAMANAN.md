@@ -201,3 +201,14 @@ npm run test:brankas           # 24 uji kriptografi & sesi
 Rotasi kunci induk: pindahkan kunci lama ke `BRANKAS_KUNCI_LAMA=1:<hex-lama>`, isi `BRANKAS_KUNCI` baru dan `BRANKAS_KUNCI_VERSI=2`, mulai ulang data-server, lalu konsol admin → Keamanan → *Putar kunci*. Setelah semua rekaman berversi 2, kosongkan `BRANKAS_KUNCI_LAMA`.
 
 Yang masih menjadi batas: penyimpanan rekaman terenkripsi masih berkas JSON per rekaman (`data/brankas/`, di luar repo) — antarmuka `PENYIMPANAN` siap diganti PostgreSQL; kunci induk di `.env` sebaiknya dipindah ke KMS/HSM (Cloud KMS, Vault) saat volume naik; foto identitas belum dititipkan (tabel `foto` sudah diizinkan di `BRANKAS_TABEL`).
+
+## 8. Program pengungkapan kerentanan (VDP) & bug bounty (8 Sep 2026)
+
+| Bagian | Berkas | Isi |
+|---|---|---|
+| Kebijakan publik | `SECURITY.md` (akar repo, dikenali GitHub), `app/keamanan.html` | cakupan, di luar cakupan, aturan main & **safe harbor** (tidak menempuh jalur hukum/UU ITE atas riset beritikad baik), tingkat CVSS v3.1 & hadiah (Kritis Rp10–25 jt, Tinggi Rp3–10 jt, Sedang Rp1–3 jt, Rendah Rp250 rb–1 jt, Informasional = pengakuan), SLA (balasan 3 hari kerja, triase 7, perbaikan 30/90 hari, pembayaran 14 hari), penanganan temuan data pribadi sebagai insiden UU PDP |
+| `security.txt` | `app/.well-known/security.txt` (RFC 9116) | Contact, Policy, Acknowledgments, Preferred-Languages, Canonical, Expires 8 Sep 2027 — **isi URL kunci PGP dan tanda tangani** sebelum tayang; perbarui sebelum kedaluwarsa |
+| Penerima laporan | `vdp-server.js` (port 4700) | formulir → laporan disimpan **terenkripsi** lewat `brankas.js` (tabel `vdp`, tanpa pemilik → hanya sesi admin), 5 laporan/jam/IP, honeypot, Turnstile bila dikonfigurasi, nomor tanda terima `VDP-YYYYMMDD-XXXXXX`; indeks polos hanya nomor + waktu + tingkat dugaan |
+| Konsol admin | `js/exo-admin-vdp.js` (IT → Bug bounty / VDP) | laporan dimuat dari brankas dengan sesi admin, triase: status (baru → triase → valid/duplikat/tidak berlaku → diperbaiki → dibayar), CVSS → tingkat → hadiah saran (interpolasi dalam rentang), PIN + audit tiap perubahan; penyunting kebijakan yang diterbitkan ke halaman publik; hall of fame dengan izin pelapor; penanda lewat SLA |
+
+Menjalankan: `npm run start:vdp` (butuh `BRANKAS_KUNCI` yang sama dengan data-server); nginx meneruskan `/api/vdp/` ke 4700 dan melayani `/.well-known/security.txt` (contoh di `contoh/nginx-exoclean.conf`). Pembayaran hadiah dicatat di triase; masukkan ke Accounting sebagai beban keamanan saat dibayar.

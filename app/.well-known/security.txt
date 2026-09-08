@@ -1,0 +1,11 @@
+Contact: mailto:security@exoclean.id
+Contact: https://app.exoclean.id/keamanan.html
+Expires: 2027-09-08T00:00:00.000Z
+Preferred-Languages: id, en
+Canonical: https://app.exoclean.id/.well-known/security.txt
+Policy: https://app.exoclean.id/keamanan.html
+Policy: https://github.com/andriyadi2025/exocleanapp/blob/main/SECURITY.md
+Acknowledgments: https://app.exoclean.id/keamanan.html#hall-of-fame
+Hiring: https://app.exoclean.id/web.html#mitra
+# Ganti dengan URL kunci PGP publik tim keamanan sebelum tayang, lalu tanda tangani berkas ini (RFC 9116 §2.3):
+# Encryption: https://app.exoclean.id/pgp-security.asc

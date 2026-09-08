@@ -21,7 +21,7 @@
 var EXO_SERVER = (function () {
   'use strict';
 
-  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400', cs:'http://localhost:4500', data:'http://localhost:4600' };
+  var BAWAAN = { pay:'http://localhost:4000', auth:'http://localhost:4100', posisi:'http://localhost:4200', kirim:'http://localhost:4300', dwi:'http://localhost:4400', cs:'http://localhost:4500', data:'http://localhost:4600', vdp:'http://localhost:4700' };
   /* Alamat timpaan dari localStorage hanya diterima bila HTTPS, atau HTTP ke
      localhost/jaringan pribadi — supaya skrip asing yang sempat menulis
      localStorage tidak bisa membelokkan pembayaran ke server miliknya. */
@@ -101,6 +101,9 @@ var EXO_SERVER = (function () {
   function dataStatistik() { return kirim('data', '/api/data/statistik', {}); }
   function dataVerifikasiAudit() { return kirim('data', '/api/data/verifikasi-audit', {}); }
   function dataPutarKunci(tabel) { return kirim('data', '/api/data/putar-kunci', tabel ? { tabel:tabel } : {}); }
+  /* VDP / bug bounty: laporan kerentanan → vdp-server (disimpan terenkripsi) */
+  function vdpLapor(isi) { return kirim('vdp', '/api/vdp/lapor', isi); }
+  function vdpSehat() { return cekSehat('vdp', '/api/vdp/health'); }
   function otpKirim(telp, captcha) {
     return cekSehat('auth', '/api/auth/health').then(function (ok) {
       if (!ok) return { ok:false, offline:true };
@@ -211,6 +214,6 @@ var EXO_SERVER = (function () {
     return dimuat[url];
   }
 
-  return { dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
+  return { vdpLapor:vdpLapor, vdpSehat:vdpSehat, dataSehat:dataSehat, dataSimpan:dataSimpan, dataAmbil:dataAmbil, dataAmbilSemua:dataAmbilSemua, dataCari:dataCari, dataHapus:dataHapus, dataStatistik:dataStatistik, dataVerifikasiAudit:dataVerifikasiAudit, dataPutarKunci:dataPutarKunci, csSehat:csSehat, csTanya:csTanya, alamat:alamat, cekSehat:cekSehat, bayar:bayar, statusBayar:statusBayar, tahan:tahan, tangkap:tangkap, lepas:lepas, otpKirim:otpKirim, otpPeriksa:otpPeriksa,
     loginGoogle:loginGoogle, loginFacebook:loginFacebook, posisiKirim:posisiKirim, posisiAmbil:posisiAmbil, tokenPosisi:tokenPosisi, dwiInfo:dwiInfo, dwiCall:dwiCall, dwiBayar:dwiBayar, dwiCocokkan:dwiCocokkan, dwiPerjalananAkses:dwiPerjalananAkses, dwiPerjalananCari:dwiPerjalananCari, dwiSaldo:dwiSaldo, dwiTransaksi:dwiTransaksi, kirimInfo:kirimInfo, tarifKirim:tarifKirim, buatKirim:buatKirim, statusKirim:statusKirim, lacakKirim:lacakKirim, cariArea:cariArea, alamatSah:alamatSah, muatSkrip:muatSkrip, KANAL:KANAL };
 })();

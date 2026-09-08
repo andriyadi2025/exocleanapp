@@ -43,7 +43,7 @@ app.use(express.json({ limit: '3mb' }));
 const lajuTulis = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DATA_TULIS_PER_MENIT || 60), kunci: (req) => (req.sesi && req.sesi.sub) || KEAMANAN.ipKlien(req) });
 const lajuBaca = KEAMANAN.batasLaju({ jendelaDetik: 60, maks: Number(process.env.LAJU_DATA_BACA_PER_MENIT || 120), kunci: (req) => (req.sesi && req.sesi.sub) || KEAMANAN.ipKlien(req) });
 const wajib = SESI.wajibSesi(RAHASIA_SESI), wajibAdmin = SESI.wajibSesi(RAHASIA_SESI, { sisi: ['admin'] });
-const TABEL_BOLEH = new Set(String(process.env.BRANKAS_TABEL || 'users,orders,kontakDarurat,toko,penarikanToko,pendaftaran,sosInsiden,foto').split(',').map((s) => s.trim()).filter(Boolean));
+const TABEL_BOLEH = new Set(String(process.env.BRANKAS_TABEL || 'users,orders,kontakDarurat,toko,penarikanToko,pendaftaran,sosInsiden,foto,vdp').split(',').map((s) => s.trim()).filter(Boolean));
 function tabelSah(t) { if (!TABEL_BOLEH.has(String(t || ''))) throw Object.assign(new Error('tabel tidak diizinkan'), { status: 400 }); return t; }
 function opsiDari(req) { return { pemilik: req.sesi.sub, admin: req.sesi.sisi === 'admin' }; }
 function tangani(fn) { return async (req, res) => { try { res.json(await fn(req)); } catch (e) { const st = e.status || 400; if (st >= 500) console.error('[data]', e.message); res.status(st).json({ error: st >= 500 ? 'Gangguan brankas' : e.message }); } }; }

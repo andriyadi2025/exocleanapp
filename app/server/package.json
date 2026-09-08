@@ -20,6 +20,7 @@
     "start:dwi": "node dwi-server.js",
     "start:cs": "node cs-server.js",
     "start:data": "node data-server.js",
+    "start:vdp": "node vdp-server.js",
     "test:brankas": "node alat/uji-brankas.js",
     "dev:dwi": "node --watch dwi-server.js"
   },

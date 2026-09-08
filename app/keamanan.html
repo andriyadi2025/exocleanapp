@@ -1,0 +1,69 @@
+<!doctype html>
+<!-- keamanan.html — halaman publik Program Pengungkapan Kerentanan (VDP) &
+     bug bounty EXOCLEAN. Kebijakan (cakupan, hadiah, aturan, SLA, hall of
+     fame) dibaca dari terbitan konsol admin (IT → Bug bounty / VDP) dengan
+     bawaan di js/exo-vdp.js. Formulir laporan dikirim ke vdp-server dan
+     disimpan terenkripsi. Tanpa skrip inline (CSP). -->
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer"><title>EXOCLEAN — Keamanan & pengungkapan kerentanan</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<style>
+:root{--aksen:#009183;--tinta:#10221d;--muted:#5b6b66;--latar:#f4f8f6;--kartu:#fff;--garis:#e3ebe7;--kritis:#a8281e;--tinggi:#b85a12;--sedang:#8f7300;--rendah:#3f7a70}
+*{box-sizing:border-box}body{margin:0;font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tinta);background:var(--latar);line-height:1.55}
+a{color:var(--aksen)}.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--garis);z-index:9}.top .wrap{display:flex;align-items:center;gap:16px;height:64px}.top img{height:30px;display:block}.top .merek{display:block;text-decoration:none}.top .merek .tag{display:block;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--aksen);margin-top:3px}.top nav{margin-left:auto;display:flex;gap:14px;font-size:14px;font-weight:700}.top nav a{text-decoration:none;color:var(--tinta)}
+.hero{background:linear-gradient(135deg,#0b5e55,#009183);color:#fff;padding:44px 0 36px}.hero h1{font-size:clamp(26px,4vw,38px);margin:0 0 10px;line-height:1.15}.hero p{margin:0;max-width:64ch;font-size:16px;opacity:.95}.hero .badge{display:inline-block;background:rgba(255,255,255,.18);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+h2{font-size:22px;margin:40px 0 10px}h3{font-size:16px;margin:18px 0 6px}
+.kartu{background:var(--kartu);border:1px solid var(--garis);border-radius:16px;padding:18px 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}th{text-align:left;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--garis)}td{padding:10px 12px;border-bottom:1px solid #eef3f0;vertical-align:top}tr:last-child td{border-bottom:0}.tbl{overflow-x:auto}
+.pil{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:800}.pil.kritis{background:#fbe9e7;color:var(--kritis)}.pil.tinggi{background:#fdeee0;color:var(--tinggi)}.pil.sedang{background:#faf3d6;color:var(--sedang)}.pil.rendah{background:#e4f1ee;color:var(--rendah)}.pil.info{background:#eceff0;color:#5f6f6a}
+ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
+.langkah{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.langkah div{background:#fff;border:1px solid var(--garis);border-radius:14px;padding:14px 16px}.langkah b{display:block;font-size:26px;color:var(--aksen);line-height:1}
+form{display:grid;gap:12px}label{font-size:12.5px;font-weight:800;color:var(--muted);display:block;margin-bottom:4px}input,select,textarea{width:100%;border:1.5px solid var(--garis);border-radius:10px;padding:10px 12px;font:inherit;background:#fff}textarea{min-height:120px}input:focus,select:focus,textarea:focus{outline:2px solid var(--aksen);border-color:var(--aksen)}
+.dua{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.dua{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 20px;border-radius:10px;font-weight:800;font-size:14px;border:1.5px solid transparent;cursor:pointer;background:var(--aksen);color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
+.info{background:#e6f5f3;color:#0b5e55;border-radius:12px;padding:12px 14px;font-size:14px}.galat{background:#fdecec;color:#9b1c1c;border-radius:12px;padding:12px 14px;font-size:14px}
+.madu{position:absolute;left:-9999px;opacity:0;height:0;width:0}
+.hof{display:flex;flex-wrap:wrap;gap:10px}.hof div{background:#fff;border:1px solid var(--garis);border-radius:12px;padding:10px 14px;font-size:14px}.hof small{display:block;color:var(--muted);font-size:12px}
+footer{margin-top:48px;padding:24px 0;border-top:1px solid var(--garis);font-size:13px;color:var(--muted)}
+.tutup{background:#fdeee0;color:#7a3c00;border-radius:12px;padding:12px 14px;font-size:14px;margin-top:14px}
+</style></head><body>
+<header class="top"><div class="wrap"><a href="web.html" class="merek" aria-label="EXOCLEAN"><img src="assets/exoclean-wordmark.png" alt="EXOCLEAN" data-brand="word"><span class="tag" data-brand="tag">We clean all purpose</span></a><nav><a href="#cakupan">Cakupan</a><a href="#hadiah">Hadiah</a><a href="#aturan">Aturan</a><a href="#lapor">Lapor</a><a href="#hall-of-fame">Hall of fame</a></nav></div></header>
+<section class="hero"><div class="wrap"><span class="badge">Program pengungkapan kerentanan · bug bounty</span><h1>Bantu kami menjaga pelanggan dan mitra tetap aman</h1><p>Menemukan celah keamanan di EXOCLEAN? Laporkan lewat formulir terenkripsi di bawah. Kami membalas dalam <span id="slaRespon">3</span> hari kerja, menetapkan tingkat dalam <span id="slaTriase">7</span> hari, dan memberi hadiah hingga <span id="hadiahMaks">Rp25.000.000</span> untuk temuan kritis.</p><div id="tutup" class="tutup" hidden>Program sedang dijeda sementara. Laporan tetap bisa dikirim ke email tim keamanan.</div></div></section>
+<main class="wrap">
+  <h2>Cara kerjanya</h2>
+  <div class="langkah"><div><b>1</b>Temukan celah pada aset dalam cakupan, dengan akun Anda sendiri.</div><div><b>2</b>Kirim laporan: langkah reproduksi, dampak, bukti.</div><div><b>3</b>Kami membalas, mentriase, dan menetapkan tingkat (CVSS v3.1).</div><div><b>4</b>Setelah diperbaiki: hadiah dibayar dan nama Anda masuk hall of fame (bila berkenan).</div></div>
+
+  <h2 id="cakupan">Cakupan</h2>
+  <div class="kartu tbl"><table><thead><tr><th>Aset</th><th>Keterangan</th><th>Prioritas</th></tr></thead><tbody id="cakupanIsi"></tbody></table></div>
+  <h3>Di luar cakupan</h3>
+  <div class="kartu"><ul id="luarIsi"></ul></div>
+
+  <h2 id="hadiah">Tingkat dan hadiah</h2>
+  <div class="kartu tbl"><table><thead><tr><th>Tingkat (CVSS v3.1)</th><th>Contoh</th><th>Hadiah</th></tr></thead><tbody id="hadiahIsi"></tbody></table><p style="font-size:13px;color:var(--muted);margin:10px 0 0">Tingkat ditetapkan tim EXOCLEAN berdasarkan CVSS dan dampak bisnis nyata. Hadiah dibayar setelah perbaikan diverifikasi, ke rekening/dompet atas nama pelapor, tunduk pajak yang berlaku. Karyawan dan kontraktor EXOCLEAN tidak berhak atas hadiah.</p></div>
+
+  <h2 id="aturan">Aturan main dan safe harbor</h2>
+  <div class="grid"><div class="kartu"><h3 style="margin-top:0">Yang kami minta</h3><ul id="aturanIsi"></ul></div><div class="kartu"><h3 style="margin-top:0">Yang kami janjikan</h3><ul><li>Tidak menempuh jalur hukum (termasuk UU ITE) atas riset beritikad baik yang mengikuti aturan ini, dan membantu bila pihak ketiga mempermasalahkannya.</li><li>Balasan pertama dalam <span class="slaRespon">3</span> hari kerja, triase dalam <span class="slaTriase">7</span> hari kerja, perbaikan kritis/tinggi dalam 30 hari, lainnya <span class="slaPerbaikan">90</span> hari.</li><li>Kabar pada setiap perubahan status dan izin Anda sebelum nama dicantumkan.</li><li>Temuan yang menyangkut data pribadi ditangani sebagai insiden UU PDP: pemberitahuan dalam 3×24 jam.</li></ul></div></div>
+
+  <h2 id="lapor">Kirim laporan</h2>
+  <div class="kartu"><p style="margin:0 0 12px;font-size:14px;color:var(--muted)">Laporan disimpan terenkripsi (AES-256-GCM) dan hanya dibuka tim keamanan. Anda mendapat nomor tanda terima. Alternatif: email <a id="emailTim" href="mailto:security@exoclean.id">security@exoclean.id</a>.</p>
+    <form id="formLapor" autocomplete="off" novalidate>
+      <div><label for="judul">Judul temuan</label><input id="judul" name="judul" maxlength="160" placeholder="mis. IDOR pada /api/kirim/daftar membocorkan resi pengguna lain" required></div>
+      <div class="dua"><div><label for="aset">Aset / URL</label><input id="aset" name="aset" maxlength="200" placeholder="app.exoclean.id/…" required></div><div><label for="tingkat">Tingkat dugaan</label><select id="tingkat" name="tingkat"><option value="kritis">Kritis</option><option value="tinggi">Tinggi</option><option value="sedang" selected>Sedang</option><option value="rendah">Rendah</option><option value="info">Informasional</option></select></div></div>
+      <div><label for="langkah">Langkah reproduksi (wajib, min. 40 karakter)</label><textarea id="langkah" name="langkah" maxlength="8000" placeholder="1. Masuk sebagai … 2. Kirim permintaan … 3. Amati …" required></textarea></div>
+      <div><label for="dampak">Dampak dan bukti (PoC, tautan tangkapan layar)</label><textarea id="dampak" name="dampak" maxlength="2000" style="min-height:80px"></textarea></div>
+      <div class="dua"><div><label for="nama">Nama / handle</label><input id="nama" name="nama" maxlength="80" placeholder="untuk hall of fame (opsional)"></div><div><label for="email">Email (untuk balasan dan hadiah)</label><input id="email" name="email" type="email" maxlength="120" required></div></div>
+      <div><label for="kontakLain">Kontak lain (opsional: Telegram, sidik jari PGP)</label><input id="kontakLain" name="kontakLain" maxlength="200"></div>
+      <div class="madu" aria-hidden="true"><label for="situs">Situs</label><input id="situs" name="situs" tabindex="-1" autocomplete="off"></div>
+      <div id="pesan" hidden></div>
+      <div><button class="btn" id="kirim" type="submit">Kirim laporan terenkripsi</button></div>
+    </form></div>
+
+  <h2 id="hall-of-fame">Hall of fame</h2>
+  <div class="hof" id="hofIsi"></div>
+</main>
+<footer><div class="wrap">EXOCLEAN · <a href="/.well-known/security.txt">security.txt</a> · <a href="web.html">Beranda</a> · Kebijakan ini diperbarui <span id="tglKebijakan">8 September 2026</span>.</div></footer>
+<script src="js/exo-brand.js"></script><script src="js/exo-server.js"></script><script src="js/exo-vdp.js"></script><script src="js/exo-vdp-halaman.js"></script>
+</body></html>
