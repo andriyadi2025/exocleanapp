@@ -21,6 +21,8 @@ var EXO_KONTEN = (function () {
       teksBerjalan:{ aktif:true, label:'Promo', teks:'', kecepatan:22 },
       /* Ikon pengganti per layanan/menu: { jenis:'emoji'|'gambar', nilai }. Dipakai menu ikon beranda, hasil cari, dan katalog. */
       ikonLayanan:{},
+      /* banner di halaman Toko (feed perlengkapan) */
+      bannerToko:[{ id:'bt1', judul:'Kupon toko aktif', sub:'cek kupon & gratis ongkir ≥ Rp150.000 per toko', cta:'Kupon saya', ke:'kuponSaya', warna:'ungu', ikon:'🎟️', aktif:true }],
       banner:[
         { id:'b1', judul:'Gratis ongkir', sub:'belanja perlengkapan ≥ Rp150.000 per toko', cta:'Belanja', ke:'toko', warna:'hijau', ikon:'🚚', aktif:true },
         { id:'b2', judul:'Langganan mingguan −10%', sub:'harga terkunci 3 bulan, jadwal tetap', cta:'Pilih paket', ke:'catalog', warna:'teal', ikon:'📅', aktif:true },
@@ -36,8 +38,8 @@ var EXO_KONTEN = (function () {
       judulFlash:'⚡ Flash Sale', judulToko:'Toko pilihan', judulRekomendasi:'Rekomendasi untuk kamu',
       jaminan:'Setelah dikonfirmasi, hanya Anda yang bisa memindahkan jadwal. Bila kami yang menggeser, Rp100.000 masuk ke dompet Anda menit itu juga — tanpa tiket, tanpa mengejar.'
     },
-    toko:{ teksBerjalan:{ aktif:false, label:'Info', teks:'Flash sale mingguan dibuka tiap Senin · proses pesanan < 24 jam agar skor toko naik', kecepatan:22 }, sapaan:'Seller Center', flashJudul:'Flash sale EXOCLEAN', flashTeks:'Slot flash sale mingguan dibuka admin (Marketplace → Promo). Produk berdiskon ≥ 15% dan stok ≥ 20 bisa diajukan lewat chat admin.', tips:['Proses pesanan baru dalam 1×24 jam dan input resi di hari yang sama.', 'Balas chat dalam 1 jam pada jam buka.', 'Lengkapi foto produk (≥ 3) dan deskripsi agar tampil lebih atas.'] },
-    mitra:{ teksBerjalan:{ aktif:false, label:'Info', teks:'Selesaikan SOP wajib di Akademi sebelum ambil job baru · bonus tepat waktu minggu ini', kecepatan:22 }, sapaan:'Selamat pagi', area:'area Kemang', kartuJudul:'Jadwal Anda, keputusan Anda', kartuTeks:'Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.', tombolDaftar:'Formulir pendaftaran mitra baru' },
+    toko:{ banner:[{ id:'tb1', judul:'Flash sale mingguan', sub:'ajukan produk diskon ≥ 15% · slot dibuka tiap Senin', cta:'Promosi', ke:'tpromosi', warna:'oranye', ikon:'⚡', aktif:true }, { id:'tb2', judul:'Iklan toko (Ads)', sub:'tampil di atas hasil cari · bayar per klik', cta:'Pasang iklan', ke:'tiklan', warna:'biru', ikon:'📣', aktif:true }], teksBerjalan:{ aktif:false, label:'Info', teks:'Flash sale mingguan dibuka tiap Senin · proses pesanan < 24 jam agar skor toko naik', kecepatan:22 }, sapaan:'Seller Center', flashJudul:'Flash sale EXOCLEAN', flashTeks:'Slot flash sale mingguan dibuka admin (Marketplace → Promo). Produk berdiskon ≥ 15% dan stok ≥ 20 bisa diajukan lewat chat admin.', tips:['Proses pesanan baru dalam 1×24 jam dan input resi di hari yang sama.', 'Balas chat dalam 1 jam pada jam buka.', 'Lengkapi foto produk (≥ 3) dan deskripsi agar tampil lebih atas.'] },
+    mitra:{ banner:[{ id:'mb1', judul:'Insentif minggu ini', sub:'12 job selesai → bonus Rp150.000', cta:'Lihat target', ke:'pinsentif', warna:'hijau', ikon:'🎯', aktif:true }, { id:'mb2', judul:'Kursus wajib Akademi', sub:'lulus SOP untuk membuka lebih banyak job', cta:'Buka Akademi', ke:'pbelajar', warna:'teal', ikon:'🎓', aktif:true }], teksBerjalan:{ aktif:false, label:'Info', teks:'Selesaikan SOP wajib di Akademi sebelum ambil job baru · bonus tepat waktu minggu ini', kecepatan:22 }, sapaan:'Selamat pagi', area:'area Kemang', kartuJudul:'Jadwal Anda, keputusan Anda', kartuTeks:'Ops tidak pernah bisa memindahkan job yang sudah Anda terima. Bila pelanggan reschedule kurang dari 4 jam, Anda tetap dibayar 30% atas waktu yang sudah dikunci.', tombolDaftar:'Formulir pendaftaran mitra baru' },
     web:{
       hero:{ judul:'Kami bersihkan segalanya.', sub:'Profil nyata, tarif nyata, jadwal yang hanya bisa Anda ubah — dan janji Rp100.000 bila kami melanggarnya.', cta:'Pesan sekarang', cta2:'Jadi mitra' },
       layanan:[{ ikon:'🧹', judul:'Cleaning per jam', teks:'Mulai Rp78.000/jam, juru bersih pilihan Anda.' }, { ikon:'✨', judul:'Deep cleaning', teks:'Degreaser dapur, kerak kamar mandi, plafon & ventilasi.' }, { ikon:'❄️', judul:'Cuci & servis AC', teks:'Indoor, outdoor, cek suhu & tekanan, garansi 30 hari.' }, { ikon:'🛒', judul:'Toko perlengkapan', teks:'Chemical, alat & APD standar SOP dari toko mitra.' }],
@@ -45,6 +47,8 @@ var EXO_KONTEN = (function () {
       testimoni:[{ nama:'Dewi A., Kemang', teks:'Sari datang tepat 09:00, foto sebelum-sesudah lengkap. Langganan mingguan sejak Juni.', bintang:5 }, { nama:'PT Karya Mitra', teks:'Kontrak kantor 3 lantai, inspeksi supervisor tiap Jumat. Laporan bulanan rapi.', bintang:5 }],
       kontak:{ wa:'0812-8890-4417', email:'halo@exoclean.id', alamat:'Jl. Kemang Raya 8, Jakarta Selatan', jam:'Senin–Minggu 07:00–21:00' },
       tautan:{ app:'exo.html', mitra:'exo.html?layar=preg', playstore:'', apk:'' },
+      /* slide korsel web; kosong = memakai banner beranda klien */
+      slide:[],
       warna:'#009183'
     }
   };
@@ -84,7 +88,9 @@ var EXO_KONTEN = (function () {
     if (tb.aktif === false || !String(tb.teks || '').trim()) return null; return { label:tb.label || '', teks:tb.teks, kecepatan:tb.kecepatan || 22, aktif:true };
   }
   function tiketHtml(halaman, gaya) { var t = tiket(halaman); if (!t) return ''; return '<div class="ticker"' + (gaya ? ' style="' + gaya + '"' : '') + '>' + (t.label ? '<div class="ticker-badge"><i></i>' + esc(t.label) + '</div>' : '') + '<div class="ticker-win"><div class="ticker-track" style="--ticker-speed:' + Number(t.kecepatan) + 's"><span>' + esc(t.teks) + '</span><span>' + esc(t.teks) + '</span></div></div></div>'; }
+  var TUJUAN_TOKO = [['tpromosi','Promosi & kupon'],['tiklan','Iklan toko'],['tproduk','Produk'],['tpesanan','Pesanan'],['tkeuangan','Keuangan'],['tpengaturan','Pengaturan & program ongkir'],['pbelajar','Edukasi Seller']];
+  var TUJUAN_MITRA = [['pinsentif','Insentif & target'],['pbelajar','Akademi'],['pjadwal','Jadwal'],['pkit','Perlengkapan dibawa'],['ptas','Tas & isi ulang'],['pkontak','Kontak darurat'],['pabsen','Absen'],['pearn','Pendapatan']];
   var TUJUAN = [['toko','Toko perlengkapan'],['catalog','Semua layanan'],['tagihan','Bayar & isi ulang'],['perjalanan','Perjalanan'],['wallet','Dompet'],['prepaid','Paket prabayar'],['pbelajar','Akademi mitra']];
   if (window.EXO_PERSETUJUAN) { try { EXO_PERSETUJUAN.TINGKAT.konten = 'sedang'; EXO_PERSETUJUAN.daftarkanPenerap('konten', function (u, oleh) { return terbitkan(oleh, u.ringkasan); }); } catch (e) { /* konsol admin saja */ } }
-  return { BAWAAN:BAWAAN, WARNA:WARNA, TUJUAN:TUJUAN, EMOJI:EMOJI, ikonLayanan:ikonLayanan, ikonHtml:ikonHtml, tiket:tiket, tiketHtml:tiketHtml, rancangan:rancangan, simpanRancangan:simpanRancangan, baca:baca, terbitan:terbitan, adaTerbitan:adaTerbitan, terbitkan:terbitkan, riwayat:riwayat, pulihkan:pulihkan, pratinjau:pratinjau, gabung:gabung };
+  return { BAWAAN:BAWAAN, WARNA:WARNA, TUJUAN:TUJUAN, TUJUAN_TOKO:TUJUAN_TOKO, TUJUAN_MITRA:TUJUAN_MITRA, EMOJI:EMOJI, ikonLayanan:ikonLayanan, ikonHtml:ikonHtml, tiket:tiket, tiketHtml:tiketHtml, rancangan:rancangan, simpanRancangan:simpanRancangan, baca:baca, terbitan:terbitan, adaTerbitan:adaTerbitan, terbitkan:terbitkan, riwayat:riwayat, pulihkan:pulihkan, pratinjau:pratinjau, gabung:gabung };
 })();
