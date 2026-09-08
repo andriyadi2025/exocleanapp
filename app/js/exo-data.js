@@ -719,10 +719,12 @@ var EXO_DATA = (function () {
 
   var TABS_CUSTOMER = [
     { id:'home',    key:'home',    d:'m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' },
+    { id:'toko',    key:'toko',    d:'M3 9l1-5h16l1 5M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18M9 21v-6h6v6' },
     { id:'orders',  key:'orders',  d:'M6 2h12v20l-3-2-3 2-3-2-3 2ZM9 8h6M9 13h6' },
-    { id:'wallet',  key:'wallet',  d:'M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z' },
+    { id:'wishlist', key:'wishlist', d:'M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9Z' },
     { id:'profile', key:'profile', d:'M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8' }
   ];
+  /* Navigasi bawah pelanggan mengikuti aplikasi pembeli Tokopedia: Beranda · Toko · Transaksi · Wishlist · Akun; dompet dibuka dari strip beranda dan Akun. */
   var TABS_PARTNER = [
     { id:'pjobs',   label:'Job',         d:'M3 6h18M3 12h18M3 18h12' },
     { id:'pjob',    label:'Berjalan',    d:'m5 13 4 4L19 7' },
@@ -739,7 +741,7 @@ var EXO_DATA = (function () {
     { id:'tkeuangan', label:'Keuangan', d:'M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z' }
   ];
   var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tiklan','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar'];
-  var TAB_SCREENS = ['home','orders','wallet','profile','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
+  var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan'];
   var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];

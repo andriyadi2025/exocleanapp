@@ -36,10 +36,12 @@ var EXO_I18N = (function () {
   var LOCALES = { en:'en-GB', id:'id-ID', ja:'ja-JP', ko:'ko-KR', zh:'zh-CN', ar:'ar-EG', ms:'ms-MY', th:'th-TH', vi:'vi-VN', tl:'fil-PH', km:'km-KH', my:'my-MM' };
 
   var T = {
+    toko:      {en:'Shop', id:'Toko', ja:'ショップ', ko:'상점', zh:'商店', ar:'المتجر', ms:'Kedai', th:'ร้านค้า', vi:'Cửa hàng', tl:'Tindahan', km:'ហាង', my:'ဆိုင်'},
+    wishlist:  {en:'Wishlist', id:'Wishlist', ja:'お気に入り', ko:'위시리스트', zh:'心愿单', ar:'المفضلة', ms:'Wishlist', th:'สิ่งที่อยากได้', vi:'Yêu thích', tl:'Wishlist', km:'បញ្ជីចង់បាន', my:'စိတ်ကြိုက်'},
     home:      {en:'Home', id:'Beranda', ja:'ホーム', ko:'홈', zh:'首页', ar:'الرئيسية', ms:'Utama', th:'หน้าแรก', vi:'Trang chủ', tl:'Home', km:'ទំព័រដើម', my:'ပင်မ'},
-    orders:    {en:'Orders', id:'Pesanan', ja:'注文', ko:'주문', zh:'订单', ar:'الطلبات', ms:'Pesanan', th:'คำสั่ง', vi:'Đơn hàng', tl:'Mga order', km:'ការបញ្ជាទិញ', my:'အော်ဒါ'},
+    orders:    {en:'Transactions', id:'Transaksi', ja:'注文', ko:'주문', zh:'订单', ar:'الطلبات', ms:'Pesanan', th:'คำสั่ง', vi:'Đơn hàng', tl:'Mga order', km:'ការបញ្ជាទិញ', my:'အော်ဒါ'},
     wallet:    {en:'Wallet', id:'Dompet', ja:'ウォレット', ko:'지갑', zh:'钱包', ar:'المحفظة', ms:'Dompet', th:'กระเป๋าเงิน', vi:'Ví', tl:'Wallet', km:'កាបូប', my:'ပိုက်ဆံအိတ်'},
-    profile:   {en:'Profile', id:'Profil', ja:'プロフィール', ko:'프로필', zh:'我的', ar:'الحساب', ms:'Profil', th:'โปรไฟล์', vi:'Hồ sơ', tl:'Profile', km:'ប្រវត្តិរូប', my:'ကိုယ်ရေး'},
+    profile:   {en:'Account', id:'Akun', ja:'プロフィール', ko:'프로필', zh:'我的', ar:'الحساب', ms:'Profil', th:'โปรไฟล์', vi:'Hồ sơ', tl:'Profile', km:'ប្រវត្តិរូប', my:'ကိုယ်ရေး'},
     cleaningAt:{en:'Cleaning at', id:'Bersih-bersih di', ja:'清掃場所', ko:'청소 위치', zh:'清洁地点', ar:'مكان التنظيف', ms:'Pembersihan di', th:'ทำความสะอาดที่', vi:'Dọn dẹp tại', tl:'Lilinisin sa', km:'សម្អាតនៅ', my:'သန့်ရှင်းရေးနေရာ'},
     whatNeeds: {en:'What needs cleaning?', id:'Mau bersihkan apa?', ja:'何を掃除しますか？', ko:'무엇을 청소할까요?', zh:'需要清洁什么？', ar:'ما الذي تريد تنظيفه؟', ms:'Apa yang perlu dibersihkan?', th:'ต้องการทำความสะอาดอะไร', vi:'Bạn cần dọn gì?', tl:'Ano ang lilinisin?', km:'ត្រូវសម្អាតអ្វី?', my:'ဘာသန့်ရှင်းမလဲ'},
     nextVisit: {en:'Your next visit', id:'Kunjungan berikutnya', ja:'次回の訪問', ko:'다음 방문', zh:'下次服务', ar:'زيارتك القادمة', ms:'Lawatan seterusnya', th:'การเข้าครั้งถัดไป', vi:'Lượt tới', tl:'Susunod na bisita', km:'ការមកលើកក្រោយ', my:'နောက်လာမည့်'},
