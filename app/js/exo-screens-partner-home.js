@@ -46,6 +46,7 @@
     h += '<div class="stack gap-12" style="padding:14px 20px 0">';
     /* ringkasan hari ini */
     h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [['Job hari ini', String(hari.length), 'pjadwal'], ['Pendapatan hari ini', rp(pendapatanHariIni).replace('Rp ', 'Rp'), 'pearn'], ['Order masuk', String(om.length), 'pjobs']].map(function (k) { return '<button class="card elev-sm gap-2" style="text-align:start;cursor:pointer;padding:10px 12px"' + aksi('ke', k[2]) + '><div class="t-10 o-6">' + k[0] + '</div><b class="t-135">' + k[1] + '</b></button>'; }).join('') + '</div>';
+    if (X.kartuKeselamatan) h += X.kartuKeselamatan();
     if (X.kartuPengumuman) h += X.kartuPengumuman();
     if (X.kartuTas) h += X.kartuTas();
     /* order masuk */
