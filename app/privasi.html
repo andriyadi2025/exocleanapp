@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- privasi.html — Kebijakan Privasi EXOCLEAN (UU No. 27/2022 tentang
+     Pelindungan Data Pribadi). Isi berversi dibaca dari terbitan konsol admin
+     (IT → UU PDP & PSE) dengan bawaan di js/exo-privasi.js. Tanpa skrip inline. -->
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer"><title>EXOCLEAN — Kebijakan Privasi</title>
+<link rel="icon" href="assets/exoclean-mark.png">
+<style>
+:root{--aksen:#009183;--tinta:#10221d;--muted:#5b6b66;--latar:#f4f8f6;--kartu:#fff;--garis:#e3ebe7}
+*{box-sizing:border-box}body{margin:0;font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tinta);background:var(--latar);line-height:1.6}
+a{color:var(--aksen)}.wrap{max-width:860px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--garis);z-index:9}.top .wrap{display:flex;align-items:center;gap:16px;height:64px}.top img{height:30px;display:block}.top .merek{display:block;text-decoration:none}.top .merek .tag{display:block;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--aksen);margin-top:3px}.top nav{margin-left:auto;display:flex;gap:14px;font-size:14px;font-weight:700}.top nav a{text-decoration:none;color:var(--tinta)}
+.hero{background:linear-gradient(135deg,#0b5e55,#009183);color:#fff;padding:40px 0 32px}.hero h1{font-size:clamp(26px,4vw,36px);margin:0 0 8px;line-height:1.15}.hero p{margin:0;opacity:.95}.hero .meta{margin-top:12px;font-size:13px;opacity:.9}
+.kartu{background:var(--kartu);border:1px solid var(--garis);border-radius:16px;padding:20px 22px;margin-top:16px}
+h2{font-size:19px;margin:0 0 8px}.isi{white-space:pre-line;font-size:15px}
+.daftar{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:16px}.daftar a{background:#fff;border:1px solid var(--garis);border-radius:12px;padding:10px 14px;text-decoration:none;color:var(--tinta);font-weight:700;font-size:14px}
+.kontak{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.kontak div{background:#e6f5f3;border-radius:12px;padding:12px 14px;font-size:14px}.kontak b{display:block}
+footer{margin-top:40px;padding:22px 0;border-top:1px solid var(--garis);font-size:13px;color:var(--muted)}
+</style></head><body>
+<header class="top"><div class="wrap"><a href="web.html" class="merek" aria-label="EXOCLEAN"><img src="assets/exoclean-wordmark.png" alt="EXOCLEAN" data-brand="word"><span class="tag" data-brand="tag">We clean all purpose</span></a><nav><a href="#hak">Hak Anda</a><a href="#kontak">Kontak DPO</a><a href="keamanan.html">Keamanan</a></nav></div></header>
+<section class="hero"><div class="wrap"><h1>Kebijakan Privasi EXOCLEAN</h1><p>Bagaimana kami mengumpulkan, memakai, menyimpan, dan melindungi data pribadi Anda — sesuai Undang-Undang No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.</p><div class="meta">Versi <b id="versi">1.0</b> · berlaku sejak <b id="berlaku">8 September 2026</b> · pengendali data: <b id="pengendali">PT EXOCLEAN Indonesia</b></div></div></section>
+<main class="wrap">
+  <div class="daftar" id="daftarIsi"></div>
+  <div id="bagianIsi"></div>
+  <div class="kartu" id="kontak"><h2>Kontak pelindungan data</h2><div class="kontak"><div><b>Pengendali data</b><span id="kPengendali"></span></div><div><b>Pejabat Pelindungan Data (DPO)</b><span id="kDpo"></span></div></div><p style="font-size:14px;color:var(--muted);margin:12px 0 0">Ajukan hak Anda lewat menu <b>Akun → Privasi &amp; data saya</b> di aplikasi (salinan data, perbaikan, penghapusan, penarikan persetujuan, portabilitas) — kami membalas dalam 3×24 jam. Pengaduan juga dapat disampaikan kepada lembaga penyelenggara pelindungan data pribadi yang berwenang.</p></div>
+  <div class="kartu"><h2>Riwayat versi</h2><ul id="riwayatIsi" style="margin:0;padding-left:20px;font-size:14px"></ul></div>
+</main>
+<footer><div class="wrap">EXOCLEAN · <a href="keamanan.html">Program pengungkapan kerentanan</a> · <a href="/.well-known/security.txt">security.txt</a> · <a href="web.html">Beranda</a></div></footer>
+<script src="js/exo-brand.js"></script><script src="js/exo-privasi.js"></script><script src="js/exo-privasi-halaman.js"></script>
+</body></html>

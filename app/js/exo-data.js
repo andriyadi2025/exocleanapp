@@ -289,6 +289,7 @@ var EXO_DATA = (function () {
     { label:'Notifications',             value:null,     act:'notifAktif' },
     { label:'Language',                  value:'lang',   go:'lang' },
     { label:'Terms of service & privacy',value:'v2.3',   go:'terms' },
+    { label:'Privasi & data saya',       value:'UU PDP', go:'privasi' },
     { label:'Help — human in 60s',       value:'AI + Chat', go:'cs' }
   ];
 
@@ -741,7 +742,7 @@ var EXO_DATA = (function () {
     { id:'tprofil',   label:'Akun',     d:'M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8' }
   ];
   var TOKO_SCREENS = ['tberanda','tpesanan','tproduk','tpromosi','tiklan','tchat','tkeuangan','tstatistik','tskor','tpengaturan','tdaftar','tprofil'];
-  var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjadwal','cs','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan','tprofil'];
+  var TAB_SCREENS = ['home','orders','wallet','profile','toko','wishlist','tokoFavorit','kuponSaya','notifikasi','pjadwal','cs','privasi','pjobs','pearn','pbelajar','tberanda','tpesanan','tproduk','tchat','tkeuangan','tprofil'];
   var PARTNER_SCREENS = ['pjobs','pjob','proute','psop','pkit','palat','ptas','pjadwal','pinsentif','pabsen','priwayat','pkontak','pearn','preg','preport','pwallet','pbelajar','pkursus','pmateri','pkuis'];
 
   var JUMP_CUSTOMER = [['onboard','Onboarding'],['signup','Sign up'],['home','Home'],['catalog','All services'],['prepaid','Prepaid'],['svc','Book 1'],['cleaner','Book 2'],['review','Book 3'],['success','Confirmed'],['track','Track'],['orders','Orders'],['wallet','Wallet'],['rate','Rate'],['share','Share'],['issue','Claim'],['report','Before-after'],['terms','Terms'],['lang','Language'],['profile','Profile']];

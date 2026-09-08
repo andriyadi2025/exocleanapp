@@ -70,7 +70,7 @@ var ADMIN = (function () {
     ['H2H', 'pasar', [['kurir','Kurir — Biteship',''], ['ppob','Bayar & isi ulang — Darmawisata',''], ['perjalanan','Perjalanan — Darmawisata','']]],
     ['Accounting & Finance', 'keuangan', [['keuangan','Accounting & Finance',''], ['claims','Claims & refunds','12']]],
     ['HRD', 'hrd', [['penggajian','Penggajian karyawan',''], ['belajar','Belajar saya','']]],
-    ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['vdp','Bug bounty / VDP',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance',''], ['konten','Halaman & konten','']]]
+    ['IT', 'it', [['persetujuan','Persetujuan & audit',''], ['keamanan','Keamanan',''], ['vdp','Bug bounty / VDP',''], ['pdp','UU PDP & PSE',''], ['roles','Roles & permissions','8'], ['team','Admins & akun','9'], ['integrasi','Integrasi & kunci',''], ['data','Cadangan & data',''], ['brand','Appearance',''], ['konten','Halaman & konten','']]]
   ];
   var NAV = []; KELOMPOK.forEach(function (g) { g[2].forEach(function (n) { NAV.push(n); }); });
   var UNIT_NAMA = { ops:'Operasional', mitra:'Mitra', pasar:'Mitra Toko', keuangan:'Accounting & Finance', hrd:'HRD', it:'IT' };
@@ -138,6 +138,7 @@ var ADMIN = (function () {
     penggajian:['Penggajian karyawan','Gaji kantor · BPJS · PPh 21 · payroll bulanan lewat Persetujuan (tinggi)','Jalankan'],
     inventaris:['Inventaris & perlengkapan','Stok chemical, alat, APD · permintaan dari lapangan (H-005) · PO lewat Persetujuan','PO baru'],
     komunikasi:['Komunikasi tim','Pengumuman ke aplikasi mitra · target per fungsi/kota · disetujui sebelum tayang','Pengumuman'],
+    pdp:['UU PDP & PSE','Kepatuhan pelindungan data pribadi: checklist & pendaftaran PSE, DPO, DPIA, prosesor · permintaan hak subjek data (tenggat 3×24 jam) · insiden kebocoran & surat pemberitahuan · bukti persetujuan · catatan pemrosesan · kebijakan privasi berversi','PIN'],
     vdp:['Bug bounty / VDP','Program pengungkapan kerentanan: laporan terenkripsi dari keamanan.html, triase CVSS & hadiah (PIN + audit), kebijakan & cakupan yang diterbitkan ke halaman publik, hall of fame, security.txt (RFC 9116)','PIN'],
     keamanan:['Keamanan','Konteks aman, login & PIN gagal, passkey, kontrol yang aktif · peristiwa autentikasi','Uji'],
     integrasi:['Integrasi & kunci','Status server pendamping & gateway · kunci publik klien · rahasia tetap di server/.env','Uji koneksi'],
